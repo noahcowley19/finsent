@@ -3,8 +3,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import feedparser
-import requests
-from bs4 import BeautifulSoup
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from urllib.parse import quote
 import os
@@ -15,18 +13,18 @@ CORS(app, origins=["*"])
 CORS(app)
 
 
-
 def fetch_news(query, num_articles=10):
     rss_url = f"https://news.google.com/rss/search?q={quote(query)}"
     feed = feedparser.parse(rss_url)
-    news_items = feed.entries[:num_articles]  # FIXED: was ["num_articles"]
+    news_items = feed.entries[:num_articles]
 
     articles = []
     for item in news_items:
         title = item.title
         link = item.link
         published = item.published
-        content = fetch_article_content(link)
+        # Use RSS summary/description instead of scraping
+        content = item.get('summary', '') or item.get('description', '')
 
         articles.append({
             "title": title,
@@ -35,19 +33,7 @@ def fetch_news(query, num_articles=10):
             "content": content
         })
 
-    return articles  # FIXED: indentation was wrong
-
-
-def fetch_article_content(url):
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        paragraphs = soup.find_all('p')
-        content = ' '.join([p.get_text() for p in paragraphs])
-        return content.strip()
-    except requests.RequestException:
-        return "Content not retrieved."
+    return articles
 
 
 def analyze_sentiment(text):
@@ -57,7 +43,7 @@ def analyze_sentiment(text):
 
     if polarity > 0.05:
         sentiment = 'Positive'
-    elif polarity < -0.05:  # FIXED: spacing
+    elif polarity < -0.05:
         sentiment = 'Negative'
     else:
         sentiment = 'Neutral'
@@ -67,7 +53,7 @@ def analyze_sentiment(text):
 
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     queries = [
-        f"{ticker} news",  # FIXED: missing comma
+        f"{ticker} news",
         f"{ticker} trends",
         f"{ticker} analysis",
         f"{ticker} forecast",
@@ -84,7 +70,9 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     summary = {"Positive": 0, "Negative": 0, "Neutral": 0}
 
     for article in all_articles:
-        polarity, sentiment = analyze_sentiment(article['title'])
+        # Analyze title + content (RSS summary)
+        text_to_analyze = f"{article['title']} {article['content']}"
+        polarity, sentiment = analyze_sentiment(text_to_analyze)
 
         article_data = {
             'title': article['title'],
@@ -127,7 +115,7 @@ def analyze():
         if not ticker:
             return jsonify({'error': 'Ticker is required'}), 400
 
-        num_articles = data.get('num_articles', 10)  # FIXED: was 'num_artiles'
+        num_articles = data.get('num_articles', 10)
 
         try:
             num_articles = int(num_articles)
