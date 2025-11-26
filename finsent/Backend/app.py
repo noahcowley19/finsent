@@ -19,18 +19,20 @@ def fetch_article_content(url):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        response = requests.get(url, timeout=4, headers=headers, allow_redirects=True)
+        response = requests.get(url, timeout=4, headers=headers, allow_redirects=True, stream=True)
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        content = response.content[:100000]
+        soup = BeautifulSoup(content, 'html.parser')
         
         for tag in soup(['script', 'style', 'nav', 'header', 'footer']):
             tag.decompose()
         
         paragraphs = soup.find_all('p')[:8]
-        content = ' '.join([p.get_text().strip() for p in paragraphs if p.get_text().strip()])
+        text = ' '.join([p.get_text().strip() for p in paragraphs if p.get_text().strip()])
         
-        if len(content) > 50:
-            return content
+        if len(text) > 50:
+            return text[:2000]
         return ""
     except:
         return ""
@@ -75,21 +77,26 @@ def fetch_news_batch(queries, num_articles_per_query):
         }
     
     results = []
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(scrape_content, article): article for article in unique_articles[:30]}
+    batch_size = 15
+    
+    for i in range(0, len(unique_articles), batch_size):
+        batch = unique_articles[i:i+batch_size]
         
-        for future in as_completed(futures, timeout=25):
-            try:
-                result = future.result(timeout=1)
-                results.append(result)
-            except:
-                article = futures[future]
-                results.append({
-                    "title": article['title'],
-                    "link": article['link'],
-                    "published": article['published'],
-                    "content": article['summary']
-                })
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(scrape_content, article): article for article in batch}
+            
+            for future in as_completed(futures, timeout=20):
+                try:
+                    result = future.result(timeout=1)
+                    results.append(result)
+                except:
+                    article = futures[future]
+                    results.append({
+                        "title": article['title'],
+                        "link": article['link'],
+                        "published": article['published'],
+                        "content": article['summary']
+                    })
     
     return results
 
@@ -112,8 +119,10 @@ def analyze_sentiment(text):
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     queries = [
         f"{ticker} news",
+        f"{ticker} market",
         f"{ticker} analysis",
-        f"{ticker} forecast"
+        f"{ticker} forecast",
+        f"{ticker} stock"
     ]
 
     articles = fetch_news_batch(queries, num_articles_per_query)
