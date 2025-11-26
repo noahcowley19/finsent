@@ -1,16 +1,40 @@
-##coded by Noah Cowley, debugged by Claude
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import feedparser
+import requests
+from bs4 import BeautifulSoup
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from urllib.parse import quote
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 import os
+import time
 
 app = Flask(__name__, static_folder='.')
 
 CORS(app, origins=["*"])
 CORS(app)
+
+
+def fetch_article_content(url, timeout=5):
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, timeout=timeout, headers=headers, allow_redirects=True)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        for script in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
+            script.decompose()
+        
+        paragraphs = soup.find_all('p')
+        content = ' '.join([p.get_text().strip() for p in paragraphs[:10] if p.get_text().strip()])
+        
+        if len(content) > 50:
+            return content
+        return ""
+    except:
+        return ""
 
 
 def fetch_news(query, num_articles=10):
@@ -19,20 +43,35 @@ def fetch_news(query, num_articles=10):
     news_items = feed.entries[:num_articles]
 
     articles = []
-    for item in news_items:
-        title = item.title
-        link = item.link
-        published = item.published
-        # Use RSS summary/description instead of scraping
-        content = item.get('summary', '') or item.get('description', '')
-
-        articles.append({
-            "title": title,
-            "link": link,
-            "published": published,
+    
+    def fetch_single_article(item):
+        content = fetch_article_content(item.link)
+        if not content:
+            content = item.get('summary', '') or item.get('description', '')
+        
+        return {
+            "title": item.title,
+            "link": item.link,
+            "published": item.published,
             "content": content
-        })
-
+        }
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_item = {executor.submit(fetch_single_article, item): item for item in news_items}
+        
+        for future in as_completed(future_to_item, timeout=15):
+            try:
+                article = future.result(timeout=2)
+                articles.append(article)
+            except:
+                item = future_to_item[future]
+                articles.append({
+                    "title": item.title,
+                    "link": item.link,
+                    "published": item.published,
+                    "content": item.get('summary', '') or item.get('description', '')
+                })
+    
     return articles
 
 
@@ -53,24 +92,40 @@ def analyze_sentiment(text):
 
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     queries = [
-        f"{ticker} news",
-        f"{ticker} trends",
-        f"{ticker} analysis",
-        f"{ticker} forecast",
-        f"{ticker} investment"
+        f"{ticker} stock news",
+        f"{ticker} market analysis",
+        f"{ticker} price forecast",
+        f"{ticker} earnings",
+        f"{ticker} investment outlook"
     ]
 
     all_articles = []
 
-    for query in queries:
-        articles = fetch_news(query, num_articles_per_query)
-        all_articles.extend(articles)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        future_to_query = {
+            executor.submit(fetch_news, query, num_articles_per_query): query 
+            for query in queries
+        }
+        
+        for future in as_completed(future_to_query, timeout=30):
+            try:
+                articles = future.result(timeout=5)
+                all_articles.extend(articles)
+            except:
+                continue
+
+    seen_titles = set()
+    unique_articles = []
+    for article in all_articles:
+        title_lower = article['title'].lower()
+        if title_lower not in seen_titles:
+            seen_titles.add(title_lower)
+            unique_articles.append(article)
 
     analyzed_articles = []
     summary = {"Positive": 0, "Negative": 0, "Neutral": 0}
 
-    for article in all_articles:
-        # Analyze title + content (RSS summary)
+    for article in unique_articles:
         text_to_analyze = f"{article['title']} {article['content']}"
         polarity, sentiment = analyze_sentiment(text_to_analyze)
 
