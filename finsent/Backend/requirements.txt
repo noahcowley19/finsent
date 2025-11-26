@@ -1,0 +1,7 @@
+Flask
+flask-cors
+feedparser
+requests
+beautifulsoup4
+vaderSentiment
+gunicorn

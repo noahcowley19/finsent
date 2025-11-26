@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finsent Sentiment Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 60px 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .author-credit {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--secondary);
+            margin-bottom: 6px;
+            display: block;
+            letter-spacing: -0.01em;
+            min-height: 30px;
+        }
+
+        input[type="text"] {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+            text-align: left;
+            width: 100%;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--secondary);
+            text-align: left;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
+        }
+
+        input[type="number"] {
+            width: 120px;
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: var(--background);
+            color: var(--primary);
+            text-align: left;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+        }
+
+        button {
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+            align-self: end;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            padding: 2px;
+            background: linear-gradient(45deg, rgba(255,255,255,0.3), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        button:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button:disabled::after {
+            animation: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 0;
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 24px;
+            background: var(--border);
+            border-radius: 12px;
+            height: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, #3b82f6 50%, var(--primary) 100%);
+            background-size: 200% 100%;
+            border-radius: 12px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .loading-text {
+            color: var(--secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pie-chart {
+            width: 280px;
+            height: 280px;
+            position: relative;
+        }
+
+        .pie-chart svg {
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .chart-legend {
+            margin-left: 60px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            margin-right: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legend-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        .legend-value {
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transition: height 0.2s ease;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.positive::before {
+            background: var(--positive);
+        }
+
+        .metric-card.negative::before {
+            background: var(--negative);
+        }
+
+        .metric-card.neutral::before {
+            background: var(--neutral);
+        }
+
+        .metric-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 12px;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        .metric-card.positive .metric-value {
+            color: var(--positive);
+        }
+
+        .metric-card.negative .metric-value {
+            color: var(--negative);
+        }
+
+        .metric-card.neutral .metric-value {
+            color: var(--neutral);
+        }
+
+        .metric-percentage {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .articles-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .articles-header {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .articles-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .article {
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s ease;
+        }
+
+        .article:last-child {
+            border-bottom: none;
+        }
+
+        .article:hover {
+            background: var(--background);
+            margin: 0 -24px;
+            padding: 24px;
+            border-radius: 8px;
+        }
+
+        .article-title {
+            margin-bottom: 12px;
+        }
+
+        .article-title a {
+            font-size: 1.0625rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+            transition: color 0.2s ease;
+        }
+
+        .article-title a:hover {
+            color: #0f172a;
+        }
+
+        .article-metadata {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .badge.positive {
+            background: var(--positive-light);
+            color: var(--positive-dark);
+        }
+
+        .badge.negative {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+        }
+
+        .badge.neutral {
+            background: var(--neutral-light);
+            color: var(--neutral-dark);
+        }
+
+        .article-detail {
+            font-size: 14px;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .error-message {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #fecaca;
+        }
+
+        @media (max-width: 968px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            input[type="number"] {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .chart-section {
+                flex-direction: column;
+            }
+
+            .chart-legend {
+                margin-left: 0;
+                margin-top: 32px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 32px 16px;
+            }
+
+            .search-section,
+            .articles-container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.875rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .metric-value {
+                font-size: 2.5rem;
+            }
+
+            .pie-chart {
+                width: 220px;
+                height: 220px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="author-credit">Noah Cowley</div>
+
+        <header>
+            <h1>Finsent Sentiment Analyzer</h1>
+            <p class="subtitle">A real-time financial sentiment analyzer using bidirectional encoder representations from transformers to evaluate market news. Like any other natural language processing model, Finsent is NOT infallible; it should be used cautiously.</p>
+        </header>
+
+        <div class="search-section">
+            <div class="input-wrapper">
+                <div class="input-group">
+                    <label class="input-label">Enter a Ticker, Company, or Commodity, and enter a query amount less than 20. One query translates to 5 articles.</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="gold">
+                </div>
+                <div class="input-group">
+                    <label class="input-label"></label>
+                    <input type="number" id="numArticles" min="1" max="20" value="10" placeholder="Count">
+                </div>
+                <button onclick="analyzeSentiment()" id="analyzeBtn">Analyze</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p class="loading-text" id="loadingText">Analyzing market sentiment...</p>
+            </div>
+
+            <div class="error-message" id="error"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="chart-section">
+                <div class="pie-chart">
+                    <svg viewBox="0 0 200 200" id="pieChartSvg"></svg>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--positive);"></div>
+                        <span class="legend-label">Positive</span>
+                        <span class="legend-value" id="legendPositive">0 (0%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--negative);"></div>
+                        <span class="legend-label">Negative</span>
+                        <span class="legend-value" id="legendNegative">0 (0%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: var(--neutral);"></div>
+                        <span class="legend-label">Neutral</span>
+                        <span class="legend-value" id="legendNeutral">0 (0%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-grid">
+                <div class="metric-card positive">
+                    <div class="metric-label">Positive</div>
+                    <div class="metric-value" id="positiveCount">0</div>
+                    <div class="metric-percentage" id="positivePercent">0%</div>
+                </div>
+                <div class="metric-card negative">
+                    <div class="metric-label">Negative</div>
+                    <div class="metric-value" id="negativeCount">0</div>
+                    <div class="metric-percentage" id="negativePercent">0%</div>
+                </div>
+                <div class="metric-card neutral">
+                    <div class="metric-label">Neutral</div>
+                    <div class="metric-value" id="neutralCount">0</div>
+                    <div class="metric-percentage" id="neutralPercent">0%</div>
+                </div>
+            </div>
+
+            <div class="articles-container">
+                <div class="articles-header">
+                    <h2 id="articlesTitle">Recent Articles</h2>
+                </div>
+                <div id="articlesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let progressInterval;
+
+        async function analyzeSentiment() {
+            const ticker = document.getElementById('tickerInput').value.trim();
+            const numArticles = parseInt(document.getElementById('numArticles').value) || 10;
+
+            if (!ticker) {
+                showError('Please enter a ticker or asset name');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // Progress bar animation
+            const progressBar = document.getElementById('progressBar');
+            const loadingText = document.getElementById('loadingText');
+            let progress = 0;
+            progressBar.style.width = '0%';
+
+            const stages = [
+                { percent: 20, text: 'Fetching news articles...' },
+                { percent: 40, text: 'Processing content...' },
+                { percent: 60, text: 'Analyzing sentiment...' },
+                { percent: 80, text: 'Compiling results...' },
+                { percent: 95, text: 'Almost done...' }
+            ];
+
+            let stageIndex = 0;
+            progressInterval = setInterval(() => {
+                if (stageIndex < stages.length) {
+                    progress = stages[stageIndex].percent;
+                    progressBar.style.width = progress + '%';
+                    loadingText.textContent = stages[stageIndex].text;
+                    stageIndex++;
+                }
+            }, 800);
+
+            try {
+                const response = await fetch('https://finset-backend.onrender.com', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ticker: ticker,
+                        num_articles: numArticles
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to analyze sentiment');
+                }
+
+                const data = await response.json();
+
+                // Complete progress bar
+                progressBar.style.width = '100%';
+                loadingText.textContent = 'Complete!';
+
+                setTimeout(() => {
+                    displayResults(data);
+                }, 500);
+
+            } catch (error) {
+                showError('Unable to connect to the API. Please ensure the Flask server is running on port 5000.');
+                console.error(error);
+            } finally {
+                clearInterval(progressInterval);
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('analyzeBtn').disabled = false;
+                }, 500);
+            }
+        }
+
+        function createPieChart(positive, negative, neutral) {
+            const total = positive + negative + neutral;
+            if (total === 0) return;
+
+            const svg = document.getElementById('pieChartSvg');
+            svg.innerHTML = '';
+
+            const radius = 80;
+            const centerX = 100;
+            const centerY = 100;
+            const strokeWidth = 40;
+
+            const data = [
+                { value: positive, color: '#10b981', name: 'Positive' },
+                { value: negative, color: '#ef4444', name: 'Negative' },
+                { value: neutral, color: '#6b7280', name: 'Neutral' }
+            ];
+
+            let currentAngle = 0;
+
+            data.forEach((item, index) => {
+                if (item.value === 0) return;
+
+                const percentage = item.value / total;
+                const angle = percentage * 360;
+                const largeArcFlag = angle > 180 ? 1 : 0;
+
+                const startX = centerX + radius * Math.cos((currentAngle * Math.PI) / 180);
+                const startY = centerY + radius * Math.sin((currentAngle * Math.PI) / 180);
+
+                const endAngle = currentAngle + angle;
+                const endX = centerX + radius * Math.cos((endAngle * Math.PI) / 180);
+                const endY = centerY + radius * Math.sin((endAngle * Math.PI) / 180);
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const d = [
+                    `M ${centerX} ${centerY}`,
+                    `L ${startX} ${startY}`,
+                    `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                    'Z'
+                ].join(' ');
+
+                path.setAttribute('d', d);
+                path.setAttribute('fill', item.color);
+                path.setAttribute('stroke', '#ffffff');
+                path.setAttribute('stroke-width', '2');
+                path.style.transition = 'all 0.3s ease';
+
+                // Hover effect
+                path.addEventListener('mouseenter', function() {
+                    this.style.opacity = '0.8';
+                    this.style.transform = 'scale(1.05)';
+                    this.style.transformOrigin = 'center';
+                });
+
+                path.addEventListener('mouseleave', function() {
+                    this.style.opacity = '1';
+                    this.style.transform = 'scale(1)';
+                });
+
+                svg.appendChild(path);
+                currentAngle = endAngle;
+            });
+
+            // Center circle for donut effect
+            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            centerCircle.setAttribute('cx', centerX);
+            centerCircle.setAttribute('cy', centerY);
+            centerCircle.setAttribute('r', radius - strokeWidth);
+            centerCircle.setAttribute('fill', '#ffffff');
+            svg.appendChild(centerCircle);
+        }
+
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = value;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function displayResults(data) {
+            // Animate count values
+            animateValue(document.getElementById('positiveCount'), 0, data.summary.Positive.count, 1000);
+            animateValue(document.getElementById('negativeCount'), 0, data.summary.Negative.count, 1000);
+            animateValue(document.getElementById('neutralCount'), 0, data.summary.Neutral.count, 1000);
+
+            document.getElementById('positivePercent').textContent = data.summary.Positive.percentage + '%';
+            document.getElementById('negativePercent').textContent = data.summary.Negative.percentage + '%';
+            document.getElementById('neutralPercent').textContent = data.summary.Neutral.percentage + '%';
+
+            // Update legend
+            document.getElementById('legendPositive').textContent =
+                `${data.summary.Positive.count} (${data.summary.Positive.percentage}%)`;
+            document.getElementById('legendNegative').textContent =
+                `${data.summary.Negative.count} (${data.summary.Negative.percentage}%)`;
+            document.getElementById('legendNeutral').textContent =
+                `${data.summary.Neutral.count} (${data.summary.Neutral.percentage}%)`;
+
+            // Create pie chart
+            createPieChart(
+                data.summary.Positive.count,
+                data.summary.Negative.count,
+                data.summary.Neutral.count
+            );
+
+            document.getElementById('articlesTitle').textContent = `${data.ticker.toUpperCase()} Analysis — ${data.total_articles} Articles`;
+
+            const articlesList = document.getElementById('articlesList');
+            articlesList.innerHTML = '';
+
+            data.articles.forEach((article, index) => {
+                const articleDiv = document.createElement('div');
+                articleDiv.className = 'article';
+                articleDiv.style.opacity = '0';
+                articleDiv.style.transform = 'translateY(20px)';
+
+                const sentimentClass = article.sentiment.toLowerCase();
+                const publishDate = new Date(article.published).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                articleDiv.innerHTML = `
+                    <div class="article-title">
+                        <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+                    </div>
+                    <div class="article-metadata">
+                        <span class="badge ${sentimentClass}">${article.sentiment}</span>
+                        <span class="article-detail">Score: ${article.polarity}</span>
+                        <span class="article-detail">${publishDate}</span>
+                    </div>
+                `;
+
+                articlesList.appendChild(articleDiv);
+
+                // Staggered fade-in animation
+                setTimeout(() => {
+                    articleDiv.style.transition = 'all 0.4s ease';
+                    articleDiv.style.opacity = '1';
+                    articleDiv.style.transform = 'translateY(0)';
+                }, index * 50);
+            });
+
+            document.getElementById('results').style.display = 'block';
+
+            // Smooth scroll to results
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeSentiment();
+            }
+        });
+    </script>
+</body>
+</html>
