@@ -5,10 +5,10 @@ from typing import Any, Optional
 
 
 class Cache:
-    TTL_PRICE = 900  # 15 minutes
-    TTL_FUNDAMENTAL = 3600  # 1 hour
-    TTL_METADATA = 86400  # 24 hours
-    TTL_DEFAULT = 900  # 15 minutes
+    TTL_PRICE = 900  #15mins
+    TTL_FUNDAMENTAL = 3600  #1hr
+    TTL_METADATA = 86400  #24hours
+    TTL_DEFAULT = 900  #15mins
 
     def __init__(self):
         self._cache = {}
