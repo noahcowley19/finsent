@@ -1,8 +1,4 @@
-"""
-Finsent Sentiment Analysis Blueprint
-Handles news fetching and sentiment analysis for tickers.
-"""
-
+#Made by Noah C. and debugged with Claude.ai
 from flask import Blueprint, request, jsonify
 import feedparser
 import requests
@@ -16,7 +12,6 @@ sentiment_bp = Blueprint('sentiment', __name__)
 
 
 def fetch_article_content(url):
-    """Fetch and extract text content from a news article URL."""
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -41,7 +36,6 @@ def fetch_article_content(url):
 
 
 def fetch_news_batch(queries, num_articles_per_query):
-    """Fetch news articles from Google News RSS for multiple queries."""
     all_articles = []
     
     for query in queries:
@@ -105,7 +99,6 @@ def fetch_news_batch(queries, num_articles_per_query):
 
 
 def analyze_sentiment(text):
-    """Analyze sentiment of text using VADER."""
     analyzer = SentimentIntensityAnalyzer()
     scores = analyzer.polarity_scores(text)
     polarity = scores['compound']
@@ -121,7 +114,6 @@ def analyze_sentiment(text):
 
 
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
-    """Analyze sentiment for a ticker across multiple news sources."""
     queries = [
         f"{ticker} news",
         f"{ticker} market",
@@ -168,7 +160,6 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
 
 @sentiment_bp.route('/api/analyze', methods=['POST'])
 def analyze():
-    """API endpoint for sentiment analysis."""
     try:
         data = request.get_json()
         ticker = data.get('ticker', '').strip()
