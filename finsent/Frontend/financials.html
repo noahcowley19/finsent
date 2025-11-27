@@ -1,1 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Analyzer | Finsent</title>
 
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+     crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --warning-dark: #92400e;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 80px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .author-credit {
+            position: absolute;
+            top: 0;
+            right: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: -0.01em;
+        }
+
+        input[type="text"] {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+            text-align: left;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--secondary);
+            text-transform: none;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
+        }
+
+        button {
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 0;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #fecaca;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .company-header {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .company-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .company-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            color: var(--secondary);
+            font-size: 15px;
+        }
+
+        .company-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .company-meta-label {
+            font-weight: 500;
+        }
+
+        .company-meta-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .timestamp {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.01em;
+        }
+
+        .scores-section {
+            margin-bottom: 32px;
+        }
+
+        .scores-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .score-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .score-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .score-card.positive::before {
+            background: var(--positive);
+        }
+
+        .score-card.negative::before {
+            background: var(--negative);
+        }
+
+        .score-card.neutral::before {
+            background: var(--warning);
+        }
+
+        .score-card:hover {
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .score-name {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 12px;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        .score-card.positive .score-value {
+            color: var(--positive);
+        }
+
+        .score-card.negative .score-value {
+            color: var(--negative);
+        }
+
+        .score-card.neutral .score-value {
+            color: var(--warning);
+        }
+
+        .score-interpretation {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .score-card.positive .score-interpretation {
+            color: var(--positive-dark);
+        }
+
+        .score-card.negative .score-interpretation {
+            color: var(--negative-dark);
+        }
+
+        .score-card.neutral .score-interpretation {
+            color: var(--warning-dark);
+        }
+
+        .explainer-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .explainer-toggle {
+            width: 100%;
+            padding: 20px 24px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            transition: background 0.2s ease;
+        }
+
+        .explainer-toggle:hover {
+            background: var(--neutral-light);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .explainer-toggle svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+            color: var(--secondary);
+        }
+
+        .explainer-toggle.active svg {
+            transform: rotate(180deg);
+        }
+
+        .explainer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .explainer-content.active {
+            max-height: 600px;
+        }
+
+        .explainer-inner {
+            padding: 0 24px 24px;
+        }
+
+        .explainer-item {
+            margin-bottom: 20px;
+        }
+
+        .explainer-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .explainer-item h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .explainer-item p {
+            font-size: 14px;
+            color: var(--secondary);
+            line-height: 1.6;
+        }
+
+        .explainer-note {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--neutral-light);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--neutral-dark);
+            font-style: italic;
+        }
+
+        .metrics-section {
+            margin-bottom: 32px;
+        }
+
+        .metrics-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+
+        .metrics-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .metrics-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .metrics-grid.three-col {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .metric-item {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .metric-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .metric-item.positive::before {
+            background: var(--positive);
+        }
+
+        .metric-item.negative::before {
+            background: var(--negative);
+        }
+
+        .metric-item.neutral::before {
+            background: var(--neutral);
+        }
+
+        .metric-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .metric-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .metric-item.positive .metric-value {
+            color: var(--positive);
+        }
+
+        .metric-item.negative .metric-value {
+            color: var(--negative);
+        }
+
+        .metric-item.neutral .metric-value {
+            color: var(--neutral-dark);
+        }
+
+        .disclaimer-section {
+            background: var(--neutral-light);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 40px;
+        }
+
+        .disclaimer-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--neutral-dark);
+            margin-bottom: 8px;
+        }
+
+        .disclaimer-text {
+            font-size: 13px;
+            color: var(--secondary);
+            line-height: 1.7;
+        }
+
+        @media (max-width: 968px) {
+            .scores-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .metrics-grid.three-col {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .company-meta {
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding-top: 64px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .search-section,
+            .company-header,
+            .metrics-card {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.875rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .metrics-grid,
+            .metrics-grid.three-col {
+                grid-template-columns: 1fr;
+            }
+
+            .company-name {
+                font-size: 1.5rem;
+            }
+
+            .company-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .score-value {
+                font-size: 2rem;
+            }
+
+            .nav-logo {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                gap: 4px;
+            }
+
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">FINSENT</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/sentiment" class="nav-link">Sentiment</a>
+            <a href="/financials" class="nav-link active">Financials</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="author-credit">Noah Cowley</div>
+
+        <header>
+            <h1>Financial Analyzer</h1>
+            <p class="subtitle">Evaluate company financial health using academic scoring models and key metrics. Enter a stock ticker to analyze fundamentals.</p>
+        </header>
+
+        <div class="search-section">
+            <div class="input-wrapper">
+                <div class="input-group">
+                    <label class="input-label">Enter a stock ticker symbol (e.g., AAPL, MSFT, GOOGL)</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="AAPL">
+                </div>
+                <button onclick="analyzeFinancials()" id="analyzeBtn">Analyze</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p class="loading-text">Fetching financial data...</p>
+            </div>
+
+            <div class="error-message" id="error"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="company-header">
+                <div class="company-name" id="companyName">Company Name</div>
+                <div class="company-meta">
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Ticker:</span>
+                        <span class="company-meta-value" id="companyTicker">AAPL</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Sector:</span>
+                        <span class="company-meta-value" id="companySector">Technology</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Price:</span>
+                        <span class="company-meta-value" id="companyPrice">$0.00</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Market Cap:</span>
+                        <span class="company-meta-value" id="companyMarketCap">$0</span>
+                    </div>
+                </div>
+                <div class="timestamp" id="dataTimestamp">Data as of: --</div>
+            </div>
+
+            <div class="scores-section">
+                <h2 class="section-title">Financial Health Scores</h2>
+                <div class="scores-grid">
+                    <div class="score-card" id="piotroskiCard">
+                        <div class="score-name">Piotroski F-Score</div>
+                        <div class="score-value" id="piotroskiValue">--</div>
+                        <div class="score-interpretation" id="piotroskiInterpretation">--</div>
+                    </div>
+                    <div class="score-card" id="altmanCard">
+                        <div class="score-name">Altman Z-Score</div>
+                        <div class="score-value" id="altmanValue">--</div>
+                        <div class="score-interpretation" id="altmanInterpretation">--</div>
+                    </div>
+                    <div class="score-card" id="beneishCard">
+                        <div class="score-name">Beneish M-Score</div>
+                        <div class="score-value" id="beneishValue">--</div>
+                        <div class="score-interpretation" id="beneishInterpretation">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explainer-section">
+                <button class="explainer-toggle" id="explainerToggle" onclick="toggleExplainer()">
+                    <span>What do these scores mean?</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div class="explainer-content" id="explainerContent">
+                    <div class="explainer-inner">
+                        <div class="explainer-item">
+                            <h4>Piotroski F-Score (0-9)</h4>
+                            <p>Developed by accounting professor Joseph Piotroski, this score evaluates financial strength across 9 criteria including profitability, leverage, and operating efficiency. Scores of 7-9 suggest strong financial health, 4-6 are neutral, and 0-3 may indicate weakness.</p>
+                        </div>
+                        <div class="explainer-item">
+                            <h4>Altman Z-Score</h4>
+                            <p>Created by Professor Edward Altman, this formula predicts the probability of bankruptcy within 2 years. Originally designed for manufacturing companies. Scores above 2.99 indicate safety, 1.81-2.99 is a grey zone requiring caution, and below 1.81 suggests financial distress.</p>
+                        </div>
+                        <div class="explainer-item">
+                            <h4>Beneish M-Score</h4>
+                            <p>Developed by Professor Messod Beneish, this score detects the likelihood of earnings manipulation. Scores below -2.22 suggest the company is unlikely to be manipulating earnings, while scores above -2.22 warrant further investigation.</p>
+                        </div>
+                        <div class="explainer-note">
+                            These scores are academic models with known limitations. They should be used as starting points for analysis, not as definitive investment signals.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metrics-section">
+                <div class="metrics-card">
+                    <div class="metrics-card-title">Valuation</div>
+                    <div class="metrics-grid" id="valuationMetrics"></div>
+                </div>
+
+                <div class="metrics-card">
+                    <div class="metrics-card-title">Profitability</div>
+                    <div class="metrics-grid three-col" id="profitabilityMetrics"></div>
+                </div>
+
+                <div class="metrics-card">
+                    <div class="metrics-card-title">Leverage</div>
+                    <div class="metrics-grid three-col" id="leverageMetrics"></div>
+                </div>
+            </div>
+
+            <div class="disclaimer-section">
+                <div class="disclaimer-title">Disclaimer</div>
+                <div class="disclaimer-text" id="disclaimerText">
+                    Financial data is provided for informational purposes only and should not be considered financial advice. Data is sourced from Yahoo Finance and may be delayed, incomplete, or inaccurate. Metric color coding represents general guidelines that vary significantly by industry and company stage — a "red" metric is not necessarily bad, and a "green" metric is not necessarily good. The Piotroski F-Score, Altman Z-Score, and Beneish M-Score are academic models with known limitations, particularly for non-manufacturing companies, financial institutions, and early-stage businesses. Always verify information with official SEC filings and consult a qualified financial advisor before making investment decisions.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleExplainer() {
+            const toggle = document.getElementById('explainerToggle');
+            const content = document.getElementById('explainerContent');
+            toggle.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        async function analyzeFinancials() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+
+            if (!ticker) {
+                showError('Please enter a ticker symbol');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('https://finsent-backend.onrender.com/api/financials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ticker: ticker })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to fetch financial data');
+                }
+
+                displayResults(data);
+
+            } catch (error) {
+                showError(error.message || 'Unable to connect to the API. Please try again later.');
+                console.error(error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            const company = data.company;
+            document.getElementById('companyName').textContent = company.name;
+            document.getElementById('companyTicker').textContent = company.ticker;
+            document.getElementById('companySector').textContent = company.sector;
+            document.getElementById('companyPrice').textContent = company.price ? `$${company.price.toFixed(2)}` : 'N/A';
+            document.getElementById('companyMarketCap').textContent = company.market_cap_display;
+
+            const timestamp = new Date(data.timestamp);
+            document.getElementById('dataTimestamp').textContent = `Data as of: ${timestamp.toLocaleString()}`;
+
+            displayScore('piotroski', data.scores.piotroski);
+            displayScore('altman', data.scores.altman);
+            displayScore('beneish', data.scores.beneish);
+
+            displayMetrics('valuationMetrics', data.metrics.valuation);
+            displayMetrics('profitabilityMetrics', data.metrics.profitability);
+            displayMetrics('leverageMetrics', data.metrics.leverage);
+
+            document.getElementById('results').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        function displayScore(type, scoreData) {
+            const card = document.getElementById(`${type}Card`);
+            const value = document.getElementById(`${type}Value`);
+            const interpretation = document.getElementById(`${type}Interpretation`);
+
+            card.className = 'score-card ' + scoreData.status;
+            value.textContent = scoreData.display;
+            interpretation.textContent = scoreData.interpretation;
+        }
+
+        function displayMetrics(containerId, metrics) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            metrics.forEach(metric => {
+                const item = document.createElement('div');
+                item.className = `metric-item ${metric.status}`;
+                item.innerHTML = `
+                    <div class="metric-name">${metric.name}</div>
+                    <div class="metric-value">${metric.display}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeFinancials();
+            }
+        });
+    </script>
+</body>
+</html>
