@@ -252,9 +252,11 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     use_finbert = check_finbert_availability()
     
     queries = [
-        f"{ticker} stock news",
+        f"{ticker} news",
         f"{ticker} market",
-        f"{ticker} financial"
+        f"{ticker} financial",
+        f"{ticker} analysis",
+        f"{ticker} trend",
     ]
 
     articles = fetch_news_batch(queries, num_articles_per_query)
