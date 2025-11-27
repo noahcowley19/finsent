@@ -4,6 +4,7 @@ import os
 
 from sentiment import sentiment_bp
 from financials import financials_bp
+from insider import insider_bp
 
 
 app = Flask(__name__)
@@ -13,6 +14,7 @@ CORS(app, origins=["*"])
 
 app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
+app.register_blueprint(insider_bp)
 
 
 @app.route('/api/health', methods=['GET'])
