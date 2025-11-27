@@ -1,1 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finsent | Financial Intelligence Platform</title>
 
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+     crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 80px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 60px 20px;
+            position: relative;
+        }
+
+        .author-credit {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero .subtitle {
+            font-size: 1.25rem;
+            color: var(--secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 48px 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 8px 30px var(--shadow-hover);
+            transform: translateY(-4px);
+        }
+
+        .feature-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 28px;
+        }
+
+        .feature-card.sentiment .feature-icon {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        }
+
+        .feature-card.financials .feature-icon {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        }
+
+        .feature-card h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .feature-card p {
+            font-size: 1rem;
+            color: var(--secondary);
+            margin-bottom: 32px;
+            flex-grow: 1;
+            line-height: 1.7;
+        }
+
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .feature-tag {
+            padding: 6px 12px;
+            background: var(--neutral-light);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--neutral-dark);
+        }
+
+        .feature-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-btn:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        .feature-btn svg {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .feature-btn:hover svg {
+            transform: translateX(4px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer p {
+            font-size: 14px;
+            color: var(--secondary);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .feature-card {
+                padding: 36px 28px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .container {
+                padding: 40px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .nav-logo {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                gap: 4px;
+            }
+
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .feature-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 24px;
+            }
+
+            .feature-card h2 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">FINSENT</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link active">Dashboard</a>
+            <a href="/sentiment" class="nav-link">Sentiment</a>
+            <a href="/financials" class="nav-link">Financials</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="author-credit">Noah Cowley</div>
+
+        <div class="hero">
+            <h1>Finsent</h1>
+            <p class="subtitle">Financial intelligence tools for informed decision-making. Analyze market sentiment and evaluate company fundamentals.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card sentiment">
+                <div class="feature-icon">📰</div>
+                <h2>Sentiment Analyzer</h2>
+                <p>Analyze real-time market sentiment by processing news articles using natural language processing. Understand how the market feels about any stock, commodity, or asset.</p>
+                <div class="feature-tags">
+                    <span class="feature-tag">NLP Analysis</span>
+                    <span class="feature-tag">Real-time News</span>
+                    <span class="feature-tag">Sentiment Scoring</span>
+                </div>
+                <a href="/sentiment" class="feature-btn">
+                    Launch Sentiment
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+            </div>
+
+            <div class="feature-card financials">
+                <div class="feature-icon">📊</div>
+                <h2>Financial Analyzer</h2>
+                <p>Evaluate company financial health using academic scoring models including Piotroski F-Score, Altman Z-Score, and Beneish M-Score, plus key valuation and profitability metrics.</p>
+                <div class="feature-tags">
+                    <span class="feature-tag">Piotroski F-Score</span>
+                    <span class="feature-tag">Altman Z-Score</span>
+                    <span class="feature-tag">Beneish M-Score</span>
+                </div>
+                <a href="/financials" class="feature-btn">
+                    Launch Financials
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built for educational purposes. Not financial advice. <a href="https://github.com/noahcowley19/finsent" target="_blank" rel="noopener noreferrer">View on GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
