@@ -211,7 +211,7 @@ def fetch_news_batch(queries, num_articles_per_query):
             seen_titles.add(title_lower)
             unique_articles.append(article)
     
-    unique_articles = unique_articles[:25]
+    unique_articles = unique_articles[:50]
     
     def scrape_content(article):
         content = fetch_article_content(article['link'])
