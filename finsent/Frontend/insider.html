@@ -1,1 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insider Trading | Finsent</title>
 
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+     crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --warning-dark: #92400e;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 80px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .author-credit {
+            position: absolute;
+            top: 0;
+            right: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            max-width: 750px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-group.period-group {
+            flex: 0 0 160px;
+        }
+
+        .input-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            display: block;
+            letter-spacing: -0.01em;
+        }
+
+        input[type="text"] {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+            text-align: left;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--secondary);
+            text-transform: none;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
+        }
+
+        select {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+            width: 100%;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+            padding-right: 40px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--card-bg);
+        }
+
+        button {
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 0;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #fecaca;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .company-header {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .company-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .company-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            color: var(--secondary);
+            font-size: 15px;
+        }
+
+        .company-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .company-meta-label {
+            font-weight: 500;
+        }
+
+        .company-meta-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .timestamp {
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            letter-spacing: -0.01em;
+        }
+
+        .summary-section {
+            margin-bottom: 32px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .summary-card.positive::before {
+            background: var(--positive);
+        }
+
+        .summary-card.negative::before {
+            background: var(--negative);
+        }
+
+        .summary-card.neutral::before {
+            background: var(--warning);
+        }
+
+        .summary-card:hover {
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .summary-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 12px;
+        }
+
+        .summary-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        .summary-card.positive .summary-value {
+            color: var(--positive);
+        }
+
+        .summary-card.negative .summary-value {
+            color: var(--negative);
+        }
+
+        .summary-card.neutral .summary-value {
+            color: var(--warning);
+        }
+
+        .summary-subtext {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .sentiment-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .sentiment-badge.positive {
+            background: var(--positive-light);
+            color: var(--positive-dark);
+        }
+
+        .sentiment-badge.negative {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+        }
+
+        .sentiment-badge.neutral {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+        }
+
+        .signals-section {
+            margin-bottom: 32px;
+        }
+
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .signal-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            border-left: 4px solid;
+        }
+
+        .signal-card.positive {
+            border-left-color: var(--positive);
+        }
+
+        .signal-card.negative {
+            border-left-color: var(--negative);
+        }
+
+        .signal-card.neutral {
+            border-left-color: var(--warning);
+        }
+
+        .signal-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .signal-description {
+            font-size: 13px;
+            color: var(--secondary);
+            line-height: 1.5;
+        }
+
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            height: 250px;
+            position: relative;
+        }
+
+        .chart-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 200px;
+            padding: 0 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .chart-bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 60px;
+        }
+
+        .chart-bar-wrapper {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 180px;
+        }
+
+        .chart-bar {
+            width: 20px;
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            min-height: 2px;
+        }
+
+        .chart-bar.buy {
+            background: var(--positive);
+        }
+
+        .chart-bar.sell {
+            background: var(--negative);
+        }
+
+        .chart-bar:hover {
+            opacity: 0.8;
+            transform: scaleY(1.02);
+        }
+
+        .chart-label {
+            font-size: 11px;
+            color: var(--secondary);
+            margin-top: 8px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.buy {
+            background: var(--positive);
+        }
+
+        .legend-dot.sell {
+            background: var(--negative);
+        }
+
+        .no-chart-data {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            font-size: 15px;
+        }
+
+        .transactions-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .transactions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transactions-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+        }
+
+        .transactions-count {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .transaction-item {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        .transaction-item:hover {
+            background: var(--background);
+            margin: 0 -16px;
+            padding: 20px 16px;
+            border-radius: 8px;
+        }
+
+        .transaction-main {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .transaction-insider {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .transaction-title {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .transaction-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .transaction-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .transaction-badge.positive {
+            background: var(--positive-light);
+            color: var(--positive-dark);
+        }
+
+        .transaction-badge.negative {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+        }
+
+        .transaction-badge.neutral {
+            background: var(--neutral-light);
+            color: var(--neutral-dark);
+        }
+
+        .transaction-meta {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .transaction-value {
+            text-align: right;
+        }
+
+        .transaction-amount {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .transaction-shares {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .no-transactions {
+            padding: 48px 0;
+            text-align: center;
+            color: var(--secondary);
+            font-size: 15px;
+        }
+
+        .institutional-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+
+        .institutional-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .institutional-summary {
+            display: flex;
+            gap: 32px;
+        }
+
+        .institutional-stat {
+            text-align: center;
+        }
+
+        .institutional-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .institutional-stat-label {
+            font-size: 12px;
+            color: var(--secondary);
+            margin-top: 4px;
+        }
+
+        .holder-item {
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .holder-item:last-child {
+            border-bottom: none;
+        }
+
+        .holder-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .holder-stat {
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .holder-stat-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .holder-stat-label {
+            font-size: 12px;
+            color: var(--secondary);
+        }
+
+        .no-institutional {
+            padding: 48px 0;
+            text-align: center;
+            color: var(--secondary);
+            font-size: 15px;
+        }
+
+        .explainer-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+            overflow: hidden;
+        }
+
+        .explainer-toggle {
+            width: 100%;
+            padding: 20px 24px;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            transition: background 0.2s ease;
+        }
+
+        .explainer-toggle:hover {
+            background: var(--neutral-light);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .explainer-toggle svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s ease;
+            color: var(--secondary);
+        }
+
+        .explainer-toggle.active svg {
+            transform: rotate(180deg);
+        }
+
+        .explainer-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .explainer-content.active {
+            max-height: 800px;
+        }
+
+        .explainer-inner {
+            padding: 0 24px 24px;
+        }
+
+        .explainer-item {
+            margin-bottom: 20px;
+        }
+
+        .explainer-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .explainer-item h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .explainer-item p {
+            font-size: 14px;
+            color: var(--secondary);
+            line-height: 1.6;
+        }
+
+        .explainer-note {
+            margin-top: 20px;
+            padding: 16px;
+            background: var(--neutral-light);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--neutral-dark);
+            font-style: italic;
+        }
+
+        @media (max-width: 968px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .signals-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .holder-item {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .company-meta {
+                gap: 16px;
+            }
+
+            .institutional-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .institutional-summary {
+                width: 100%;
+                justify-content: space-around;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding-top: 64px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .search-section,
+            .company-header,
+            .chart-section,
+            .transactions-section,
+            .institutional-section {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.875rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .input-wrapper {
+                flex-direction: column;
+            }
+
+            .input-group.period-group {
+                flex: 1;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .company-name {
+                font-size: 1.5rem;
+            }
+
+            .company-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .summary-value {
+                font-size: 2rem;
+            }
+
+            .transaction-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .transaction-value {
+                text-align: left;
+            }
+
+            .holder-item {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .holder-stat {
+                text-align: left;
+            }
+
+            .nav-links {
+                gap: 4px;
+            }
+
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .chart-bar-group {
+                max-width: 40px;
+            }
+
+            .chart-bar {
+                width: 14px;
+            }
+
+            .chart-label {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/sentiment" class="nav-link">Sentiment</a>
+            <a href="/financials" class="nav-link">Financials</a>
+            <a href="/insider" class="nav-link active">Insider</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="author-credit">Noah Cowley</div>
+
+        <header>
+            <h1>Insider Trading</h1>
+            <p class="subtitle">Track insider transactions and institutional ownership changes. Insider buying often signals confidence, while concentrated selling may warrant attention. Context matters—sales often occur for personal reasons.</p>
+        </header>
+
+        <div class="search-section">
+            <div class="input-wrapper">
+                <div class="input-group">
+                    <label class="input-label">Enter a stock ticker symbol (e.g., AAPL for Apple).</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="AAPL">
+                </div>
+                <div class="input-group period-group">
+                    <label class="input-label">Time Period</label>
+                    <select id="periodSelect">
+                        <option value="3">3 Months</option>
+                        <option value="6">6 Months</option>
+                        <option value="12" selected>12 Months</option>
+                        <option value="24">24 Months</option>
+                    </select>
+                </div>
+                <button onclick="analyzeInsider()" id="analyzeBtn">Analyze</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p class="loading-text">Fetching insider trading data...</p>
+            </div>
+
+            <div class="error-message" id="error"></div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="company-header">
+                <div class="company-name" id="companyName">Company Name</div>
+                <div class="company-meta">
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Ticker:</span>
+                        <span class="company-meta-value" id="companyTicker">AAPL</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Sector:</span>
+                        <span class="company-meta-value" id="companySector">Technology</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Price:</span>
+                        <span class="company-meta-value" id="companyPrice">$0.00</span>
+                    </div>
+                    <div class="company-meta-item">
+                        <span class="company-meta-label">Market Cap:</span>
+                        <span class="company-meta-value" id="companyMarketCap">$0</span>
+                    </div>
+                </div>
+                <div class="timestamp" id="dataTimestamp">Data as of: --</div>
+            </div>
+
+            <div class="summary-section">
+                <h2 class="section-title">Insider Activity Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-card positive" id="buysCard">
+                        <div class="summary-label">Total Buys</div>
+                        <div class="summary-value" id="totalBuys">0</div>
+                        <div class="summary-subtext" id="buyValue">$0</div>
+                    </div>
+                    <div class="summary-card negative" id="sellsCard">
+                        <div class="summary-label">Total Sells</div>
+                        <div class="summary-value" id="totalSells">0</div>
+                        <div class="summary-subtext" id="sellValue">$0</div>
+                    </div>
+                    <div class="summary-card neutral" id="sentimentCard">
+                        <div class="summary-label">Insider Sentiment</div>
+                        <div class="summary-value" id="netValue">$0</div>
+                        <div class="sentiment-badge neutral" id="sentimentBadge">Neutral</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="signals-section" id="signalsSection" style="display: none;">
+                <h2 class="section-title">Key Signals</h2>
+                <div class="signals-grid" id="signalsGrid"></div>
+            </div>
+
+            <div class="chart-section">
+                <div class="chart-title">Monthly Activity</div>
+                <div class="chart-container" id="chartContainer">
+                    <div class="no-chart-data" id="noChartData">No monthly data available</div>
+                    <div class="chart-bars" id="chartBars" style="display: none;"></div>
+                </div>
+                <div class="chart-legend" id="chartLegend" style="display: none;">
+                    <div class="legend-item">
+                        <div class="legend-dot buy"></div>
+                        <span>Purchases</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot sell"></div>
+                        <span>Sales</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="explainer-section">
+                <button class="explainer-toggle" id="explainerToggle" onclick="toggleExplainer()">
+                    <span>What does insider trading data mean?</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div class="explainer-content" id="explainerContent">
+                    <div class="explainer-inner">
+                        <div class="explainer-item">
+                            <h4>Insider Purchases (Bullish Signal)</h4>
+                            <p>When executives buy shares with their own money, it often indicates confidence in the company's future. Cluster buying—multiple insiders buying around the same time—is considered particularly significant.</p>
+                        </div>
+                        <div class="explainer-item">
+                            <h4>Insider Sales (Context Required)</h4>
+                            <p>Sales are common and often occur for personal reasons: diversification, tax planning, home purchases, or scheduled trading plans (10b5-1). Concentrated or unusual selling may warrant attention, but sales alone don't indicate bearishness.</p>
+                        </div>
+                        <div class="explainer-item">
+                            <h4>Cluster Transactions</h4>
+                            <p>When multiple insiders buy or sell within a short timeframe, it carries more weight than individual transactions. This coordinated activity may reflect shared information about company prospects.</p>
+                        </div>
+                        <div class="explainer-item">
+                            <h4>Institutional Ownership</h4>
+                            <p>High institutional ownership (60%+) typically indicates a well-followed stock. Changes in institutional positions can signal shifting sentiment among professional investors.</p>
+                        </div>
+                        <div class="explainer-note">
+                            Insider trading data comes from SEC Form 4 filings, which must be filed within 2 business days of a transaction. This data should supplement, not replace, fundamental analysis.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="transactions-section">
+                <div class="transactions-header">
+                    <div class="transactions-title">Recent Transactions</div>
+                    <div class="transactions-count" id="transactionsCount">0 transactions</div>
+                </div>
+                <div id="transactionsList">
+                    <div class="no-transactions">No insider transactions found for this period.</div>
+                </div>
+            </div>
+
+            <div class="institutional-section">
+                <div class="institutional-header">
+                    <div>
+                        <div class="transactions-title">Top Institutional Holders</div>
+                    </div>
+                    <div class="institutional-summary">
+                        <div class="institutional-stat">
+                            <div class="institutional-stat-value" id="instOwnership">--</div>
+                            <div class="institutional-stat-label">Institutional</div>
+                        </div>
+                        <div class="institutional-stat">
+                            <div class="institutional-stat-value" id="insiderOwnership">--</div>
+                            <div class="institutional-stat-label">Insider</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="holdersList">
+                    <div class="no-institutional">No institutional holder data available.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleExplainer() {
+            const toggle = document.getElementById('explainerToggle');
+            const content = document.getElementById('explainerContent');
+            toggle.classList.toggle('active');
+            content.classList.toggle('active');
+        }
+
+        async function analyzeInsider() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            const months = parseInt(document.getElementById('periodSelect').value);
+
+            if (!ticker) {
+                showError('Please enter a ticker symbol');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('https://finsent-backend.onrender.com/api/insider', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        ticker: ticker,
+                        months: months
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to fetch insider data');
+                }
+
+                displayResults(data);
+
+            } catch (error) {
+                showError(error.message || 'Unable to connect to the API. Please try again later.');
+                console.error(error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            const company = data.company;
+            document.getElementById('companyName').textContent = company.name;
+            document.getElementById('companyTicker').textContent = company.ticker;
+            document.getElementById('companySector').textContent = company.sector;
+            document.getElementById('companyPrice').textContent = company.price_display;
+            document.getElementById('companyMarketCap').textContent = company.market_cap_display;
+
+            const timestamp = new Date(data.timestamp);
+            document.getElementById('dataTimestamp').textContent = `Data as of: ${timestamp.toLocaleString()} | ${data.period_months} month period`;
+
+            displaySummary(data.summary, data.sentiment);
+            displaySignals(data.signals);
+            displayChart(data.monthly_data);
+            displayTransactions(data.transactions);
+            displayInstitutional(data.institutional);
+
+            document.getElementById('results').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        function displaySummary(summary, sentiment) {
+            animateValue(document.getElementById('totalBuys'), 0, summary.total_buys, 800);
+            animateValue(document.getElementById('totalSells'), 0, summary.total_sells, 800);
+
+            document.getElementById('buyValue').textContent = summary.buy_value_display;
+            document.getElementById('sellValue').textContent = summary.sell_value_display;
+
+            const netValueEl = document.getElementById('netValue');
+            const prefix = summary.net_positive ? '+' : '-';
+            netValueEl.textContent = prefix + summary.net_value_display;
+
+            const sentimentCard = document.getElementById('sentimentCard');
+            const sentimentBadge = document.getElementById('sentimentBadge');
+
+            sentimentCard.className = 'summary-card ' + sentiment.status;
+            sentimentBadge.className = 'sentiment-badge ' + sentiment.status;
+            sentimentBadge.textContent = sentiment.sentiment;
+        }
+
+        function displaySignals(signals) {
+            const section = document.getElementById('signalsSection');
+            const grid = document.getElementById('signalsGrid');
+
+            if (!signals || signals.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = '';
+
+            signals.forEach(signal => {
+                const card = document.createElement('div');
+                card.className = `signal-card ${signal.status}`;
+                card.innerHTML = `
+                    <div class="signal-title">${signal.title}</div>
+                    <div class="signal-description">${signal.description}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function displayChart(monthlyData) {
+            const container = document.getElementById('chartBars');
+            const noData = document.getElementById('noChartData');
+            const legend = document.getElementById('chartLegend');
+
+            if (!monthlyData || monthlyData.length === 0) {
+                container.style.display = 'none';
+                noData.style.display = 'flex';
+                legend.style.display = 'none';
+                return;
+            }
+
+            noData.style.display = 'none';
+            container.style.display = 'flex';
+            legend.style.display = 'flex';
+            container.innerHTML = '';
+
+            let maxValue = 1;
+            monthlyData.forEach(d => {
+                maxValue = Math.max(maxValue, d.buys, d.sells);
+            });
+
+            monthlyData.forEach(month => {
+                const group = document.createElement('div');
+                group.className = 'chart-bar-group';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'chart-bar-wrapper';
+
+                const buyHeight = (month.buys / maxValue) * 160;
+                const sellHeight = (month.sells / maxValue) * 160;
+
+                const buyBar = document.createElement('div');
+                buyBar.className = 'chart-bar buy';
+                buyBar.style.height = Math.max(buyHeight, 2) + 'px';
+                buyBar.title = `Buys: ${month.buys}`;
+
+                const sellBar = document.createElement('div');
+                sellBar.className = 'chart-bar sell';
+                sellBar.style.height = Math.max(sellHeight, 2) + 'px';
+                sellBar.title = `Sells: ${month.sells}`;
+
+                wrapper.appendChild(buyBar);
+                wrapper.appendChild(sellBar);
+
+                const label = document.createElement('div');
+                label.className = 'chart-label';
+                label.textContent = month.label;
+
+                group.appendChild(wrapper);
+                group.appendChild(label);
+                container.appendChild(group);
+            });
+        }
+
+        function displayTransactions(transactions) {
+            const list = document.getElementById('transactionsList');
+            const countEl = document.getElementById('transactionsCount');
+
+            countEl.textContent = `${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`;
+
+            if (!transactions || transactions.length === 0) {
+                list.innerHTML = '<div class="no-transactions">No insider transactions found for this period.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+
+            transactions.forEach((trans, index) => {
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(10px)';
+
+                item.innerHTML = `
+                    <div class="transaction-main">
+                        <div class="transaction-insider">${trans.insider}</div>
+                        <div class="transaction-title">${trans.title}</div>
+                        <div class="transaction-details">
+                            <span class="transaction-badge ${trans.type_status}">${trans.type}</span>
+                            <span class="transaction-meta">${trans.date}</span>
+                        </div>
+                    </div>
+                    <div class="transaction-value">
+                        <div class="transaction-amount">${trans.value_display}</div>
+                        <div class="transaction-shares">${trans.shares_display} shares</div>
+                    </div>
+                `;
+
+                list.appendChild(item);
+
+                setTimeout(() => {
+                    item.style.transition = 'all 0.3s ease';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 30);
+            });
+        }
+
+        function displayInstitutional(institutional) {
+            const list = document.getElementById('holdersList');
+            const instOwnership = document.getElementById('instOwnership');
+            const insiderOwnership = document.getElementById('insiderOwnership');
+
+            const summary = institutional.summary;
+            instOwnership.textContent = summary.total_institutional ? `${summary.total_institutional}%` : '--';
+            insiderOwnership.textContent = summary.total_insider ? `${summary.total_insider}%` : '--';
+
+            if (!institutional.holders || institutional.holders.length === 0) {
+                list.innerHTML = '<div class="no-institutional">No institutional holder data available.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+
+            institutional.holders.forEach(holder => {
+                const item = document.createElement('div');
+                item.className = 'holder-item';
+
+                item.innerHTML = `
+                    <div class="holder-name">${holder.name}</div>
+                    <div class="holder-stat">
+                        <div class="holder-stat-value">${holder.shares_display}</div>
+                        <div class="holder-stat-label">Shares</div>
+                    </div>
+                    <div class="holder-stat">
+                        <div class="holder-stat-value">${holder.value_display}</div>
+                        <div class="holder-stat-label">Value</div>
+                    </div>
+                    <div class="holder-stat">
+                        <div class="holder-stat-value">${holder.percent_display}</div>
+                        <div class="holder-stat-label">% Owned</div>
+                    </div>
+                `;
+
+                list.appendChild(item);
+            });
+        }
+
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = value;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeInsider();
+            }
+        });
+    </script>
+</body>
+</html>
