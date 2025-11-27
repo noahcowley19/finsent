@@ -57,18 +57,10 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 0 40px;
             z-index: 1000;
             box-shadow: 0 1px 3px var(--shadow);
-        }
-
-        .nav-logo {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-            letter-spacing: -0.02em;
         }
 
         .nav-links {
@@ -631,10 +623,6 @@
                 height: 220px;
             }
 
-            .nav-logo {
-                font-size: 1.1rem;
-            }
-
             .nav-links {
                 gap: 4px;
             }
@@ -648,7 +636,6 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="nav-logo">FINSENT</a>
         <div class="nav-links">
             <a href="/" class="nav-link">Dashboard</a>
             <a href="/sentiment" class="nav-link active">Sentiment</a>
