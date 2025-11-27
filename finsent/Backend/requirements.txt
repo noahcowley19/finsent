@@ -3,5 +3,6 @@ flask-cors
 feedparser
 requests
 beautifulsoup4
+vaderSentiment
 yfinance
 gunicorn
