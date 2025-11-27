@@ -60,18 +60,10 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 0 40px;
             z-index: 1000;
             box-shadow: 0 1px 3px var(--shadow);
-        }
-
-        .nav-logo {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-            letter-spacing: -0.02em;
         }
 
         .nav-links {
@@ -720,10 +712,6 @@
                 font-size: 2rem;
             }
 
-            .nav-logo {
-                font-size: 1.1rem;
-            }
-
             .nav-links {
                 gap: 4px;
             }
@@ -737,7 +725,6 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="nav-logo">FINSENT</a>
         <div class="nav-links">
             <a href="/" class="nav-link">Dashboard</a>
             <a href="/sentiment" class="nav-link">Sentiment</a>
@@ -750,14 +737,14 @@
 
         <header>
             <h1>Financial Analyzer</h1>
-            <p class="subtitle">A financial rundown of a company. Scores are not definitve; metrics will function differently from industry to industry.</p>
+            <p class="subtitle">Evaluate company financial health using academic scoring models and key metrics. Enter a stock ticker to analyze fundamentals.</p>
         </header>
 
         <div class="search-section">
             <div class="input-wrapper">
                 <div class="input-group">
-                    <label class="input-label">Enter a stock ticker symbol (e.g., MSFT for Microsoft)</label>
-                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="MSFT">
+                    <label class="input-label">Enter a stock ticker symbol (e.g., AAPL, MSFT, GOOGL)</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="AAPL">
                 </div>
                 <button onclick="analyzeFinancials()" id="analyzeBtn">Analyze</button>
             </div>
