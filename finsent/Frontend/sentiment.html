@@ -648,14 +648,14 @@
 
         <header>
             <h1>Sentiment Analyzer</h1>
-            <p class="subtitle">Real-time financial sentiment analysis using natural language processing to evaluate market news. Like any NLP model, Finsent is not infallible and should be used cautiously.</p>
+            <p class="subtitle">Real-time financial sentiment analyzer using bidirectional encoder representations from transformers to evaluate market news scraped from Google News. Like any other natural language processing model, Finsent is NOT infallible and should be used with caution.</p>
         </header>
 
         <div class="search-section">
             <div class="input-wrapper">
                 <div class="input-group">
-                    <label class="input-label">Enter a ticker, company, or commodity. One query translates to approximately 5 articles after deduplication.</label>
-                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="AAPL">
+                    <label class="input-label">Enter a company, cryptocurrency, or commodity. One query translates to roughly 5 articles after duplication removal.</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="gold">
                 </div>
                 <div class="input-group">
                     <label class="input-label"></label>
