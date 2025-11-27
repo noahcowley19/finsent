@@ -604,28 +604,6 @@
             color: var(--neutral-dark);
         }
 
-        .disclaimer-section {
-            background: var(--neutral-light);
-            border-radius: 12px;
-            padding: 20px 24px;
-            margin-top: 40px;
-        }
-
-        .disclaimer-title {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--neutral-dark);
-            margin-bottom: 8px;
-        }
-
-        .disclaimer-text {
-            font-size: 13px;
-            color: var(--secondary);
-            line-height: 1.7;
-        }
-
         @media (max-width: 968px) {
             .scores-grid {
                 grid-template-columns: 1fr;
@@ -737,14 +715,14 @@
 
         <header>
             <h1>Financial Analyzer</h1>
-            <p class="subtitle">Evaluate company financial health using academic scoring models and key metrics. Enter a stock ticker to analyze fundamentals.</p>
+            <p class="subtitle">Real-time company financial metrics and calculations of academic scoring models. Scores are not definitive; metrics function differently from industry to industry.</p>
         </header>
 
         <div class="search-section">
             <div class="input-wrapper">
                 <div class="input-group">
-                    <label class="input-label">Enter a stock ticker symbol (e.g., AAPL, MSFT, GOOGL)</label>
-                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="AAPL">
+                    <label class="input-label">Enter a stock ticker symbol (e.g, MSFT for Microsoft).</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker symbol" value="MSFT">
                 </div>
                 <button onclick="analyzeFinancials()" id="analyzeBtn">Analyze</button>
             </div>
@@ -763,7 +741,7 @@
                 <div class="company-meta">
                     <div class="company-meta-item">
                         <span class="company-meta-label">Ticker:</span>
-                        <span class="company-meta-value" id="companyTicker">AAPL</span>
+                        <span class="company-meta-value" id="companyTicker">MSFT</span>
                     </div>
                     <div class="company-meta-item">
                         <span class="company-meta-label">Sector:</span>
@@ -844,13 +822,6 @@
                 <div class="metrics-card">
                     <div class="metrics-card-title">Leverage</div>
                     <div class="metrics-grid three-col" id="leverageMetrics"></div>
-                </div>
-            </div>
-
-            <div class="disclaimer-section">
-                <div class="disclaimer-title">Disclaimer</div>
-                <div class="disclaimer-text" id="disclaimerText">
-                    Financial data is provided for informational purposes only and should not be considered financial advice. Data is sourced from Yahoo Finance and may be delayed, incomplete, or inaccurate. Metric color coding represents general guidelines that vary significantly by industry and company stage — a "red" metric is not necessarily bad, and a "green" metric is not necessarily good. The Piotroski F-Score, Altman Z-Score, and Beneish M-Score are academic models with known limitations, particularly for non-manufacturing companies, financial institutions, and early-stage businesses. Always verify information with official SEC filings and consult a qualified financial advisor before making investment decisions.
                 </div>
             </div>
         </div>
