@@ -2,9 +2,28 @@ from flask import Blueprint, request, jsonify
 import yfinance as yf
 from datetime import datetime
 from cache import financial_cache, Cache
+import math
 
 
 financials_bp = Blueprint('financials', __name__)
+
+
+def clean_value(value):
+    if value is None:
+        return None
+    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+        return None
+    return value
+
+
+def safe_round(value, decimals=2):
+    cleaned = clean_value(value)
+    if cleaned is None:
+        return None
+    try:
+        return round(cleaned, decimals)
+    except:
+        return None
 
 
 def get_stock_data(ticker):
@@ -63,7 +82,8 @@ def get_stock_data(ticker):
 def safe_get(data, key, default=None):
     try:
         if hasattr(data, 'get'):
-            return data.get(key, default)
+            value = data.get(key, default)
+            return clean_value(value) if value != default else default
         return default
     except:
         return default
@@ -76,7 +96,8 @@ def safe_get_statement(df, row_name, column_index=0, default=None):
         if row_name in df.index:
             value = df.loc[row_name].iloc[column_index]
             if value is not None and not (hasattr(value, '__iter__') and len(value) == 0):
-                return float(value)
+                cleaned = clean_value(float(value))
+                return cleaned if cleaned is not None else default
         return default
     except:
         return default
@@ -87,8 +108,8 @@ def safe_get_statement_yoy(df, row_name, default=None):
         if df is None or df.empty or len(df.columns) < 2:
             return default, default
         if row_name in df.index:
-            current = float(df.loc[row_name].iloc[0])
-            prior = float(df.loc[row_name].iloc[1])
+            current = clean_value(float(df.loc[row_name].iloc[0]))
+            prior = clean_value(float(df.loc[row_name].iloc[1]))
             return current, prior
         return default, default
     except:
@@ -244,7 +265,7 @@ def calculate_altman_zscore(data):
         if total_liabilities is None:
             total_liabilities = safe_get_statement(balance_sheet, 'Total Debt')
         revenue = safe_get_statement(income_stmt, 'Total Revenue')
-        market_cap = info.get('marketCap')
+        market_cap = clean_value(info.get('marketCap'))
         
         if total_assets is None or total_assets == 0:
             raise ValueError("Total assets not available")
@@ -270,16 +291,16 @@ def calculate_altman_zscore(data):
             status = "negative"
         
         return {
-            'score': round(z_score, 2),
-            'display': f"{round(z_score, 2)}",
+            'score': safe_round(z_score, 2),
+            'display': f"{safe_round(z_score, 2)}",
             'interpretation': interpretation,
             'status': status,
             'components': {
-                'working_capital_to_assets': round(A, 4),
-                'retained_earnings_to_assets': round(B, 4),
-                'ebit_to_assets': round(C, 4),
-                'market_cap_to_liabilities': round(D, 4),
-                'revenue_to_assets': round(E, 4)
+                'working_capital_to_assets': safe_round(A, 4),
+                'retained_earnings_to_assets': safe_round(B, 4),
+                'ebit_to_assets': safe_round(C, 4),
+                'market_cap_to_liabilities': safe_round(D, 4),
+                'revenue_to_assets': safe_round(E, 4)
             }
         }
         
@@ -338,7 +359,7 @@ def calculate_beneish_mscore(data):
             dsr_prior = receivables_prior / revenue_prior
             if dsr_prior != 0:
                 dsri = dsr_curr / dsr_prior
-        components['dsri'] = round(dsri, 4)
+        components['dsri'] = safe_round(dsri, 4)
         
         gmi = 1.0
         if all(v is not None and v != 0 for v in [gross_profit_curr, gross_profit_prior, revenue_curr, revenue_prior]):
@@ -346,7 +367,7 @@ def calculate_beneish_mscore(data):
             gm_prior = gross_profit_prior / revenue_prior
             if gm_curr != 0:
                 gmi = gm_prior / gm_curr
-        components['gmi'] = round(gmi, 4)
+        components['gmi'] = safe_round(gmi, 4)
         
         aqi = 1.0
         if all(v is not None for v in [current_assets_curr, current_assets_prior, ppe_curr, ppe_prior, total_assets_curr, total_assets_prior]):
@@ -355,12 +376,12 @@ def calculate_beneish_mscore(data):
                 aq_prior = 1 - ((current_assets_prior + ppe_prior) / total_assets_prior)
                 if aq_prior != 0:
                     aqi = aq_curr / aq_prior
-        components['aqi'] = round(aqi, 4)
+        components['aqi'] = safe_round(aqi, 4)
         
         sgi = 1.0
         if revenue_curr is not None and revenue_prior is not None and revenue_prior != 0:
             sgi = revenue_curr / revenue_prior
-        components['sgi'] = round(sgi, 4)
+        components['sgi'] = safe_round(sgi, 4)
         
         depi = 1.0
         if all(v is not None and v != 0 for v in [depreciation_curr, depreciation_prior, ppe_curr, ppe_prior]):
@@ -368,7 +389,7 @@ def calculate_beneish_mscore(data):
             dep_rate_prior = depreciation_prior / (ppe_prior + depreciation_prior)
             if dep_rate_curr != 0:
                 depi = dep_rate_prior / dep_rate_curr
-        components['depi'] = round(depi, 4)
+        components['depi'] = safe_round(depi, 4)
         
         sgai = 1.0
         if all(v is not None and v != 0 for v in [sga_curr, sga_prior, revenue_curr, revenue_prior]):
@@ -376,12 +397,12 @@ def calculate_beneish_mscore(data):
             sga_ratio_prior = sga_prior / revenue_prior
             if sga_ratio_prior != 0:
                 sgai = sga_ratio_curr / sga_ratio_prior
-        components['sgai'] = round(sgai, 4)
+        components['sgai'] = safe_round(sgai, 4)
         
         tata = 0.0
         if all(v is not None for v in [net_income, ocf, total_assets_curr]) and total_assets_curr != 0:
             tata = (net_income - ocf) / total_assets_curr
-        components['tata'] = round(tata, 4)
+        components['tata'] = safe_round(tata, 4)
         
         lvgi = 1.0
         if all(v is not None and v != 0 for v in [total_liabilities_curr, total_liabilities_prior, total_assets_curr, total_assets_prior]):
@@ -389,7 +410,7 @@ def calculate_beneish_mscore(data):
             lev_prior = total_liabilities_prior / total_assets_prior
             if lev_prior != 0:
                 lvgi = lev_curr / lev_prior
-        components['lvgi'] = round(lvgi, 4)
+        components['lvgi'] = safe_round(lvgi, 4)
         
         m_score = (-4.84 + 0.92 * dsri + 0.528 * gmi + 0.404 * aqi + 
                    0.892 * sgi + 0.115 * depi - 0.172 * sgai + 
@@ -403,8 +424,8 @@ def calculate_beneish_mscore(data):
             status = "negative"
         
         return {
-            'score': round(m_score, 2),
-            'display': f"{round(m_score, 2)}",
+            'score': safe_round(m_score, 2),
+            'display': f"{safe_round(m_score, 2)}",
             'interpretation': interpretation,
             'status': status,
             'components': components
@@ -432,7 +453,7 @@ def calculate_metrics(data):
             'leverage': []
         }
         
-        pe = info.get('trailingPE') or info.get('forwardPE')
+        pe = clean_value(info.get('trailingPE')) or clean_value(info.get('forwardPE'))
         pe_status = 'neutral'
         if pe is not None:
             if pe < 0:
@@ -443,12 +464,12 @@ def calculate_metrics(data):
                 pe_status = 'negative'
         metrics['valuation'].append({
             'name': 'P/E',
-            'value': round(pe, 2) if pe else None,
-            'display': f"{round(pe, 1)}x" if pe else 'N/A',
+            'value': safe_round(pe, 2),
+            'display': f"{safe_round(pe, 1)}x" if pe else 'N/A',
             'status': pe_status if pe else 'neutral'
         })
         
-        ps = info.get('priceToSalesTrailing12Months')
+        ps = clean_value(info.get('priceToSalesTrailing12Months'))
         ps_status = 'neutral'
         if ps is not None:
             if ps < 2:
@@ -457,12 +478,12 @@ def calculate_metrics(data):
                 ps_status = 'negative'
         metrics['valuation'].append({
             'name': 'P/S',
-            'value': round(ps, 2) if ps else None,
-            'display': f"{round(ps, 1)}x" if ps else 'N/A',
+            'value': safe_round(ps, 2),
+            'display': f"{safe_round(ps, 1)}x" if ps else 'N/A',
             'status': ps_status if ps else 'neutral'
         })
         
-        pb = info.get('priceToBook')
+        pb = clean_value(info.get('priceToBook'))
         pb_status = 'neutral'
         if pb is not None:
             if pb < 0:
@@ -473,12 +494,12 @@ def calculate_metrics(data):
                 pb_status = 'negative'
         metrics['valuation'].append({
             'name': 'P/B',
-            'value': round(pb, 2) if pb else None,
-            'display': f"{round(pb, 1)}x" if pb else 'N/A',
+            'value': safe_round(pb, 2),
+            'display': f"{safe_round(pb, 1)}x" if pb else 'N/A',
             'status': pb_status if pb else 'neutral'
         })
         
-        ev_ebitda = info.get('enterpriseToEbitda')
+        ev_ebitda = clean_value(info.get('enterpriseToEbitda'))
         ev_status = 'neutral'
         if ev_ebitda is not None:
             if ev_ebitda < 0:
@@ -489,12 +510,12 @@ def calculate_metrics(data):
                 ev_status = 'negative'
         metrics['valuation'].append({
             'name': 'EV/EBITDA',
-            'value': round(ev_ebitda, 2) if ev_ebitda else None,
-            'display': f"{round(ev_ebitda, 1)}x" if ev_ebitda else 'N/A',
+            'value': safe_round(ev_ebitda, 2),
+            'display': f"{safe_round(ev_ebitda, 1)}x" if ev_ebitda else 'N/A',
             'status': ev_status if ev_ebitda else 'neutral'
         })
         
-        gross_margin = info.get('grossMargins')
+        gross_margin = clean_value(info.get('grossMargins'))
         if gross_margin:
             gross_margin = gross_margin * 100
         gm_status = 'neutral'
@@ -505,12 +526,12 @@ def calculate_metrics(data):
                 gm_status = 'negative'
         metrics['profitability'].append({
             'name': 'Gross Margin',
-            'value': round(gross_margin, 2) if gross_margin else None,
-            'display': f"{round(gross_margin, 1)}%" if gross_margin else 'N/A',
+            'value': safe_round(gross_margin, 2),
+            'display': f"{safe_round(gross_margin, 1)}%" if gross_margin else 'N/A',
             'status': gm_status if gross_margin else 'neutral'
         })
         
-        op_margin = info.get('operatingMargins')
+        op_margin = clean_value(info.get('operatingMargins'))
         if op_margin:
             op_margin = op_margin * 100
         om_status = 'neutral'
@@ -521,12 +542,12 @@ def calculate_metrics(data):
                 om_status = 'negative'
         metrics['profitability'].append({
             'name': 'Op. Margin',
-            'value': round(op_margin, 2) if op_margin else None,
-            'display': f"{round(op_margin, 1)}%" if op_margin else 'N/A',
+            'value': safe_round(op_margin, 2),
+            'display': f"{safe_round(op_margin, 1)}%" if op_margin else 'N/A',
             'status': om_status if op_margin else 'neutral'
         })
         
-        net_margin = info.get('profitMargins')
+        net_margin = clean_value(info.get('profitMargins'))
         if net_margin:
             net_margin = net_margin * 100
         nm_status = 'neutral'
@@ -537,12 +558,12 @@ def calculate_metrics(data):
                 nm_status = 'negative'
         metrics['profitability'].append({
             'name': 'Net Margin',
-            'value': round(net_margin, 2) if net_margin else None,
-            'display': f"{round(net_margin, 1)}%" if net_margin else 'N/A',
+            'value': safe_round(net_margin, 2),
+            'display': f"{safe_round(net_margin, 1)}%" if net_margin else 'N/A',
             'status': nm_status if net_margin else 'neutral'
         })
         
-        de = info.get('debtToEquity')
+        de = clean_value(info.get('debtToEquity'))
         if de:
             de = de / 100
         de_status = 'neutral'
@@ -555,12 +576,12 @@ def calculate_metrics(data):
                 de_status = 'negative'
         metrics['leverage'].append({
             'name': 'Debt/Equity',
-            'value': round(de, 2) if de else None,
-            'display': f"{round(de, 2)}" if de else 'N/A',
+            'value': safe_round(de, 2),
+            'display': f"{safe_round(de, 2)}" if de else 'N/A',
             'status': de_status if de else 'neutral'
         })
         
-        cr = info.get('currentRatio')
+        cr = clean_value(info.get('currentRatio'))
         cr_status = 'neutral'
         if cr is not None:
             if cr > 1.5:
@@ -569,8 +590,8 @@ def calculate_metrics(data):
                 cr_status = 'negative'
         metrics['leverage'].append({
             'name': 'Current Ratio',
-            'value': round(cr, 2) if cr else None,
-            'display': f"{round(cr, 2)}" if cr else 'N/A',
+            'value': safe_round(cr, 2),
+            'display': f"{safe_round(cr, 2)}" if cr else 'N/A',
             'status': cr_status if cr else 'neutral'
         })
         
@@ -592,8 +613,8 @@ def calculate_metrics(data):
         
         metrics['leverage'].append({
             'name': 'Int. Coverage',
-            'value': round(ic, 2) if ic else None,
-            'display': f"{round(ic, 1)}x" if ic else 'No Debt',
+            'value': safe_round(ic, 2),
+            'display': f"{safe_round(ic, 1)}x" if ic else 'No Debt',
             'status': ic_status
         })
         
@@ -612,7 +633,7 @@ def get_company_info(data):
     try:
         info = data.get('info', {})
         
-        market_cap = info.get('marketCap')
+        market_cap = clean_value(info.get('marketCap'))
         if market_cap:
             if market_cap >= 1e12:
                 market_cap_display = f"${market_cap / 1e12:.2f}T"
@@ -625,12 +646,14 @@ def get_company_info(data):
         else:
             market_cap_display = 'N/A'
         
+        price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
+        
         return {
             'name': info.get('longName') or info.get('shortName') or 'Unknown',
             'ticker': info.get('symbol', '').upper(),
             'sector': info.get('sector') or 'N/A',
             'industry': info.get('industry') or 'N/A',
-            'price': info.get('currentPrice') or info.get('regularMarketPrice'),
+            'price': price,
             'market_cap': market_cap,
             'market_cap_display': market_cap_display,
             'currency': info.get('currency', 'USD')
