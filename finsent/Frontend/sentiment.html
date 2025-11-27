@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finsent Sentiment Analyzer</title>
+    <title>Sentiment Analyzer | Finsent</title>
 
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
      crossorigin="anonymous"></script>
 
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -44,20 +43,70 @@
             color: var(--primary);
             line-height: 1.6;
             min-height: 100vh;
-            padding: 60px 20px;
+            padding-top: 80px;
             -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
         }
 
         .container {
             max-width: 1280px;
             margin: 0 auto;
+            padding: 40px 20px;
             position: relative;
         }
 
         .author-credit {
             position: absolute;
-            top: -40px;
-            right: 0;
+            top: 0;
+            right: 20px;
             font-family: 'Inter', sans-serif;
             font-size: 15px;
             font-weight: 500;
@@ -83,6 +132,8 @@
             color: var(--secondary);
             font-weight: 400;
             letter-spacing: -0.01em;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .search-section {
@@ -194,29 +245,6 @@
             height: 300px;
         }
 
-        button::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 10px;
-            padding: 2px;
-            background: linear-gradient(45deg, rgba(255,255,255,0.3), transparent);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            opacity: 0;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-
         button:hover {
             background: #0f172a;
             box-shadow: 0 4px 12px var(--shadow-hover);
@@ -231,10 +259,6 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-        }
-
-        button:disabled::after {
-            animation: none;
         }
 
         .loading {
@@ -565,11 +589,24 @@
                 margin-left: 0;
                 margin-top: 32px;
             }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
         }
 
         @media (max-width: 640px) {
             body {
-                padding: 32px 16px;
+                padding-top: 64px;
+            }
+
+            .container {
+                padding: 24px 16px;
             }
 
             .search-section,
@@ -593,23 +630,45 @@
                 width: 220px;
                 height: 220px;
             }
+
+            .nav-logo {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                gap: 4px;
+            }
+
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
+    <nav class="navbar">
+        <a href="/" class="nav-logo">FINSENT</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/sentiment" class="nav-link active">Sentiment</a>
+            <a href="/financials" class="nav-link">Financials</a>
+        </div>
+    </nav>
+
     <div class="container">
         <div class="author-credit">Noah Cowley</div>
 
         <header>
-            <h1>Finsent Sentiment Analyzer</h1>
-            <p class="subtitle">A real-time financial sentiment analyzer using bidirectional encoder representations from transformers to evaluate market news. Like any other natural language processing model, Finsent is NOT infallible; it should be used cautiously.</p>
+            <h1>Sentiment Analyzer</h1>
+            <p class="subtitle">Real-time financial sentiment analysis using natural language processing to evaluate market news. Like any NLP model, Finsent is not infallible and should be used cautiously.</p>
         </header>
 
         <div class="search-section">
             <div class="input-wrapper">
                 <div class="input-group">
-                    <label class="input-label">Enter a Ticker, Company, or Commodity, and enter a query amount less than 10. One query translates to ~5 articles after duplication removal.</label>
-                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="gold">
+                    <label class="input-label">Enter a ticker, company, or commodity. One query translates to approximately 5 articles after deduplication.</label>
+                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="AAPL">
                 </div>
                 <div class="input-group">
                     <label class="input-label"></label>
@@ -696,10 +755,8 @@
             document.getElementById('error').style.display = 'none';
             document.getElementById('analyzeBtn').disabled = true;
 
-            // Progress bar animation
             const progressBar = document.getElementById('progressBar');
             const loadingText = document.getElementById('loadingText');
-            let progress = 0;
             progressBar.style.width = '0%';
 
             const stages = [
@@ -713,8 +770,7 @@
             let stageIndex = 0;
             progressInterval = setInterval(() => {
                 if (stageIndex < stages.length) {
-                    progress = stages[stageIndex].percent;
-                    progressBar.style.width = progress + '%';
+                    progressBar.style.width = stages[stageIndex].percent + '%';
                     loadingText.textContent = stages[stageIndex].text;
                     stageIndex++;
                 }
@@ -738,7 +794,6 @@
 
                 const data = await response.json();
 
-                // Complete progress bar
                 progressBar.style.width = '100%';
                 loadingText.textContent = 'Complete!';
 
@@ -747,7 +802,7 @@
                 }, 500);
 
             } catch (error) {
-                showError('Unable to connect to the API. Please ensure the Flask server is running on port 5000.');
+                showError('Unable to connect to the API. Please try again later.');
                 console.error(error);
             } finally {
                 clearInterval(progressInterval);
@@ -778,7 +833,7 @@
 
             let currentAngle = 0;
 
-            data.forEach((item, index) => {
+            data.forEach((item) => {
                 if (item.value === 0) return;
 
                 const percentage = item.value / total;
@@ -806,7 +861,6 @@
                 path.setAttribute('stroke-width', '2');
                 path.style.transition = 'all 0.3s ease';
 
-                // Hover effect
                 path.addEventListener('mouseenter', function() {
                     this.style.opacity = '0.8';
                     this.style.transform = 'scale(1.05)';
@@ -822,7 +876,6 @@
                 currentAngle = endAngle;
             });
 
-            // Center circle for donut effect
             const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             centerCircle.setAttribute('cx', centerX);
             centerCircle.setAttribute('cy', centerY);
@@ -846,7 +899,6 @@
         }
 
         function displayResults(data) {
-            // Animate count values
             animateValue(document.getElementById('positiveCount'), 0, data.summary.Positive.count, 1000);
             animateValue(document.getElementById('negativeCount'), 0, data.summary.Negative.count, 1000);
             animateValue(document.getElementById('neutralCount'), 0, data.summary.Neutral.count, 1000);
@@ -855,7 +907,6 @@
             document.getElementById('negativePercent').textContent = data.summary.Negative.percentage + '%';
             document.getElementById('neutralPercent').textContent = data.summary.Neutral.percentage + '%';
 
-            // Update legend
             document.getElementById('legendPositive').textContent =
                 `${data.summary.Positive.count} (${data.summary.Positive.percentage}%)`;
             document.getElementById('legendNegative').textContent =
@@ -863,7 +914,6 @@
             document.getElementById('legendNeutral').textContent =
                 `${data.summary.Neutral.count} (${data.summary.Neutral.percentage}%)`;
 
-            // Create pie chart
             createPieChart(
                 data.summary.Positive.count,
                 data.summary.Negative.count,
@@ -901,7 +951,6 @@
 
                 articlesList.appendChild(articleDiv);
 
-                // Staggered fade-in animation
                 setTimeout(() => {
                     articleDiv.style.transition = 'all 0.4s ease';
                     articleDiv.style.opacity = '1';
@@ -911,7 +960,6 @@
 
             document.getElementById('results').style.display = 'block';
 
-            // Smooth scroll to results
             setTimeout(() => {
                 document.getElementById('results').scrollIntoView({
                     behavior: 'smooth',
@@ -933,6 +981,4 @@
         });
     </script>
 </body>
-
 </html>
-
