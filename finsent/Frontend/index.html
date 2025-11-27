@@ -57,18 +57,10 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             padding: 0 40px;
             z-index: 1000;
             box-shadow: 0 1px 3px var(--shadow);
-        }
-
-        .nav-logo {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-            letter-spacing: -0.02em;
         }
 
         .nav-links {
@@ -157,44 +149,9 @@
             overflow: hidden;
         }
 
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--primary);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-
         .feature-card:hover {
             box-shadow: 0 8px 30px var(--shadow-hover);
             transform: translateY(-4px);
-        }
-
-        .feature-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .feature-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 24px;
-            font-size: 28px;
-        }
-
-        .feature-card.sentiment .feature-icon {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-        }
-
-        .feature-card.financials .feature-icon {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
         }
 
         .feature-card h2 {
@@ -211,22 +168,6 @@
             margin-bottom: 32px;
             flex-grow: 1;
             line-height: 1.7;
-        }
-
-        .feature-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 32px;
-        }
-
-        .feature-tag {
-            padding: 6px 12px;
-            background: var(--neutral-light);
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--neutral-dark);
         }
 
         .feature-btn {
@@ -329,10 +270,6 @@
                 font-size: 2rem;
             }
 
-            .nav-logo {
-                font-size: 1.1rem;
-            }
-
             .nav-links {
                 gap: 4px;
             }
@@ -340,12 +277,6 @@
             .nav-link {
                 padding: 6px 10px;
                 font-size: 12px;
-            }
-
-            .feature-icon {
-                width: 48px;
-                height: 48px;
-                font-size: 24px;
             }
 
             .feature-card h2 {
@@ -356,7 +287,6 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="/" class="nav-logo">FINSENT</a>
         <div class="nav-links">
             <a href="/" class="nav-link active">Dashboard</a>
             <a href="/sentiment" class="nav-link">Sentiment</a>
@@ -369,19 +299,13 @@
 
         <div class="hero">
             <h1>Finsent</h1>
-            <p class="subtitle">Financial intelligence tools for informed decision-making. Analyze market sentiment and evaluate company fundamentals.</p>
+            <p class="subtitle">Catholic financial intelligence tools to efficiently analyze market information.</p>
         </div>
 
         <div class="features-grid">
-            <div class="feature-card sentiment">
-                <div class="feature-icon">📰</div>
+            <div class="feature-card">
                 <h2>Sentiment Analyzer</h2>
-                <p>Analyze real-time market sentiment by processing news articles using natural language processing. Understand how the market feels about any stock, commodity, or asset.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">NLP Analysis</span>
-                    <span class="feature-tag">Real-time News</span>
-                    <span class="feature-tag">Sentiment Scoring</span>
-                </div>
+                <p>Get a real-time evaluation of market sentiment on a company, cryptocurrency, or commodity using bidirectional encoder representations from transformers.</p>
                 <a href="/sentiment" class="feature-btn">
                     Launch Sentiment
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -390,15 +314,9 @@
                 </a>
             </div>
 
-            <div class="feature-card financials">
-                <div class="feature-icon">📊</div>
+            <div class="feature-card">
                 <h2>Financial Analyzer</h2>
-                <p>Evaluate company financial health using academic scoring models including Piotroski F-Score, Altman Z-Score, and Beneish M-Score, plus key valuation and profitability metrics.</p>
-                <div class="feature-tags">
-                    <span class="feature-tag">Piotroski F-Score</span>
-                    <span class="feature-tag">Altman Z-Score</span>
-                    <span class="feature-tag">Beneish M-Score</span>
-                </div>
+                <p>Receive raw financial metrics and an evaluation of a company's financials using academic scoring models: The Piotroski F-Score, Altman Z-Score, and Beneish M-Score.</p>
                 <a href="/financials" class="feature-btn">
                     Launch Financials
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
