@@ -1,8 +1,9 @@
-# Made by Noah C. debugged by claude
+# Made by Noah C, debugged by Claude.ai
 from flask import Blueprint, request, jsonify
 import feedparser
 import requests
 from bs4 import BeautifulSoup
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
@@ -14,15 +15,21 @@ sentiment_bp = Blueprint('sentiment', __name__)
 HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
 HF_API_TOKEN = os.environ.get('HF_API_TOKEN')
 
-# Flag to track if model is warm
-_model_warmed = False
+# Initialize VADER as fallback
+vader_analyzer = SentimentIntensityAnalyzer()
+
+# Track which model is being used
+_finbert_available = None
+_finbert_last_check = 0
 
 
-def warm_up_model():
-    """Pre-warm the FinBERT model on HF servers."""
-    global _model_warmed
-    if _model_warmed:
-        return True
+def check_finbert_availability():
+    """Check if FinBERT API is responding."""
+    global _finbert_available, _finbert_last_check
+    
+    # Cache the check for 5 minutes
+    if _finbert_available is not None and (time.time() - _finbert_last_check) < 300:
+        return _finbert_available
     
     headers = {}
     if HF_API_TOKEN:
@@ -32,41 +39,54 @@ def warm_up_model():
         response = requests.post(
             HF_API_URL,
             headers=headers,
-            json={"inputs": "Stock price increased."},
-            timeout=60
+            json={"inputs": "Stock price increased today."},
+            timeout=30
         )
+        
         if response.status_code == 200:
-            _model_warmed = True
-            return True
+            result = response.json()
+            if result and isinstance(result, list):
+                _finbert_available = True
+                _finbert_last_check = time.time()
+                print("FinBERT: Available and responding")
+                return True
         elif response.status_code == 503:
-            # Model loading, wait and retry once
+            # Model loading - wait and retry once
             data = response.json()
-            wait_time = min(data.get('estimated_time', 20), 30)
+            wait_time = min(data.get('estimated_time', 20), 25)
+            print(f"FinBERT: Cold start, waiting {wait_time}s...")
             time.sleep(wait_time)
+            
             response = requests.post(
                 HF_API_URL,
                 headers=headers,
-                json={"inputs": "Stock price increased."},
-                timeout=60
+                json={"inputs": "Stock price increased today."},
+                timeout=30
             )
             if response.status_code == 200:
-                _model_warmed = True
+                _finbert_available = True
+                _finbert_last_check = time.time()
+                print("FinBERT: Available after warm-up")
                 return True
-    except:
-        pass
-    return False
+                
+        print(f"FinBERT: Unavailable (status {response.status_code})")
+        _finbert_available = False
+        _finbert_last_check = time.time()
+        return False
+        
+    except Exception as e:
+        print(f"FinBERT: Error checking availability - {e}")
+        _finbert_available = False
+        _finbert_last_check = time.time()
+        return False
 
 
 def query_finbert(text):
-    """
-    Query FinBERT model via Hugging Face Inference API.
-    Returns sentiment label and confidence score.
-    """
+    """Query FinBERT model via Hugging Face Inference API."""
     headers = {}
     if HF_API_TOKEN:
         headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
     
-    # Truncate text to avoid API limits (FinBERT max ~512 tokens)
     truncated_text = text[:1000]
     
     try:
@@ -74,19 +94,14 @@ def query_finbert(text):
             HF_API_URL,
             headers=headers,
             json={"inputs": truncated_text},
-            timeout=15
+            timeout=20
         )
         
-        # Handle model loading (cold start)
-        if response.status_code == 503:
-            return 0.0, 'Neutral'
-                
         if response.status_code != 200:
-            return 0.0, 'Neutral'
+            return None  # Signal to use fallback
             
         result = response.json()
         
-        # HF returns [[{"label": "positive", "score": 0.9}, ...]]
         if result and isinstance(result, list) and len(result) > 0:
             predictions = result[0] if isinstance(result[0], list) else result
             
@@ -100,18 +115,46 @@ def query_finbert(text):
                 polarity = score
             elif label == 'negative':
                 polarity = -score
-            else:  # neutral
+            else:
                 polarity = 0.0
             
             return polarity, label.capitalize()
             
-    except requests.exceptions.Timeout:
-        return 0.0, 'Neutral'
     except Exception as e:
-        print(f"FinBERT API error: {e}")
-        return 0.0, 'Neutral'
+        print(f"FinBERT query error: {e}")
+        return None
     
-    return 0.0, 'Neutral'
+    return None
+
+
+def query_vader(text):
+    """Analyze sentiment using VADER (fallback)."""
+    scores = vader_analyzer.polarity_scores(text)
+    polarity = scores['compound']
+    
+    if polarity > 0.05:
+        sentiment = 'Positive'
+    elif polarity < -0.05:
+        sentiment = 'Negative'
+    else:
+        sentiment = 'Neutral'
+    
+    return polarity, sentiment
+
+
+def analyze_sentiment(text, use_finbert=True):
+    """
+    Analyze sentiment - tries FinBERT first, falls back to VADER.
+    Returns (polarity, sentiment, model_used)
+    """
+    if use_finbert:
+        result = query_finbert(text)
+        if result is not None:
+            return result[0], result[1], 'FinBERT'
+    
+    # Fallback to VADER
+    polarity, sentiment = query_vader(text)
+    return polarity, sentiment, 'VADER'
 
 
 def fetch_article_content(url):
@@ -123,7 +166,6 @@ def fetch_article_content(url):
         response = requests.get(url, timeout=3, headers=headers, allow_redirects=True)
         response.raise_for_status()
         
-        # Limit content size to reduce memory usage
         content = response.content[:50000]
         soup = BeautifulSoup(content, 'html.parser')
         
@@ -169,7 +211,6 @@ def fetch_news_batch(queries, num_articles_per_query):
             seen_titles.add(title_lower)
             unique_articles.append(article)
     
-    # Limit total articles to reduce processing time
     unique_articles = unique_articles[:25]
     
     def scrape_content(article):
@@ -185,7 +226,6 @@ def fetch_news_batch(queries, num_articles_per_query):
     
     results = []
     
-    # Process in smaller batches
     with ThreadPoolExecutor(max_workers=3) as executor:
         futures = {executor.submit(scrape_content, article): article for article in unique_articles}
         
@@ -208,8 +248,8 @@ def fetch_news_batch(queries, num_articles_per_query):
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     """Main function to analyze sentiment for a ticker/asset."""
     
-    # Warm up model first
-    warm_up_model()
+    # Check if FinBERT is available
+    use_finbert = check_finbert_availability()
     
     queries = [
         f"{ticker} stock news",
@@ -229,16 +269,16 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
                 'Neutral': {'count': 0, 'percentage': 0}
             },
             'total_articles': 0,
-            'model': 'FinBERT'
+            'model': 'N/A'
         }
 
-    # Analyze sentiment sequentially to avoid overwhelming the API
     analyzed_articles = []
     summary = {"Positive": 0, "Negative": 0, "Neutral": 0}
+    models_used = set()
     
     for article in articles:
         text_to_analyze = f"{article['title']} {article['content']}"
-        polarity, sentiment = query_finbert(text_to_analyze)
+        polarity, sentiment, model = analyze_sentiment(text_to_analyze, use_finbert)
         
         analyzed_articles.append({
             'title': article['title'],
@@ -248,6 +288,7 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
             'sentiment': sentiment
         })
         summary[sentiment] += 1
+        models_used.add(model)
 
     total = len(analyzed_articles)
     summary_percent = {
@@ -257,13 +298,21 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
         }
         for sentiment, count in summary.items()
     }
+    
+    # Determine primary model used
+    if 'FinBERT' in models_used and 'VADER' in models_used:
+        model_display = 'FinBERT + VADER (hybrid)'
+    elif 'FinBERT' in models_used:
+        model_display = 'FinBERT'
+    else:
+        model_display = 'VADER'
 
     return {
         'ticker': ticker,
         'articles': analyzed_articles,
         'summary': summary_percent,
         'total_articles': total,
-        'model': 'FinBERT'
+        'model': model_display
     }
 
 
@@ -294,18 +343,12 @@ def analyze():
 
 @sentiment_bp.route('/api/sentiment/health', methods=['GET'])
 def sentiment_health():
-    """Health check that also verifies FinBERT API connectivity."""
-    try:
-        polarity, sentiment = query_finbert("Stock prices rose today.")
-        return jsonify({
-            'status': 'healthy',
-            'model': 'FinBERT',
-            'api': 'Hugging Face Inference',
-            'test_result': {'polarity': polarity, 'sentiment': sentiment}
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'degraded',
-            'model': 'FinBERT',
-            'error': str(e)
-        }), 500
+    """Health check with model status."""
+    finbert_ok = check_finbert_availability()
+    
+    return jsonify({
+        'status': 'healthy',
+        'finbert_available': finbert_ok,
+        'fallback': 'VADER',
+        'hf_token_set': bool(HF_API_TOKEN)
+    })
