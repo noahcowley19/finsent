@@ -1,14 +1,67 @@
-#Made by Noah C. and debugged with Claude.ai
+# Made by Noah C. and debugged by Claude.ai
 from flask import Blueprint, request, jsonify
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
+import os
+import time
 
 sentiment_bp = Blueprint('sentiment', __name__)
+
+HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
+HF_API_TOKEN = os.environ.get('HF_API_TOKEN')  
+
+def query_finbert(text, retries=3):
+
+    headers = {}
+    if HF_API_TOKEN:
+        headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
+    truncated_text = text[:1500]
+    
+    for attempt in range(retries):
+        try:
+            response = requests.post(
+                HF_API_URL,
+                headers=headers,
+                json={"inputs": truncated_text},
+                timeout=30
+            )
+            
+            if response.status_code == 503:
+                data = response.json()
+                wait_time = data.get('estimated_time', 20)
+                if attempt < retries - 1:
+                    time.sleep(min(wait_time, 30))
+                    continue
+                    
+            response.raise_for_status()
+            result = response.json()
+            
+            if result and isinstance(result, list) and len(result) > 0:
+                predictions = result[0] if isinstance(result[0], list) else result
+                
+                best = max(predictions, key=lambda x: x['score'])
+                label = best['label'].lower()
+                score = best['score']
+                
+                if label == 'positive':
+                    polarity = score
+                elif label == 'negative':
+                    polarity = -score
+                else:
+                    polarity = 0.0
+                
+                return polarity, label.capitalize()
+                
+        except requests.exceptions.RequestException as e:
+            if attempt < retries - 1:
+                time.sleep(2 ** attempt) 
+                continue
+            print(f"FinBERT API error: {e}")
+            
+    return 0.0, 'Neutral'
 
 
 def fetch_article_content(url):
@@ -98,48 +151,70 @@ def fetch_news_batch(queries, num_articles_per_query):
     return results
 
 
-def analyze_sentiment(text):
-    analyzer = SentimentIntensityAnalyzer()
-    scores = analyzer.polarity_scores(text)
-    polarity = scores['compound']
-
-    if polarity > 0.05:
-        sentiment = 'Positive'
-    elif polarity < -0.05:
-        sentiment = 'Negative'
-    else:
-        sentiment = 'Neutral'
-
-    return polarity, sentiment
-
-
-def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
-    queries = [
-        f"{ticker} news",
-        f"{ticker} market",
-        f"{ticker} analysis",
-        f"{ticker} forecast",
-        f"{ticker} stock"
-    ]
-
-    articles = fetch_news_batch(queries, num_articles_per_query)
-
-    analyzed_articles = []
-    summary = {"Positive": 0, "Negative": 0, "Neutral": 0}
-
-    for article in articles:
+def analyze_sentiment_batch(articles):
+   
+    analyzed = []
+    
+    def analyze_single(article):
         text_to_analyze = f"{article['title']} {article['content']}"
-        polarity, sentiment = analyze_sentiment(text_to_analyze)
-
-        article_data = {
+        polarity, sentiment = query_finbert(text_to_analyze)
+        return {
             'title': article['title'],
             'link': article['link'],
             'published': article['published'],
             'polarity': round(polarity, 3),
             'sentiment': sentiment
         }
-        analyzed_articles.append(article_data)
-        summary[sentiment] += 1
+    
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(analyze_single, article): article for article in articles}
+        
+        for future in as_completed(futures, timeout=120):
+            try:
+                result = future.result(timeout=35)
+                analyzed.append(result)
+            except Exception as e:
+                article = futures[future]
+                analyzed.append({
+                    'title': article['title'],
+                    'link': article['link'],
+                    'published': article['published'],
+                    'polarity': 0.0,
+                    'sentiment': 'Neutral'
+                })
+    
+    return analyzed
+
+
+def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
+    queries = [
+        f"{ticker} stock news",
+        f"{ticker} market analysis",
+        f"{ticker} financial news",
+        f"{ticker} investor",
+        f"{ticker} earnings"
+    ]
+
+    articles = fetch_news_batch(queries, num_articles_per_query)
+    
+    if not articles:
+        return {
+            'ticker': ticker,
+            'articles': [],
+            'summary': {
+                'Positive': {'count': 0, 'percentage': 0},
+                'Negative': {'count': 0, 'percentage': 0},
+                'Neutral': {'count': 0, 'percentage': 0}
+            },
+            'total_articles': 0,
+            'model': 'FinBERT'
+        }
+
+    analyzed_articles = analyze_sentiment_batch(articles)
+    
+    summary = {"Positive": 0, "Negative": 0, "Neutral": 0}
+    for article in analyzed_articles:
+        summary[article['sentiment']] += 1
 
     total = len(analyzed_articles)
     summary_percent = {
@@ -154,7 +229,8 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
         'ticker': ticker,
         'articles': analyzed_articles,
         'summary': summary_percent,
-        'total_articles': total
+        'total_articles': total,
+        'model': 'FinBERT'
     }
 
 
@@ -181,3 +257,22 @@ def analyze():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@sentiment_bp.route('/api/sentiment/health', methods=['GET'])
+def sentiment_health():
+    """Health check that also verifies FinBERT API connectivity."""
+    try:
+        polarity, sentiment = query_finbert("Stock prices rose today.", retries=1)
+        return jsonify({
+            'status': 'healthy',
+            'model': 'FinBERT',
+            'api': 'Hugging Face Inference',
+            'test_result': {'polarity': polarity, 'sentiment': sentiment}
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'degraded',
+            'model': 'FinBERT',
+            'error': str(e)
+        }), 500
