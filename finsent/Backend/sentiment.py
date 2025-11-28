@@ -1,6 +1,5 @@
-# Made by Noah C, debugged by Claude.ai
-# Finsent Sentiment Analysis Backend
-
+# Made by Noah C, enhanced by Claude.ai
+# Social Screener with StockTwits, X/Twitter, and News Sentiment
 from flask import Blueprint, request, jsonify
 import feedparser
 import requests
@@ -11,110 +10,127 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import time
 import yfinance as yf
+import re
 import math
 
 sentiment_bp = Blueprint('sentiment', __name__)
-
-# ==================== CONFIGURATION ====================
 
 # Hugging Face Inference API for FinBERT
 HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
 HF_API_TOKEN = os.environ.get('HF_API_TOKEN')
 
-# Initialize VADER for sentiment analysis
+# Initialize VADER as fallback
 vader_analyzer = SentimentIntensityAnalyzer()
 
-# Default tickers for social screening
-DEFAULT_TICKERS = ['AAPL', 'AMZN', 'GOOGL', 'META', 'NVDA']
-
-# Company name mappings for common tickers
-COMPANY_NAMES = {
-    'AAPL': 'Apple Inc.',
-    'MSFT': 'Microsoft Corp.',
-    'GOOGL': 'Alphabet Inc.',
-    'GOOG': 'Alphabet Inc.',
-    'AMZN': 'Amazon.com Inc.',
-    'NVDA': 'NVIDIA Corp.',
-    'META': 'Meta Platforms',
-    'TSLA': 'Tesla Inc.',
-    'AMD': 'AMD Inc.',
-    'INTC': 'Intel Corp.',
-    'NFLX': 'Netflix Inc.',
-    'BA': 'Boeing Co.',
-    'DIS': 'Walt Disney Co.',
-    'V': 'Visa Inc.',
-    'MA': 'Mastercard Inc.',
-    'JPM': 'JPMorgan Chase',
-    'WMT': 'Walmart Inc.',
-    'COIN': 'Coinbase Global',
-    'PLTR': 'Palantir Tech.',
-    'F': 'Ford Motor Co.',
-    'GM': 'General Motors',
-    'AAL': 'American Airlines',
-    'BAC': 'Bank of America',
-    'C': 'Citigroup Inc.',
-    'PYPL': 'PayPal Holdings',
-    'UBER': 'Uber Technologies',
-    'LYFT': 'Lyft Inc.',
-    'SNAP': 'Snap Inc.',
-    'TWTR': 'Twitter Inc.',
-    'SQ': 'Block Inc.',
-    'SHOP': 'Shopify Inc.',
-    'ROKU': 'Roku Inc.',
-    'ZM': 'Zoom Video',
-    'DOCU': 'DocuSign Inc.',
-    'CRM': 'Salesforce Inc.',
-    'ORCL': 'Oracle Corp.',
-    'IBM': 'IBM Corp.',
-    'CSCO': 'Cisco Systems',
-    'QCOM': 'Qualcomm Inc.',
-    'AVGO': 'Broadcom Inc.',
-    'TXN': 'Texas Instruments',
-    'MU': 'Micron Technology',
-    'LRCX': 'Lam Research',
-    'AMAT': 'Applied Materials',
-    'KLAC': 'KLA Corp.',
-    'ADI': 'Analog Devices',
-    'MRVL': 'Marvell Technology',
-    'ON': 'ON Semiconductor',
-    'SWKS': 'Skyworks Solutions',
-    'QRVO': 'Qorvo Inc.',
-    'SPY': 'SPDR S&P 500 ETF',
-    'QQQ': 'Invesco QQQ Trust',
-    'IWM': 'iShares Russell 2000',
-    'DIA': 'SPDR Dow Jones ETF',
-    'VTI': 'Vanguard Total Stock',
-    'VOO': 'Vanguard S&P 500',
-    'ARKK': 'ARK Innovation ETF',
-    'XLF': 'Financial Select SPDR',
-    'XLE': 'Energy Select SPDR',
-    'XLK': 'Technology Select SPDR',
-}
-
-# ==================== CACHING ====================
-
-# Track FinBERT availability
+# Track which model is being used
 _finbert_available = None
 _finbert_last_check = 0
 
 # Cache for social screening data
 _screening_cache = {}
-_screening_cache_ttl = 300  # 5 minutes
+_screening_cache_time = {}
+SCREENING_CACHE_TTL = 300  # 5 minutes
 
-# Cache for Sentdex data
-_sentdex_cache = {
-    'data': None,
-    'timestamp': 0,
-    'ttl': 600  # 10 minutes
+# StockTwits cache
+_stocktwits_cache = {}
+_stocktwits_cache_time = {}
+STOCKTWITS_CACHE_TTL = 300  # 5 minutes
+
+# Default tickers for social screener
+DEFAULT_TICKERS = ['AAPL', 'AMZN', 'GOOGL', 'META', 'NVDA']
+
+# Company name mappings
+COMPANY_NAMES = {
+    'AAPL': 'Apple Inc.',
+    'MSFT': 'Microsoft Corporation',
+    'GOOGL': 'Alphabet Inc.',
+    'GOOG': 'Alphabet Inc.',
+    'AMZN': 'Amazon.com Inc.',
+    'META': 'Meta Platforms Inc.',
+    'NVDA': 'NVIDIA Corporation',
+    'TSLA': 'Tesla Inc.',
+    'BRK.B': 'Berkshire Hathaway',
+    'JPM': 'JPMorgan Chase',
+    'V': 'Visa Inc.',
+    'JNJ': 'Johnson & Johnson',
+    'WMT': 'Walmart Inc.',
+    'PG': 'Procter & Gamble',
+    'MA': 'Mastercard Inc.',
+    'UNH': 'UnitedHealth Group',
+    'HD': 'Home Depot Inc.',
+    'DIS': 'Walt Disney Co.',
+    'BAC': 'Bank of America',
+    'ADBE': 'Adobe Inc.',
+    'CRM': 'Salesforce Inc.',
+    'NFLX': 'Netflix Inc.',
+    'XOM': 'Exxon Mobil',
+    'PFE': 'Pfizer Inc.',
+    'TMO': 'Thermo Fisher',
+    'CSCO': 'Cisco Systems',
+    'ABT': 'Abbott Labs',
+    'COST': 'Costco Wholesale',
+    'CVX': 'Chevron Corp.',
+    'PEP': 'PepsiCo Inc.',
+    'AVGO': 'Broadcom Inc.',
+    'MRK': 'Merck & Co.',
+    'KO': 'Coca-Cola Co.',
+    'ABBV': 'AbbVie Inc.',
+    'AMD': 'AMD Inc.',
+    'INTC': 'Intel Corp.',
+    'ORCL': 'Oracle Corp.',
+    'QCOM': 'Qualcomm Inc.',
+    'NKE': 'Nike Inc.',
+    'MCD': "McDonald's Corp.",
+    'T': 'AT&T Inc.',
+    'VZ': 'Verizon',
+    'IBM': 'IBM Corp.',
+    'GS': 'Goldman Sachs',
+    'CAT': 'Caterpillar Inc.',
+    'BA': 'Boeing Co.',
+    'GE': 'General Electric',
+    'F': 'Ford Motor Co.',
+    'GM': 'General Motors',
+    'AAL': 'American Airlines',
+    'DAL': 'Delta Air Lines',
+    'UAL': 'United Airlines',
+    'COIN': 'Coinbase',
+    'HOOD': 'Robinhood',
+    'SQ': 'Block Inc.',
+    'PYPL': 'PayPal Holdings',
+    'SHOP': 'Shopify Inc.',
+    'UBER': 'Uber Technologies',
+    'LYFT': 'Lyft Inc.',
+    'ABNB': 'Airbnb Inc.',
+    'ZM': 'Zoom Video',
+    'PLTR': 'Palantir',
+    'SNOW': 'Snowflake Inc.',
+    'RBLX': 'Roblox Corp.',
+    'GME': 'GameStop Corp.',
+    'AMC': 'AMC Entertainment',
+    'BB': 'BlackBerry Ltd.',
+    'NOK': 'Nokia Corp.',
+    'SOFI': 'SoFi Technologies',
+    'RIVN': 'Rivian Automotive',
+    'LCID': 'Lucid Group',
+    'NIO': 'NIO Inc.',
+    'XPEV': 'XPeng Inc.',
+    'LI': 'Li Auto Inc.',
+    'BABA': 'Alibaba Group',
+    'JD': 'JD.com Inc.',
+    'PDD': 'PDD Holdings',
+    'BIDU': 'Baidu Inc.',
 }
 
 
-def get_cache_key(tickers):
-    """Generate a cache key from ticker list."""
-    return ':'.join(sorted([t.upper() for t in tickers]))
+def clean_value(value):
+    """Clean NaN, Inf, and None values"""
+    if value is None:
+        return None
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+    return value
 
-
-# ==================== FINBERT FUNCTIONS ====================
 
 def check_finbert_availability():
     """Check if FinBERT API is responding."""
@@ -144,7 +160,6 @@ def check_finbert_availability():
         elif response.status_code == 503:
             data = response.json()
             wait_time = min(data.get('estimated_time', 20), 25)
-            print(f"FinBERT: Cold start, waiting {wait_time}s...")
             time.sleep(wait_time)
             
             response = requests.post(
@@ -157,13 +172,12 @@ def check_finbert_availability():
                 _finbert_available = True
                 _finbert_last_check = time.time()
                 return True
-        
+                
         _finbert_available = False
         _finbert_last_check = time.time()
         return False
         
     except Exception as e:
-        print(f"FinBERT: Error - {e}")
         _finbert_available = False
         _finbert_last_check = time.time()
         return False
@@ -175,11 +189,13 @@ def query_finbert(text):
     if HF_API_TOKEN:
         headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
     
+    truncated_text = text[:1000]
+    
     try:
         response = requests.post(
             HF_API_URL,
             headers=headers,
-            json={"inputs": text[:1000]},
+            json={"inputs": truncated_text},
             timeout=20
         )
         
@@ -204,14 +220,13 @@ def query_finbert(text):
             return polarity, label.capitalize()
             
     except Exception as e:
-        print(f"FinBERT query error: {e}")
         return None
     
     return None
 
 
 def query_vader(text):
-    """Analyze sentiment using VADER."""
+    """Analyze sentiment using VADER (fallback)."""
     scores = vader_analyzer.polarity_scores(text)
     polarity = scores['compound']
     
@@ -236,7 +251,163 @@ def analyze_sentiment(text, use_finbert=True):
     return polarity, sentiment, 'VADER'
 
 
-# ==================== NEWS FETCHING ====================
+# =============================================================================
+# StockTwits Sentiment - Free API for user-labeled bullish/bearish posts
+# =============================================================================
+
+def get_stocktwits_sentiment(ticker):
+    """
+    Fetch sentiment from StockTwits API.
+    Returns bullish/bearish ratio based on user-labeled posts.
+    """
+    global _stocktwits_cache, _stocktwits_cache_time
+    
+    cache_key = ticker.upper()
+    current_time = time.time()
+    
+    # Check cache
+    if cache_key in _stocktwits_cache:
+        if current_time - _stocktwits_cache_time.get(cache_key, 0) < STOCKTWITS_CACHE_TTL:
+            return _stocktwits_cache[cache_key]
+    
+    try:
+        url = f"https://api.stocktwits.com/api/2/streams/symbol/{ticker}.json"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            return None
+            
+        data = response.json()
+        messages = data.get('messages', [])
+        
+        if not messages:
+            return None
+        
+        bullish_count = 0
+        bearish_count = 0
+        total_with_sentiment = 0
+        
+        for msg in messages:
+            entities = msg.get('entities', {})
+            sentiment = entities.get('sentiment', {})
+            
+            if sentiment:
+                basic = sentiment.get('basic')
+                if basic == 'Bullish':
+                    bullish_count += 1
+                    total_with_sentiment += 1
+                elif basic == 'Bearish':
+                    bearish_count += 1
+                    total_with_sentiment += 1
+        
+        # Calculate sentiment score (0-100 scale)
+        if total_with_sentiment > 0:
+            bullish_ratio = bullish_count / total_with_sentiment
+            sentiment_score = bullish_ratio * 100
+        else:
+            sentiment_score = 50  # Neutral if no labeled posts
+        
+        # Get watchlist count if available
+        symbol_data = data.get('symbol', {})
+        watchlist_count = symbol_data.get('watchlist_count', 0)
+        
+        result = {
+            'score': round(sentiment_score, 1),
+            'bullish': bullish_count,
+            'bearish': bearish_count,
+            'total_posts': len(messages),
+            'labeled_posts': total_with_sentiment,
+            'watchlist_count': watchlist_count,
+            'source': 'StockTwits'
+        }
+        
+        # Cache the result
+        _stocktwits_cache[cache_key] = result
+        _stocktwits_cache_time[cache_key] = current_time
+        
+        return result
+        
+    except Exception as e:
+        print(f"StockTwits error for {ticker}: {e}")
+        return None
+
+
+# =============================================================================
+# X/Twitter Sentiment - Using cashtag analysis from social aggregators
+# =============================================================================
+
+def get_x_sentiment(ticker):
+    """
+    Get X/Twitter sentiment by analyzing cashtag discussions.
+    Uses Google News to find social media coverage and sentiment.
+    """
+    try:
+        # Search for recent X/Twitter discussions about the stock
+        query = f"${ticker} twitter OR x.com stock"
+        rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
+        
+        feed = feedparser.parse(rss_url)
+        
+        if not feed.entries:
+            # Fallback: search for general social sentiment
+            query = f"{ticker} stock sentiment social media"
+            rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
+            feed = feedparser.parse(rss_url)
+        
+        if not feed.entries:
+            return None
+        
+        # Analyze sentiment of headlines
+        positive_count = 0
+        negative_count = 0
+        neutral_count = 0
+        total = 0
+        
+        for entry in feed.entries[:10]:
+            title = entry.get('title', '')
+            summary = entry.get('summary', '')
+            text = f"{title} {summary}"
+            
+            # Use VADER for quick sentiment
+            scores = vader_analyzer.polarity_scores(text)
+            compound = scores['compound']
+            
+            total += 1
+            if compound > 0.05:
+                positive_count += 1
+            elif compound < -0.05:
+                negative_count += 1
+            else:
+                neutral_count += 1
+        
+        if total == 0:
+            return None
+        
+        # Calculate score (0-100)
+        sentiment_score = ((positive_count - negative_count) / total + 1) * 50
+        sentiment_score = max(0, min(100, sentiment_score))
+        
+        return {
+            'score': round(sentiment_score, 1),
+            'positive': positive_count,
+            'negative': negative_count,
+            'neutral': neutral_count,
+            'total_analyzed': total,
+            'source': 'X/Social'
+        }
+        
+    except Exception as e:
+        print(f"X sentiment error for {ticker}: {e}")
+        return None
+
+
+# =============================================================================
+# News Sentiment
+# =============================================================================
 
 def fetch_article_content(url):
     """Fetch and extract article text content."""
@@ -247,7 +418,8 @@ def fetch_article_content(url):
         response = requests.get(url, timeout=3, headers=headers, allow_redirects=True)
         response.raise_for_status()
         
-        soup = BeautifulSoup(response.content[:50000], 'html.parser')
+        content = response.content[:50000]
+        soup = BeautifulSoup(content, 'html.parser')
         
         for tag in soup(['script', 'style', 'nav', 'header', 'footer', 'aside']):
             tag.decompose()
@@ -262,16 +434,356 @@ def fetch_article_content(url):
         return ""
 
 
+def get_news_sentiment(ticker, num_articles=5):
+    """Get news sentiment for a ticker using Google News RSS."""
+    try:
+        queries = [
+            f"{ticker} stock news",
+            f"{ticker} market"
+        ]
+        
+        all_articles = []
+        
+        for query in queries:
+            rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
+            feed = feedparser.parse(rss_url)
+            
+            for item in feed.entries[:num_articles]:
+                all_articles.append({
+                    'title': item.get('title', ''),
+                    'summary': item.get('summary', '')[:300]
+                })
+        
+        if not all_articles:
+            return None
+        
+        # Remove duplicates
+        seen = set()
+        unique_articles = []
+        for article in all_articles:
+            if article['title'] not in seen:
+                seen.add(article['title'])
+                unique_articles.append(article)
+        
+        # Analyze sentiment
+        positive_count = 0
+        negative_count = 0
+        neutral_count = 0
+        
+        for article in unique_articles[:10]:
+            text = f"{article['title']} {article['summary']}"
+            scores = vader_analyzer.polarity_scores(text)
+            compound = scores['compound']
+            
+            if compound > 0.05:
+                positive_count += 1
+            elif compound < -0.05:
+                negative_count += 1
+            else:
+                neutral_count += 1
+        
+        total = positive_count + negative_count + neutral_count
+        if total == 0:
+            return None
+        
+        # Calculate score (0-100)
+        sentiment_score = ((positive_count - negative_count) / total + 1) * 50
+        sentiment_score = max(0, min(100, sentiment_score))
+        
+        return {
+            'score': round(sentiment_score, 1),
+            'positive': positive_count,
+            'negative': negative_count,
+            'neutral': neutral_count,
+            'total_articles': total,
+            'source': 'News'
+        }
+        
+    except Exception as e:
+        print(f"News sentiment error for {ticker}: {e}")
+        return None
+
+
+# =============================================================================
+# Stock Data via yfinance
+# =============================================================================
+
+def get_stock_data(tickers):
+    """Fetch stock data for multiple tickers using yfinance."""
+    try:
+        ticker_str = ' '.join(tickers)
+        data = yf.download(ticker_str, period='5d', interval='1d', progress=False, threads=True)
+        
+        results = {}
+        
+        for ticker in tickers:
+            try:
+                if len(tickers) == 1:
+                    close_data = data['Close']
+                    volume_data = data['Volume']
+                else:
+                    close_data = data['Close'][ticker] if ticker in data['Close'].columns else None
+                    volume_data = data['Volume'][ticker] if ticker in data['Volume'].columns else None
+                
+                if close_data is None or close_data.empty:
+                    results[ticker] = None
+                    continue
+                
+                # Get latest values
+                current_price = clean_value(float(close_data.iloc[-1]))
+                
+                # Calculate change
+                if len(close_data) >= 2:
+                    prev_price = clean_value(float(close_data.iloc[-2]))
+                    if prev_price and current_price:
+                        change = current_price - prev_price
+                        pct_change = (change / prev_price) * 100
+                    else:
+                        change = 0
+                        pct_change = 0
+                else:
+                    change = 0
+                    pct_change = 0
+                
+                # Get volume
+                volume = clean_value(float(volume_data.iloc[-1])) if volume_data is not None and not volume_data.empty else 0
+                
+                results[ticker] = {
+                    'price': current_price,
+                    'change': clean_value(change),
+                    'pct_change': clean_value(pct_change),
+                    'volume': volume
+                }
+                
+            except Exception as e:
+                print(f"Error processing {ticker}: {e}")
+                results[ticker] = None
+        
+        return results
+        
+    except Exception as e:
+        print(f"yfinance error: {e}")
+        return {ticker: None for ticker in tickers}
+
+
+def format_volume(volume):
+    """Format volume for display."""
+    if volume is None:
+        return 'N/A'
+    if volume >= 1e9:
+        return f"{volume/1e9:.2f}B"
+    elif volume >= 1e6:
+        return f"{volume/1e6:.2f}M"
+    elif volume >= 1e3:
+        return f"{volume/1e3:.1f}K"
+    return str(int(volume))
+
+
+# =============================================================================
+# Social Screening Endpoint
+# =============================================================================
+
+@sentiment_bp.route('/api/social-screening', methods=['POST'])
+def social_screening():
+    """
+    Main social screening endpoint.
+    Returns stock data with StockTwits, X, and News sentiment.
+    """
+    global _screening_cache, _screening_cache_time
+    
+    try:
+        data = request.get_json()
+        tickers = data.get('tickers', DEFAULT_TICKERS)
+        
+        # Validate tickers
+        if not tickers:
+            tickers = DEFAULT_TICKERS
+        
+        # Limit to 10 tickers
+        tickers = [t.upper().strip() for t in tickers[:10] if t.strip()]
+        
+        if not tickers:
+            tickers = DEFAULT_TICKERS
+        
+        # Create cache key
+        cache_key = ':'.join(sorted(tickers))
+        current_time = time.time()
+        
+        # Check cache
+        if cache_key in _screening_cache:
+            if current_time - _screening_cache_time.get(cache_key, 0) < SCREENING_CACHE_TTL:
+                return jsonify(_screening_cache[cache_key])
+        
+        # Fetch stock data
+        stock_data = get_stock_data(tickers)
+        
+        results = []
+        sources_status = {
+            'market_data': False,
+            'stocktwits': False,
+            'x_sentiment': False,
+            'news': False
+        }
+        
+        for ticker in tickers:
+            stock = stock_data.get(ticker)
+            
+            # Get company name
+            company_name = COMPANY_NAMES.get(ticker, ticker)
+            
+            # Initialize result
+            result = {
+                'ticker': ticker,
+                'company': company_name,
+                'price': None,
+                'price_display': '--',
+                'change': None,
+                'pct_change': None,
+                'change_display': '--',
+                'volume': None,
+                'volume_display': '--',
+                'stocktwits': None,
+                'stocktwits_display': '--',
+                'stocktwits_detail': None,
+                'x_sentiment': None,
+                'x_display': '--',
+                'x_detail': None,
+                'news_sentiment': None,
+                'news_display': '--',
+                'news_detail': None,
+                'composite': None,
+                'composite_display': '--',
+                'composite_status': 'neutral'
+            }
+            
+            # Add stock data
+            if stock:
+                sources_status['market_data'] = True
+                result['price'] = stock['price']
+                result['price_display'] = f"${stock['price']:.2f}" if stock['price'] else '--'
+                result['change'] = stock['change']
+                result['pct_change'] = stock['pct_change']
+                
+                if stock['pct_change'] is not None:
+                    sign = '+' if stock['pct_change'] >= 0 else ''
+                    result['change_display'] = f"{sign}{stock['pct_change']:.2f}%"
+                
+                result['volume'] = stock['volume']
+                result['volume_display'] = format_volume(stock['volume'])
+            
+            # Get StockTwits sentiment
+            stocktwits = get_stocktwits_sentiment(ticker)
+            if stocktwits:
+                sources_status['stocktwits'] = True
+                result['stocktwits'] = stocktwits['score']
+                result['stocktwits_display'] = f"{stocktwits['score']:.0f}"
+                result['stocktwits_detail'] = f"🐂 {stocktwits['bullish']} / 🐻 {stocktwits['bearish']}"
+            
+            # Get X/Twitter sentiment
+            x_sent = get_x_sentiment(ticker)
+            if x_sent:
+                sources_status['x_sentiment'] = True
+                result['x_sentiment'] = x_sent['score']
+                result['x_display'] = f"{x_sent['score']:.0f}"
+                if 'positive' in x_sent:
+                    result['x_detail'] = f"+{x_sent['positive']} / -{x_sent['negative']}"
+            
+            # Get News sentiment
+            news = get_news_sentiment(ticker, num_articles=5)
+            if news:
+                sources_status['news'] = True
+                result['news_sentiment'] = news['score']
+                result['news_display'] = f"{news['score']:.0f}"
+                result['news_detail'] = f"+{news['positive']} / -{news['negative']}"
+            
+            # Calculate composite score
+            scores = []
+            weights = []
+            
+            if result['stocktwits'] is not None:
+                scores.append(result['stocktwits'])
+                weights.append(1.5)  # StockTwits weighted higher (user-labeled)
+            
+            if result['x_sentiment'] is not None:
+                scores.append(result['x_sentiment'])
+                weights.append(1.0)
+            
+            if result['news_sentiment'] is not None:
+                scores.append(result['news_sentiment'])
+                weights.append(1.0)
+            
+            # Fallback: use price momentum if no sentiment data
+            if not scores and result['pct_change'] is not None:
+                # Convert pct_change to 0-100 scale
+                momentum_score = ((result['pct_change'] + 10) / 20) * 100
+                momentum_score = max(0, min(100, momentum_score))
+                scores.append(momentum_score)
+                weights.append(0.5)
+            
+            if scores:
+                weighted_sum = sum(s * w for s, w in zip(scores, weights))
+                total_weight = sum(weights)
+                composite = weighted_sum / total_weight
+                
+                result['composite'] = round(composite, 1)
+                result['composite_display'] = f"{composite:.0f}"
+                
+                if composite >= 60:
+                    result['composite_status'] = 'positive'
+                elif composite <= 40:
+                    result['composite_status'] = 'negative'
+                else:
+                    result['composite_status'] = 'neutral'
+            
+            results.append(result)
+        
+        response = {
+            'tickers': tickers,
+            'results': results,
+            'sources': sources_status,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'cache_ttl': SCREENING_CACHE_TTL
+        }
+        
+        # Cache the response
+        _screening_cache[cache_key] = response
+        _screening_cache_time[cache_key] = current_time
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Social screening error: {e}")
+        return jsonify({
+            'error': str(e),
+            'tickers': [],
+            'results': []
+        }), 500
+
+
+@sentiment_bp.route('/api/social-screening/defaults', methods=['GET'])
+def get_defaults():
+    """Return default tickers for social screener."""
+    return jsonify({
+        'tickers': DEFAULT_TICKERS,
+        'max_tickers': 10
+    })
+
+
+# =============================================================================
+# Original News Analysis Endpoint (for deep analysis)
+# =============================================================================
+
 def fetch_news_batch(queries, num_articles_per_query):
     """Fetch news articles from Google News RSS."""
     all_articles = []
     
     for query in queries:
         try:
-            rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
+            rss_url = f"https://news.google.com/rss/search?q={quote(query)}"
             feed = feedparser.parse(rss_url)
+            news_items = feed.entries[:num_articles_per_query]
             
-            for item in feed.entries[:num_articles_per_query]:
+            for item in news_items:
                 all_articles.append({
                     "title": item.title,
                     "link": item.link,
@@ -326,6 +838,7 @@ def fetch_news_batch(queries, num_articles_per_query):
 
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     """Main function to analyze sentiment for a ticker/asset."""
+    
     use_finbert = check_finbert_availability()
     
     queries = [
@@ -394,355 +907,8 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
     }
 
 
-# ==================== SOCIAL SCREENING FUNCTIONS ====================
-
-def clean_value(value):
-    """Clean a value, handling NaN and Inf."""
-    if value is None:
-        return None
-    if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
-        return None
-    return value
-
-
-def get_stock_data_yfinance(tickers):
-    """
-    Fetch stock data using yfinance for specific tickers.
-    Returns dict with stock data for each ticker.
-    """
-    results = []
-    
-    if not tickers:
-        return results
-    
-    # Clean and validate tickers
-    clean_tickers = [t.strip().upper() for t in tickers if t and t.strip()]
-    if not clean_tickers:
-        return results
-    
-    print(f"Fetching data for tickers: {clean_tickers}")
-    
-    try:
-        # Download data for all tickers at once
-        data = yf.download(
-            clean_tickers,
-            period='5d',
-            group_by='ticker',
-            progress=False,
-            threads=True,
-            timeout=30
-        )
-        
-        for ticker in clean_tickers:
-            try:
-                # Handle single vs multiple ticker data structure
-                if len(clean_tickers) == 1:
-                    ticker_data = data
-                else:
-                    if ticker not in data.columns.get_level_values(0):
-                        print(f"No data found for {ticker}")
-                        continue
-                    ticker_data = data[ticker]
-                
-                # Skip if empty
-                if ticker_data.empty:
-                    print(f"Empty data for {ticker}")
-                    continue
-                
-                # Get the most recent row with valid data
-                ticker_data = ticker_data.dropna(subset=['Close'])
-                if ticker_data.empty:
-                    continue
-                
-                latest = ticker_data.iloc[-1]
-                
-                close_price = clean_value(latest.get('Close'))
-                volume = clean_value(latest.get('Volume'))
-                
-                if close_price is None or close_price == 0:
-                    continue
-                
-                # Calculate change
-                if len(ticker_data) >= 2:
-                    prev_close = clean_value(ticker_data.iloc[-2].get('Close'))
-                    if prev_close and prev_close > 0:
-                        change = close_price - prev_close
-                        pct_change = ((close_price - prev_close) / prev_close) * 100
-                    else:
-                        change = 0
-                        pct_change = 0
-                else:
-                    change = 0
-                    pct_change = 0
-                
-                # Get company name
-                name = COMPANY_NAMES.get(ticker, ticker)
-                
-                results.append({
-                    'symbol': ticker,
-                    'name': name,
-                    'price': round(float(close_price), 2),
-                    'change': round(float(change), 2),
-                    'pct_change': round(float(pct_change), 2),
-                    'volume': int(float(volume)) if volume else 0
-                })
-                
-                print(f"Got data for {ticker}: ${close_price:.2f} ({pct_change:+.2f}%)")
-                
-            except Exception as e:
-                print(f"Error processing {ticker}: {e}")
-                continue
-        
-    except Exception as e:
-        print(f"Error downloading stock data: {e}")
-    
-    return results
-
-
-def scrape_sentdex_sentiment():
-    """Scrape sentiment data from Sentdex with caching."""
-    global _sentdex_cache
-    
-    # Check cache
-    if _sentdex_cache['data'] is not None and (time.time() - _sentdex_cache['timestamp']) < _sentdex_cache['ttl']:
-        return _sentdex_cache['data']
-    
-    try:
-        url = 'http://www.sentdex.com/financial-analysis/?tf=30d'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find_all('tr')
-        
-        result = {}
-        for row in table:
-            cells = row.find_all('td')
-            try:
-                if len(cells) >= 5:
-                    symbol = cells[0].get_text().strip().upper()
-                    sentiment = cells[3].get_text().strip()
-                    mentions = cells[2].get_text().strip()
-                    
-                    trend_up = cells[4].find('span', {"class": "glyphicon glyphicon-chevron-up"})
-                    trend = 'up' if trend_up else 'down'
-                    
-                    try:
-                        sentiment_val = float(sentiment)
-                    except:
-                        sentiment_val = 0
-                    
-                    try:
-                        mentions_val = int(mentions.replace(',', ''))
-                    except:
-                        mentions_val = 0
-                    
-                    if symbol:
-                        result[symbol] = {
-                            'sentiment': sentiment_val,
-                            'mentions': mentions_val,
-                            'trend': trend
-                        }
-            except:
-                continue
-        
-        # Update cache
-        _sentdex_cache['data'] = result
-        _sentdex_cache['timestamp'] = time.time()
-        
-        print(f"Sentdex: Got sentiment for {len(result)} stocks")
-        return result
-        
-    except Exception as e:
-        print(f"Error scraping Sentdex: {e}")
-        return _sentdex_cache.get('data') or {}
-
-
-def get_news_sentiment_for_symbol(symbol):
-    """Get news sentiment for a single symbol using VADER."""
-    try:
-        rss_url = f"https://news.google.com/rss/search?q={symbol}+stock&hl=en-US&gl=US&ceid=US:en"
-        feed = feedparser.parse(rss_url)
-        
-        if not feed.entries:
-            return None
-        
-        sentiments = []
-        for entry in feed.entries[:5]:  # Analyze 5 headlines
-            title = entry.get('title', '')
-            if title:
-                scores = vader_analyzer.polarity_scores(title)
-                sentiments.append(scores['compound'])
-        
-        if sentiments:
-            avg_sentiment = sum(sentiments) / len(sentiments)
-            # Normalize from [-1, 1] to [0, 100]
-            normalized = (avg_sentiment + 1) * 50
-            return round(normalized, 2)
-        
-        return None
-    except Exception as e:
-        print(f"Error getting news sentiment for {symbol}: {e}")
-        return None
-
-
-def get_social_screening_data(tickers):
-    """
-    Get comprehensive social screening data for specified tickers.
-    Uses yfinance for stock data, Sentdex for 30-day sentiment, and news for real-time sentiment.
-    """
-    global _screening_cache
-    
-    # Validate tickers
-    if not tickers:
-        tickers = DEFAULT_TICKERS.copy()
-    
-    clean_tickers = [t.strip().upper() for t in tickers if t and t.strip()][:10]  # Max 10
-    
-    if not clean_tickers:
-        clean_tickers = DEFAULT_TICKERS.copy()
-    
-    # Check cache
-    cache_key = get_cache_key(clean_tickers)
-    if cache_key in _screening_cache:
-        cached = _screening_cache[cache_key]
-        if time.time() - cached['timestamp'] < _screening_cache_ttl:
-            print(f"Returning cached data for {cache_key}")
-            return cached['data']
-    
-    print(f"Fetching fresh social screening data for: {clean_tickers}")
-    start_time = time.time()
-    
-    # Fetch stock data
-    stocks = get_stock_data_yfinance(clean_tickers)
-    
-    if not stocks:
-        return {
-            'stocks': [],
-            'sources': {
-                'market_data': False,
-                'sentdex': False,
-                'news_sentiment': False
-            },
-            'total_stocks': 0,
-            'requested_tickers': clean_tickers,
-            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        }
-    
-    # Fetch Sentdex data (cached)
-    sentdex_data = scrape_sentdex_sentiment()
-    
-    # Process each stock and add sentiment data
-    merged_stocks = []
-    news_success = 0
-    sentdex_matches = 0
-    
-    for stock in stocks:
-        symbol = stock['symbol']
-        
-        merged = {
-            'symbol': symbol,
-            'name': stock['name'],
-            'price': stock['price'],
-            'change': stock['change'],
-            'pct_change': stock['pct_change'],
-            'volume': stock['volume'],
-            'sentdex_sentiment': None,
-            'sentdex_mentions': None,
-            'sentdex_trend': None,
-            'news_sentiment': None,
-            'composite_score': None,
-            'sentiment_status': 'neutral'
-        }
-        
-        # Add Sentdex data if available
-        if symbol in sentdex_data:
-            merged['sentdex_sentiment'] = sentdex_data[symbol]['sentiment']
-            merged['sentdex_mentions'] = sentdex_data[symbol]['mentions']
-            merged['sentdex_trend'] = sentdex_data[symbol]['trend']
-            sentdex_matches += 1
-        
-        # Get news sentiment
-        news_score = get_news_sentiment_for_symbol(symbol)
-        if news_score is not None:
-            merged['news_sentiment'] = news_score
-            news_success += 1
-        
-        # Calculate composite score
-        scores = []
-        weights = []
-        
-        if merged['sentdex_sentiment'] is not None:
-            # Normalize Sentdex from [-6, 6] to [0, 100]
-            normalized_sentdex = ((merged['sentdex_sentiment'] + 6) / 12) * 100
-            scores.append(normalized_sentdex)
-            weights.append(1.5)  # Sentdex weighted higher (30-day data)
-        
-        if merged['news_sentiment'] is not None:
-            scores.append(merged['news_sentiment'])
-            weights.append(1.0)
-        
-        # Fallback: use price momentum if no sentiment data
-        if not scores:
-            pct = max(-10, min(10, merged['pct_change']))
-            price_score = ((pct + 10) / 20) * 100
-            scores.append(price_score)
-            weights.append(0.5)
-        
-        # Weighted average
-        if scores:
-            weighted_sum = sum(s * w for s, w in zip(scores, weights))
-            total_weight = sum(weights)
-            merged['composite_score'] = round(weighted_sum / total_weight, 1)
-        else:
-            merged['composite_score'] = 50.0
-        
-        # Determine sentiment status
-        if merged['composite_score'] >= 60:
-            merged['sentiment_status'] = 'positive'
-        elif merged['composite_score'] <= 40:
-            merged['sentiment_status'] = 'negative'
-        else:
-            merged['sentiment_status'] = 'neutral'
-        
-        merged_stocks.append(merged)
-    
-    # Sort by composite score (highest first)
-    merged_stocks.sort(key=lambda x: x['composite_score'], reverse=True)
-    
-    elapsed = time.time() - start_time
-    print(f"Social screening completed in {elapsed:.2f}s - {len(merged_stocks)} stocks, {sentdex_matches} sentdex, {news_success} news")
-    
-    # Build response
-    response_data = {
-        'stocks': merged_stocks,
-        'sources': {
-            'market_data': len(stocks) > 0,
-            'sentdex': sentdex_matches > 0,
-            'news_sentiment': news_success > 0
-        },
-        'total_stocks': len(merged_stocks),
-        'requested_tickers': clean_tickers,
-        'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-    }
-    
-    # Cache the results
-    _screening_cache[cache_key] = {
-        'data': response_data,
-        'timestamp': time.time()
-    }
-    
-    return response_data
-
-
-# ==================== API ROUTES ====================
-
 @sentiment_bp.route('/api/analyze', methods=['POST'])
 def analyze():
-    """Analyze news sentiment for a ticker/asset."""
     try:
         data = request.get_json()
         ticker = data.get('ticker', '').strip()
@@ -766,47 +932,6 @@ def analyze():
         return jsonify({'error': str(e)}), 500
 
 
-@sentiment_bp.route('/api/social-screening', methods=['POST'])
-def social_screening():
-    """
-    API endpoint for social screening with custom tickers.
-    Accepts POST with JSON body: {"tickers": ["AAPL", "MSFT", ...]}
-    """
-    try:
-        data = request.get_json() or {}
-        tickers = data.get('tickers', DEFAULT_TICKERS)
-        
-        # Validate and clean tickers
-        if not isinstance(tickers, list):
-            tickers = DEFAULT_TICKERS
-        
-        result = get_social_screening_data(tickers)
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"Social screening error: {e}")
-        return jsonify({
-            'error': str(e),
-            'stocks': [],
-            'sources': {
-                'market_data': False,
-                'sentdex': False,
-                'news_sentiment': False
-            },
-            'total_stocks': 0,
-            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        }), 500
-
-
-@sentiment_bp.route('/api/social-screening/defaults', methods=['GET'])
-def get_default_tickers():
-    """Return the default tickers list."""
-    return jsonify({
-        'defaults': DEFAULT_TICKERS,
-        'max_tickers': 10
-    })
-
-
 @sentiment_bp.route('/api/sentiment/health', methods=['GET'])
 def sentiment_health():
     """Health check with model status."""
@@ -816,5 +941,6 @@ def sentiment_health():
         'status': 'healthy',
         'finbert_available': finbert_ok,
         'fallback': 'VADER',
-        'hf_token_set': bool(HF_API_TOKEN)
+        'hf_token_set': bool(HF_API_TOKEN),
+        'features': ['stocktwits', 'x_sentiment', 'news_sentiment', 'composite_score']
     })
