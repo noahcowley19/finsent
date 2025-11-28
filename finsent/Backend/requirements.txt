@@ -6,3 +6,4 @@ beautifulsoup4
 vaderSentiment
 yfinance
 gunicorn
+pandas
