@@ -26,6 +26,57 @@ def safe_round(value, decimals=2):
         return None
 
 
+def parse_percentage(value):
+    """
+    Parse a percentage value from various formats yfinance might return.
+    Returns a float between 0 and 100, or None if invalid.
+    """
+    if value is None:
+        return None
+    
+    try:
+        # Handle string formats
+        if isinstance(value, str):
+            # Remove % sign and whitespace
+            cleaned = value.replace('%', '').strip()
+            if not cleaned:
+                return None
+            value = float(cleaned)
+        
+        # Convert to float if not already
+        value = float(value)
+        
+        # Check for NaN or Inf
+        if math.isnan(value) or math.isinf(value):
+            return None
+        
+        # Determine if value is decimal (0-1) or percentage (0-100)
+        # Values > 1 and <= 100 are assumed to be percentages already
+        # Values <= 1 are assumed to be decimals that need * 100
+        # Values > 100 are likely errors - try to correct if possible
+        if value <= 1 and value >= 0:
+            # Decimal format (e.g., 0.7066 for 70.66%)
+            value = value * 100
+        elif value > 100:
+            # Likely an error - value might be in basis points or double-converted
+            # Try to detect if it's a reasonable percentage * 100
+            if value <= 10000:
+                # Could be basis points (7066 = 70.66%)
+                value = value / 100
+            else:
+                # Too large, likely corrupted data
+                return None
+        
+        # Final validation - percentage should be 0-100
+        if value < 0 or value > 100:
+            return None
+        
+        return round(value, 2)
+        
+    except (ValueError, TypeError):
+        return None
+
+
 def format_currency(value):
     if value is None:
         return 'N/A'
@@ -326,8 +377,13 @@ def process_transactions(data, months=12):
                     week_key = date_val.strftime('%Y-%W') if hasattr(date_val, 'strftime') else None
                     if week_key:
                         if week_key not in cluster_window:
-                            cluster_window[week_key] = {'buys': [], 'sells': []}
-                        cluster_window[week_key]['buys'].append(insider_name)
+                            cluster_window[week_key] = {'buys': [], 'sells': [], 'date': date_val}
+                        cluster_window[week_key]['buys'].append({
+                            'name': insider_name,
+                            'title': title,
+                            'value': value,
+                            'shares': shares
+                        })
                         
             elif trans_status == 'negative':
                 total_sells += 1
@@ -339,8 +395,13 @@ def process_transactions(data, months=12):
                     week_key = date_val.strftime('%Y-%W') if hasattr(date_val, 'strftime') else None
                     if week_key:
                         if week_key not in cluster_window:
-                            cluster_window[week_key] = {'buys': [], 'sells': []}
-                        cluster_window[week_key]['sells'].append(insider_name)
+                            cluster_window[week_key] = {'buys': [], 'sells': [], 'date': date_val}
+                        cluster_window[week_key]['sells'].append({
+                            'name': insider_name,
+                            'title': title,
+                            'value': value,
+                            'shares': shares
+                        })
                         
         except Exception as e:
             continue
@@ -364,30 +425,72 @@ def process_transactions(data, months=12):
     
     monthly_data = monthly_data[-12:]
     
+    # Process cluster alerts with more detail
     cluster_alerts = []
-    for week, data in cluster_window.items():
-        unique_buyers = list(set(data['buys']))
-        unique_sellers = list(set(data['sells']))
+    for week, week_data in cluster_window.items():
+        unique_buyers = {}
+        unique_sellers = {}
         
-        if len(unique_buyers) >= 3:
+        # Dedupe by name and aggregate
+        for buy in week_data['buys']:
+            name = buy['name']
+            if name not in unique_buyers:
+                unique_buyers[name] = {'title': buy['title'], 'total_value': 0, 'total_shares': 0}
+            unique_buyers[name]['total_value'] += buy['value']
+            unique_buyers[name]['total_shares'] += buy['shares']
+        
+        for sell in week_data['sells']:
+            name = sell['name']
+            if name not in unique_sellers:
+                unique_sellers[name] = {'title': sell['title'], 'total_value': 0, 'total_shares': 0}
+            unique_sellers[name]['total_value'] += sell['value']
+            unique_sellers[name]['total_shares'] += sell['shares']
+        
+        # Format week date for display
+        try:
+            week_date = week_data.get('date')
+            if week_date and hasattr(week_date, 'strftime'):
+                week_display = week_date.strftime('%b %d, %Y')
+            else:
+                week_display = week
+        except:
+            week_display = week
+        
+        if len(unique_buyers) >= 2:
+            total_cluster_value = sum(b['total_value'] for b in unique_buyers.values())
+            insiders_list = [{'name': name, 'title': info['title'], 'value': format_currency(info['total_value'])} 
+                          for name, info in list(unique_buyers.items())[:5]]
             cluster_alerts.append({
                 'type': 'cluster_buy',
                 'status': 'positive',
                 'message': f'{len(unique_buyers)} insiders bought within the same week',
-                'insiders': unique_buyers[:5],
-                'week': week
+                'description': f'Total cluster buying value: {format_currency(total_cluster_value)}',
+                'insiders': insiders_list,
+                'insider_count': len(unique_buyers),
+                'total_value': total_cluster_value,
+                'total_value_display': format_currency(total_cluster_value),
+                'week': week,
+                'week_display': week_display
             })
         
-        if len(unique_sellers) >= 3:
+        if len(unique_sellers) >= 2:
+            total_cluster_value = sum(s['total_value'] for s in unique_sellers.values())
+            insiders_list = [{'name': name, 'title': info['title'], 'value': format_currency(info['total_value'])} 
+                          for name, info in list(unique_sellers.items())[:5]]
             cluster_alerts.append({
                 'type': 'cluster_sell',
                 'status': 'negative',
                 'message': f'{len(unique_sellers)} insiders sold within the same week',
-                'insiders': unique_sellers[:5],
-                'week': week
+                'description': f'Total cluster selling value: {format_currency(total_cluster_value)}',
+                'insiders': insiders_list,
+                'insider_count': len(unique_sellers),
+                'total_value': total_cluster_value,
+                'total_value_display': format_currency(total_cluster_value),
+                'week': week,
+                'week_display': week_display
             })
     
-    cluster_alerts = sorted(cluster_alerts, key=lambda x: x['week'], reverse=True)[:5]
+    cluster_alerts = sorted(cluster_alerts, key=lambda x: x['week'], reverse=True)[:10]
     
     net_value = buy_value - sell_value
     
@@ -480,27 +583,34 @@ def process_institutional_holdings(data):
         'has_data': False
     }
     
+    # Parse major holders for summary stats
     if major_df is not None and not major_df.empty:
         try:
+            # yfinance major_holders DataFrame structure:
+            # Index contains descriptions, single column contains values
             for idx, row in major_df.iterrows():
+                # Get value from first column
                 value = row.iloc[0] if len(row) > 0 else None
-                label = row.iloc[1] if len(row) > 1 else str(idx)
+                # Get label from index or second column if exists
+                if len(row) > 1:
+                    label = str(row.iloc[1])
+                else:
+                    label = str(idx)
                 
                 if value is not None:
-                    if isinstance(value, str) and '%' in value:
-                        value = float(value.replace('%', ''))
-                    elif isinstance(value, (int, float)):
-                        if value <= 1:
-                            value = value * 100
+                    # Parse the percentage value properly
+                    parsed_pct = parse_percentage(value)
                     
-                    label_lower = str(label).lower()
-                    if 'institution' in label_lower:
-                        result['summary']['total_institutional'] = safe_round(value, 2)
-                    elif 'insider' in label_lower:
-                        result['summary']['total_insider'] = safe_round(value, 2)
-        except:
+                    if parsed_pct is not None:
+                        label_lower = label.lower()
+                        if 'institution' in label_lower and 'float' not in label_lower:
+                            result['summary']['total_institutional'] = parsed_pct
+                        elif 'insider' in label_lower:
+                            result['summary']['total_insider'] = parsed_pct
+        except Exception as e:
             pass
     
+    # Parse individual institutional holders
     if institutional_df is not None and not institutional_df.empty:
         result['has_data'] = True
         
@@ -518,11 +628,11 @@ def process_institutional_holdings(data):
                 if value is None:
                     value = 0
                 
-                pct_out = clean_value(row.get('% Out', row.get('pctHeld', 0)))
+                # Parse percentage with proper validation
+                pct_raw = row.get('% Out', row.get('pctHeld', 0))
+                pct_out = parse_percentage(pct_raw)
                 if pct_out is None:
                     pct_out = 0
-                if pct_out > 0 and pct_out < 1:
-                    pct_out = pct_out * 100
                 
                 date_reported = row.get('Date Reported', None)
                 if date_reported is not None and not pd.isna(date_reported):
@@ -539,8 +649,8 @@ def process_institutional_holdings(data):
                     'shares_display': format_shares(shares),
                     'value': value,
                     'value_display': format_currency(value),
-                    'percent': safe_round(pct_out, 2),
-                    'percent_display': f"{safe_round(pct_out, 2)}%" if pct_out else 'N/A',
+                    'percent': pct_out,
+                    'percent_display': f"{pct_out}%" if pct_out else 'N/A',
                     'date_reported': date_str
                 })
                 
@@ -605,7 +715,7 @@ def generate_key_signals(transaction_data, institutional_data, sentiment):
     summary = transaction_data.get('summary', {})
     cluster_alerts = transaction_data.get('cluster_alerts', [])
     
-    for alert in cluster_alerts[:2]:
+    for alert in cluster_alerts[:3]:
         signals.append({
             'type': alert['type'],
             'status': alert['status'],
