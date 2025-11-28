@@ -8,7 +8,6 @@ from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import time
-import yfinance as yf
 
 sentiment_bp = Blueprint('sentiment', __name__)
 
@@ -27,7 +26,7 @@ _finbert_last_check = 0
 _social_cache = {
     'data': None,
     'timestamp': 0,
-    'ttl': 600  # 10 minutes cache
+    'ttl': 1800  # 30 minutes cache to reduce server load
 }
 
 # Predefined stock info to avoid slow API calls
@@ -358,86 +357,130 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
 # ==================== SOCIAL SCREENING FUNCTIONS ====================
 
 def get_stock_data_fast():
-    """Get stock data quickly using yfinance with minimal tickers."""
+    """Get stock data by scraping Yahoo Finance most active page - no yfinance needed."""
     try:
-        # Use only reliable, high-volume tickers
-        tickers = list(STOCK_INFO.keys())
+        print("Fetching most active stocks from Yahoo Finance...")
         
-        # Download all at once - much faster than individual calls
-        print(f"Downloading data for {len(tickers)} tickers...")
-        data = yf.download(
-            tickers, 
-            period='2d', 
-            group_by='ticker', 
-            progress=False, 
-            threads=True,
-            timeout=20
-        )
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        # Scrape Yahoo Finance most active page
+        url = 'https://finance.yahoo.com/markets/stocks/most-active/'
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
         
         results = []
         
-        for ticker in tickers:
+        # Find the table rows
+        rows = soup.find_all('tr', class_='row')
+        
+        if not rows:
+            # Fallback: try finding table body rows
+            table = soup.find('table')
+            if table:
+                rows = table.find_all('tr')[1:]  # Skip header
+        
+        for row in rows[:20]:  # Limit to 20 stocks
             try:
-                # Get ticker data from the download
-                if len(tickers) == 1:
-                    ticker_data = data
-                else:
-                    if ticker not in data.columns.get_level_values(0):
-                        continue
-                    ticker_data = data[ticker]
-                
-                # Skip if no data
-                if ticker_data.empty or len(ticker_data) < 1:
+                cells = row.find_all('td')
+                if len(cells) < 5:
                     continue
                 
-                # Get latest values
-                latest = ticker_data.iloc[-1]
+                # Extract symbol
+                symbol_elem = row.find('span', class_='symbol') or cells[0].find('a')
+                if not symbol_elem:
+                    continue
+                symbol = symbol_elem.get_text(strip=True).upper()
                 
-                close_price = latest.get('Close')
-                open_price = latest.get('Open')
-                volume = latest.get('Volume')
+                # Extract name
+                name_elem = row.find('span', class_='longName') or cells[1]
+                name = name_elem.get_text(strip=True)[:30] if name_elem else symbol
                 
-                # Skip if missing critical data
-                if close_price is None or volume is None:
+                # Extract price - look for the price cell
+                price = None
+                for cell in cells:
+                    text = cell.get_text(strip=True)
+                    if text and text[0].isdigit() and '.' in text:
+                        try:
+                            price = float(text.replace(',', ''))
+                            break
+                        except:
+                            continue
+                
+                if not price:
                     continue
                 
-                close_price = float(close_price)
-                volume = int(float(volume))
+                # Extract change percentage
+                pct_change = 0
+                change_elem = row.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
+                if change_elem:
+                    try:
+                        pct_text = change_elem.get_text(strip=True).replace('%', '').replace('+', '')
+                        pct_change = float(pct_text)
+                    except:
+                        pass
                 
-                if close_price == 0 or volume == 0:
-                    continue
+                # Extract volume
+                volume = 0
+                vol_elem = row.find('fin-streamer', {'data-field': 'regularMarketVolume'})
+                if vol_elem:
+                    try:
+                        vol_text = vol_elem.get_text(strip=True).replace(',', '')
+                        if 'M' in vol_text:
+                            volume = int(float(vol_text.replace('M', '')) * 1_000_000)
+                        elif 'B' in vol_text:
+                            volume = int(float(vol_text.replace('B', '')) * 1_000_000_000)
+                        elif 'K' in vol_text:
+                            volume = int(float(vol_text.replace('K', '')) * 1_000)
+                        else:
+                            volume = int(float(vol_text))
+                    except:
+                        volume = 0
                 
-                # Calculate change from previous day
-                if len(ticker_data) >= 2:
-                    prev_close = float(ticker_data.iloc[-2].get('Close', close_price))
-                else:
-                    prev_close = float(open_price) if open_price else close_price
-                
-                change = close_price - prev_close
-                pct_change = ((close_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
+                change = round(price * pct_change / 100, 2)
                 
                 results.append({
-                    'symbol': ticker,
-                    'name': STOCK_INFO.get(ticker, ticker),
-                    'price': round(close_price, 2),
-                    'change': round(change, 2),
+                    'symbol': symbol,
+                    'name': STOCK_INFO.get(symbol, name),
+                    'price': round(price, 2),
+                    'change': change,
                     'pct_change': round(pct_change, 2),
                     'volume': volume
                 })
                 
             except Exception as e:
-                print(f"Error processing {ticker}: {e}")
                 continue
         
-        # Sort by volume
-        results.sort(key=lambda x: x['volume'], reverse=True)
-        print(f"Successfully processed {len(results)} tickers")
+        # If scraping failed, use static fallback with predefined data
+        if not results:
+            print("Scraping failed, using fallback data...")
+            results = get_fallback_stock_data()
         
+        print(f"Got {len(results)} stocks")
         return results
         
     except Exception as e:
-        print(f"Error in get_stock_data_fast: {e}")
-        return []
+        print(f"Error fetching stock data: {e}")
+        return get_fallback_stock_data()
+
+
+def get_fallback_stock_data():
+    """Return static fallback data when scraping fails."""
+    # Static fallback - just show the tickers with placeholder data
+    fallback = []
+    for symbol, name in list(STOCK_INFO.items())[:15]:
+        fallback.append({
+            'symbol': symbol,
+            'name': name,
+            'price': 0,
+            'change': 0,
+            'pct_change': 0,
+            'volume': 0
+        })
+    return fallback
 
 
 def scrape_sentdex_sentiment():
@@ -490,53 +533,36 @@ def scrape_sentdex_sentiment():
         return {}
 
 
-def generate_news_sentiment_batch(symbols):
-    """Generate sentiment from news headlines for multiple symbols at once."""
-    results = {}
-    
-    def get_sentiment_for_symbol(symbol):
-        try:
-            rss_url = f"https://news.google.com/rss/search?q={symbol}+stock"
-            feed = feedparser.parse(rss_url)
-            
-            if not feed.entries:
-                return symbol, None
-            
-            sentiments = []
-            for entry in feed.entries[:3]:  # Only 3 headlines for speed
-                title = entry.get('title', '')
-                if title:
-                    scores = vader_analyzer.polarity_scores(title)
-                    sentiments.append(scores['compound'])
-            
-            if sentiments:
-                avg_sentiment = sum(sentiments) / len(sentiments)
-                normalized = (avg_sentiment + 1) * 50
-                return symbol, round(normalized, 2)
-            
-            return symbol, None
-        except:
-            return symbol, None
-    
-    # Process in parallel with timeout
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(get_sentiment_for_symbol, s): s for s in symbols}
+def get_news_sentiment_for_symbol(symbol):
+    """Get news sentiment for a single symbol - fast inline version."""
+    try:
+        rss_url = f"https://news.google.com/rss/search?q={symbol}+stock&hl=en-US&gl=US&ceid=US:en"
+        feed = feedparser.parse(rss_url)
         
-        for future in as_completed(futures, timeout=15):
-            try:
-                symbol, sentiment = future.result(timeout=3)
-                if sentiment is not None:
-                    results[symbol] = sentiment
-            except:
-                continue
-    
-    return results
+        if not feed.entries:
+            return None
+        
+        sentiments = []
+        for entry in feed.entries[:3]:  # Only 3 headlines
+            title = entry.get('title', '')
+            if title:
+                scores = vader_analyzer.polarity_scores(title)
+                sentiments.append(scores['compound'])
+        
+        if sentiments:
+            avg_sentiment = sum(sentiments) / len(sentiments)
+            # Normalize from [-1, 1] to [0, 100]
+            normalized = (avg_sentiment + 1) * 50
+            return round(normalized, 2)
+        
+        return None
+    except:
+        return None
 
 
 def get_social_screening_data():
     """
-    Get combined social screening data from multiple sources.
-    Optimized for speed and reliability.
+    Get combined social screening data - ultra-lightweight version.
     """
     global _social_cache
     
@@ -548,7 +574,7 @@ def get_social_screening_data():
     print("Fetching fresh social screening data...")
     start_time = time.time()
     
-    # Fetch stock data (this is the main data source)
+    # Fetch stock data (lightweight scraping)
     stocks = get_stock_data_fast()
     
     if not stocks:
@@ -565,32 +591,19 @@ def get_social_screening_data():
             'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         }
     
-    # Get symbols for sentiment lookup
-    symbols = [s['symbol'] for s in stocks]
-    
-    # Fetch additional data in parallel
+    # Fetch Sentdex data (single request)
     sentdex_data = {}
-    news_sentiment = {}
+    try:
+        sentdex_data = scrape_sentdex_sentiment()
+        print(f"Sentdex returned {len(sentdex_data)} stocks")
+    except Exception as e:
+        print(f"Sentdex failed: {e}")
     
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        sentdex_future = executor.submit(scrape_sentdex_sentiment)
-        news_future = executor.submit(generate_news_sentiment_batch, symbols)
-        
-        try:
-            sentdex_data = sentdex_future.result(timeout=12)
-        except Exception as e:
-            print(f"Sentdex fetch failed: {e}")
-            sentdex_data = {}
-        
-        try:
-            news_sentiment = news_future.result(timeout=18)
-        except Exception as e:
-            print(f"News sentiment fetch failed: {e}")
-            news_sentiment = {}
-    
-    # Merge all data
+    # Merge all data and calculate news sentiment inline
     merged_stocks = []
-    for stock in stocks:
+    news_success_count = 0
+    
+    for stock in stocks[:15]:  # Limit to 15 stocks
         symbol = stock['symbol']
         
         merged = {
@@ -615,9 +628,11 @@ def get_social_screening_data():
             merged['sentdex_mentions'] = sentdex_data[symbol]['mentions']
             merged['sentdex_trend'] = sentdex_data[symbol]['trend']
         
-        # Add news sentiment
-        if symbol in news_sentiment:
-            merged['news_sentiment'] = news_sentiment[symbol]
+        # Calculate news sentiment for this stock
+        news_score = get_news_sentiment_for_symbol(symbol)
+        if news_score is not None:
+            merged['news_sentiment'] = news_score
+            news_success_count += 1
         
         # Calculate composite score
         scores = []
@@ -651,7 +666,7 @@ def get_social_screening_data():
     merged_stocks.sort(key=lambda x: (x['composite_score'] or 0, x['volume']), reverse=True)
     
     elapsed = time.time() - start_time
-    print(f"Social screening completed in {elapsed:.2f}s")
+    print(f"Social screening completed in {elapsed:.2f}s with {news_success_count} news scores")
     
     # Build response
     response_data = {
@@ -659,8 +674,8 @@ def get_social_screening_data():
         'sources': {
             'yahoo_finance': len(stocks) > 0,
             'sentdex': len(sentdex_data) > 0,
-            'twitter_strength': False,  # Not using Twitter anymore
-            'twitter_activity': len(news_sentiment) > 0  # Using news instead
+            'twitter_strength': False,
+            'twitter_activity': news_success_count > 0
         },
         'total_stocks': len(merged_stocks),
         'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
