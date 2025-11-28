@@ -896,6 +896,7 @@
             padding: 60px 20px;
             text-align: center;
             color: var(--secondary);
+            display: none;
         }
 
         .no-screening-data svg {
@@ -1216,7 +1217,7 @@
 
         <div class="social-header">
             <h2>Market Social Screener</h2>
-            <p>Track the most active stocks with aggregated social sentiment data from Sentdex and Twitter. Combines price action with social signals to identify trending opportunities.</p>
+            <p>Track the most active stocks with aggregated social sentiment data from multiple sources. Combines price action with social signals to identify trending opportunities.</p>
         </div>
 
         <div class="social-controls">
@@ -1231,7 +1232,7 @@
         <div class="sources-status" id="sourcesStatus">
             <div class="source-indicator">
                 <div class="source-dot" id="yahooStatus"></div>
-                <span>Yahoo Finance</span>
+                <span>Market Data</span>
             </div>
             <div class="source-indicator">
                 <div class="source-dot" id="sentdexStatus"></div>
@@ -1239,11 +1240,11 @@
             </div>
             <div class="source-indicator">
                 <div class="source-dot" id="twitterStrStatus"></div>
-                <span>Twitter Strength</span>
+                <span>Social Trends</span>
             </div>
             <div class="source-indicator">
                 <div class="source-dot" id="twitterActStatus"></div>
-                <span>Twitter Activity</span>
+                <span>News Sentiment</span>
             </div>
         </div>
 
@@ -1253,7 +1254,7 @@
         </div>
 
         <div id="socialResults">
-            <div class="screening-table-container">
+            <div class="screening-table-container" id="tableContainer">
                 <table class="screening-table">
                     <thead>
                         <tr>
@@ -1262,8 +1263,8 @@
                             <th class="right">Change</th>
                             <th class="right">Volume</th>
                             <th>Sentdex</th>
-                            <th>Twitter Str.</th>
-                            <th>Twitter Act.</th>
+                            <th>Social Score</th>
+                            <th>News</th>
                             <th>Composite</th>
                         </tr>
                     </thead>
@@ -1277,7 +1278,7 @@
                 </div>
             </div>
 
-            <div class="no-screening-data" id="noScreeningData" style="display: none;">
+            <div class="no-screening-data" id="noScreeningData">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -1296,20 +1297,20 @@
             <div class="explainer-content" id="socialExplainerContent">
                 <div class="explainer-inner">
                     <div class="explainer-item">
-                        <h4>Yahoo Finance Most Active</h4>
-                        <p>Stocks with the highest trading volume for the day, indicating significant market interest. High volume combined with price movement can signal institutional activity or breaking news.</p>
+                        <h4>Most Active Stocks</h4>
+                        <p>Stocks with the highest trading volume, indicating significant market interest. High volume combined with price movement can signal institutional activity or breaking news.</p>
                     </div>
                     <div class="explainer-item">
                         <h4>Sentdex Sentiment (30-Day)</h4>
                         <p>Aggregated sentiment from news and social sources over 30 days. Scores range from -6 (very negative) to +6 (very positive). The trend arrow indicates whether sentiment is improving or declining.</p>
                     </div>
                     <div class="explainer-item">
-                        <h4>Twitter Strength Score</h4>
-                        <p>Measures the strength of bullish vs bearish sentiment in Twitter discussions about a stock. Higher scores indicate stronger positive conviction among traders.</p>
+                        <h4>Social Score</h4>
+                        <p>Measures the social media buzz and sentiment around a stock from platforms like StockTwits. Higher scores indicate stronger positive discussion and interest among retail traders.</p>
                     </div>
                     <div class="explainer-item">
-                        <h4>Twitter Activity Score</h4>
-                        <p>Measures the volume and engagement of Twitter discussions about a stock. High activity often precedes significant price movements and can indicate viral interest.</p>
+                        <h4>News Sentiment</h4>
+                        <p>Real-time sentiment analysis of recent news headlines about each stock. This is calculated when other sentiment sources are unavailable, providing a fallback sentiment reading.</p>
                     </div>
                     <div class="explainer-item">
                         <h4>Composite Score</h4>
@@ -1566,14 +1567,15 @@
         async function loadSocialScreening() {
             const refreshBtn = document.getElementById('refreshBtn');
             const socialLoading = document.getElementById('socialLoading');
-            const socialResults = document.getElementById('socialResults');
             const noDataDiv = document.getElementById('noScreeningData');
+            const tableContainer = document.getElementById('tableContainer');
             const tableBody = document.getElementById('screeningTableBody');
 
             refreshBtn.classList.add('loading');
             refreshBtn.disabled = true;
             socialLoading.style.display = 'block';
             noDataDiv.style.display = 'none';
+            tableContainer.style.display = 'block';
 
             // Reset source indicators
             ['yahooStatus', 'sentdexStatus', 'twitterStrStatus', 'twitterActStatus'].forEach(id => {
@@ -1596,6 +1598,7 @@
                 document.getElementById('twitterActStatus').className = 'source-dot ' + (data.sources.twitter_activity ? 'active' : 'inactive');
 
                 if (!data.stocks || data.stocks.length === 0) {
+                    tableContainer.style.display = 'none';
                     noDataDiv.style.display = 'block';
                     tableBody.innerHTML = '';
                 } else {
@@ -1604,6 +1607,7 @@
 
             } catch (error) {
                 console.error('Social screening error:', error);
+                tableContainer.style.display = 'none';
                 noDataDiv.style.display = 'block';
                 tableBody.innerHTML = '';
             } finally {
@@ -1615,7 +1619,12 @@
 
         function displaySocialScreeningData(data) {
             const tableBody = document.getElementById('screeningTableBody');
+            const tableContainer = document.getElementById('tableContainer');
+            const noDataDiv = document.getElementById('noScreeningData');
+            
             tableBody.innerHTML = '';
+            tableContainer.style.display = 'block';
+            noDataDiv.style.display = 'none';
 
             data.stocks.forEach((stock, index) => {
                 const row = document.createElement('tr');
@@ -1635,23 +1644,25 @@
                 // Sentdex display
                 let sentdexHtml = '<span class="no-data">—</span>';
                 if (stock.sentdex_sentiment !== null) {
-                    const sentdexClass = stock.sentdex_sentiment > 0 ? 'positive' : stock.sentdex_sentiment < 0 ? 'negative' : 'neutral';
                     const trendArrow = stock.sentdex_trend === 'up' 
                         ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>'
                         : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>';
                     sentdexHtml = `<span class="trend-indicator ${stock.sentdex_trend}">${stock.sentdex_sentiment.toFixed(1)} ${trendArrow}</span>`;
                 }
 
-                // Twitter strength display
-                let twitterStrHtml = '<span class="no-data">—</span>';
+                // Social score display (was twitter strength)
+                let socialScoreHtml = '<span class="no-data">—</span>';
                 if (stock.twitter_strength_score !== null) {
-                    twitterStrHtml = `<span class="twitter-score">${stock.twitter_strength_score.toFixed(0)}</span>`;
+                    socialScoreHtml = `<span class="twitter-score">${stock.twitter_strength_score.toFixed(0)}</span>`;
                 }
 
-                // Twitter activity display
-                let twitterActHtml = '<span class="no-data">—</span>';
-                if (stock.twitter_activity_score !== null) {
-                    twitterActHtml = `<span class="twitter-score">${stock.twitter_activity_score.toFixed(0)}</span>`;
+                // News sentiment display
+                let newsHtml = '<span class="no-data">—</span>';
+                if (stock.news_sentiment !== null) {
+                    const newsClass = stock.news_sentiment >= 60 ? 'positive' : stock.news_sentiment <= 40 ? 'negative' : 'neutral';
+                    newsHtml = `<span class="sentiment-score ${newsClass}">${stock.news_sentiment.toFixed(0)}</span>`;
+                } else if (stock.twitter_activity_score !== null && stock.twitter_activity_score !== stock.twitter_strength_score) {
+                    newsHtml = `<span class="twitter-score">${stock.twitter_activity_score.toFixed(0)}</span>`;
                 }
 
                 // Composite score display
@@ -1676,8 +1687,8 @@
                     </td>
                     <td class="volume-cell">${volumeDisplay}</td>
                     <td class="sentiment-cell">${sentdexHtml}</td>
-                    <td class="twitter-score-cell">${twitterStrHtml}</td>
-                    <td class="twitter-score-cell">${twitterActHtml}</td>
+                    <td class="twitter-score-cell">${socialScoreHtml}</td>
+                    <td class="twitter-score-cell">${newsHtml}</td>
                     <td class="composite-cell">${compositeHtml}</td>
                 `;
 
