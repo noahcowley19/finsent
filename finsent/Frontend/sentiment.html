@@ -35,6 +35,8 @@
             --border: #e2e8f0;
             --shadow: rgba(15, 23, 42, 0.08);
             --shadow-hover: rgba(15, 23, 42, 0.12);
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
         }
 
         body {
@@ -46,6 +48,8 @@
             padding-top: 80px;
             -webkit-font-smoothing: antialiased;
         }
+
+        /* ==================== NAVBAR ==================== */
 
         .navbar {
             position: fixed;
@@ -88,6 +92,8 @@
             background: var(--neutral-light);
         }
 
+        /* ==================== CONTAINER ==================== */
+
         .container {
             max-width: 1280px;
             margin: 0 auto;
@@ -106,104 +112,243 @@
             letter-spacing: -0.01em;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 60px;
+        /* ==================== SOCIAL SCREENING SECTION ==================== */
+
+        .screening-section {
+            margin-bottom: 80px;
         }
 
-        h1 {
-            font-size: 3rem;
+        .screening-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .screening-header h1 {
+            font-size: 2.75rem;
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 12px;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
         }
 
-        .subtitle {
+        .screening-header p {
             font-size: 1.125rem;
             color: var(--secondary);
-            font-weight: 400;
-            letter-spacing: -0.01em;
-            max-width: 800px;
+            max-width: 700px;
             margin: 0 auto;
+            line-height: 1.7;
         }
 
-        .search-section {
+        /* Ticker Selection */
+        .ticker-selection {
             background: var(--card-bg);
             border-radius: 16px;
-            padding: 40px;
+            padding: 32px;
             box-shadow: 0 1px 3px var(--shadow);
-            margin-bottom: 40px;
             border: 1px solid var(--border);
+            margin-bottom: 32px;
         }
 
-        .input-wrapper {
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 12px;
+        .ticker-selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .ticker-selection-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+        }
+
+        .ticker-count {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .ticker-count span {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .ticker-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .ticker-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--neutral-light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            transition: all 0.2s ease;
+        }
+
+        .ticker-chip:hover {
+            border-color: var(--secondary);
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .ticker-chip .remove-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: transparent;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--secondary);
+            transition: all 0.2s ease;
+            padding: 0;
+        }
+
+        .ticker-chip .remove-btn:hover {
+            background: var(--negative-light);
+            color: var(--negative);
+        }
+
+        .ticker-chip .remove-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .add-ticker-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: var(--accent-light);
+            border: 1px dashed var(--accent);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .add-ticker-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-style: solid;
+        }
+
+        .add-ticker-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .add-ticker-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Add Ticker Modal/Popover */
+        .add-ticker-popover {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .add-ticker-popover.active {
+            display: block;
+            animation: popIn 0.2s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .popover-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+        }
+
+        .popover-overlay.active {
+            display: block;
+        }
+
+        .popover-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .popover-subtitle {
+            font-size: 14px;
+            color: var(--secondary);
             margin-bottom: 24px;
         }
 
-        .input-group {
-            position: relative;
+        .popover-input-group {
+            display: flex;
+            gap: 12px;
         }
 
-        .input-label {
-            font-family: 'Inter', sans-serif;
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--secondary);
-            margin-bottom: 6px;
-            display: block;
-            letter-spacing: -0.01em;
-            min-height: 30px;
-        }
-
-        input[type="text"] {
+        .popover-input {
+            flex: 1;
             padding: 14px 18px;
             font-size: 15px;
             font-family: 'Inter', sans-serif;
             border: 1.5px solid var(--border);
             border-radius: 10px;
+            background: var(--background);
+            color: var(--primary);
+            text-transform: uppercase;
             transition: all 0.2s ease;
-            background: var(--background);
-            color: var(--primary);
-            text-align: left;
-            width: 100%;
         }
 
-        input[type="text"]::placeholder {
+        .popover-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--card-bg);
+        }
+
+        .popover-input::placeholder {
+            text-transform: none;
             color: var(--secondary);
-            text-align: left;
         }
 
-        input[type="text"]:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: var(--card-bg);
-            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
-        }
-
-        input[type="number"] {
-            width: 120px;
-            padding: 14px 18px;
-            font-size: 15px;
-            font-family: 'Inter', sans-serif;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            background: var(--background);
-            color: var(--primary);
-            text-align: left;
-        }
-
-        input[type="number"]:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: var(--card-bg);
-        }
-
-        button {
-            padding: 14px 32px;
+        .popover-add-btn {
+            padding: 14px 24px;
             font-size: 15px;
             font-weight: 600;
             font-family: 'Inter', sans-serif;
@@ -213,380 +358,65 @@
             border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s ease;
-            letter-spacing: -0.01em;
-            align-self: end;
-            position: relative;
-            overflow: hidden;
+            white-space: nowrap;
         }
 
-        button:hover {
+        .popover-add-btn:hover {
             background: #0f172a;
-            box-shadow: 0 4px 12px var(--shadow-hover);
-            transform: translateY(-1px);
         }
 
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 48px 0;
-            display: none;
-        }
-
-        .progress-container {
-            width: 100%;
-            max-width: 400px;
-            margin: 0 auto 24px;
-            background: var(--border);
-            border-radius: 12px;
-            height: 8px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary) 0%, #3b82f6 50%, var(--primary) 100%);
-            background-size: 200% 100%;
-            border-radius: 12px;
-            width: 0%;
-            transition: width 0.3s ease;
-            animation: shimmer 2s linear infinite;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .loading-text {
-            color: var(--secondary);
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .results {
-            display: none;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-bottom: 40px;
-        }
-
-        .chart-section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 1px 3px var(--shadow);
-            border: 1px solid var(--border);
-            margin-bottom: 40px;
+        .popover-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .pie-chart {
-            width: 280px;
-            height: 280px;
-            position: relative;
-        }
-
-        .pie-chart svg {
-            transform: rotate(-90deg);
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
-        }
-
-        .chart-legend {
-            margin-left: 60px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 16px;
-            font-size: 15px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 6px;
-            margin-right: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .legend-label {
-            font-weight: 600;
-            color: var(--primary);
-            margin-right: 8px;
-        }
-
-        .legend-value {
-            color: var(--secondary);
-            font-weight: 500;
-        }
-
-        .metric-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 32px;
-            box-shadow: 0 1px 3px var(--shadow);
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .metric-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-        }
-
-        .metric-card:hover {
-            box-shadow: 0 4px 12px var(--shadow-hover);
-            transform: translateY(-2px);
-        }
-
-        .metric-card.positive::before { background: var(--positive); }
-        .metric-card.negative::before { background: var(--negative); }
-        .metric-card.neutral::before { background: var(--neutral); }
-
-        .metric-label {
-            font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--secondary);
-            margin-bottom: 12px;
-        }
-
-        .metric-value {
-            font-size: 3rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 8px;
-            letter-spacing: -0.03em;
-        }
-
-        .metric-card.positive .metric-value { color: var(--positive); }
-        .metric-card.negative .metric-value { color: var(--negative); }
-        .metric-card.neutral .metric-value { color: var(--neutral); }
-
-        .metric-percentage {
-            font-size: 1rem;
-            font-weight: 500;
-            color: var(--secondary);
-        }
-
-        .articles-container {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 40px;
-            box-shadow: 0 1px 3px var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .articles-header {
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .articles-header h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -0.02em;
-        }
-
-        .article {
-            padding: 24px 0;
-            border-bottom: 1px solid var(--border);
-            transition: background 0.2s ease;
-        }
-
-        .article:last-child { border-bottom: none; }
-
-        .article:hover {
-            background: var(--background);
-            margin: 0 -24px;
-            padding: 24px;
+            background: var(--neutral-light);
+            border: none;
             border-radius: 8px;
-        }
-
-        .article-title { margin-bottom: 12px; }
-
-        .article-title a {
-            font-size: 1.0625rem;
-            font-weight: 600;
-            color: var(--primary);
-            text-decoration: none;
-            line-height: 1.5;
-            letter-spacing: -0.01em;
-            transition: color 0.2s ease;
-        }
-
-        .article-title a:hover { color: #0f172a; }
-
-        .article-metadata {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-        }
-
-        .badge.positive { background: var(--positive-light); color: var(--positive-dark); }
-        .badge.negative { background: var(--negative-light); color: var(--negative-dark); }
-        .badge.neutral { background: var(--neutral-light); color: var(--neutral-dark); }
-
-        .article-detail {
-            font-size: 14px;
+            cursor: pointer;
             color: var(--secondary);
-            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
-        .error-message {
+        .popover-close:hover {
+            background: var(--neutral);
+            color: white;
+        }
+
+        .popover-close svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .popover-error {
+            margin-top: 12px;
+            padding: 10px 14px;
             background: var(--negative-light);
             color: var(--negative-dark);
-            padding: 16px 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            display: none;
-            font-size: 14px;
-            font-weight: 500;
-            border: 1px solid #fecaca;
-        }
-
-        /* ==================== SOCIAL SCREENING STYLES ==================== */
-        
-        .section-divider {
-            margin: 80px 0 60px;
-            text-align: center;
-            position: relative;
-        }
-
-        .section-divider::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .section-divider span {
-            background: var(--background);
-            padding: 0 24px;
-            position: relative;
-            color: var(--secondary);
+            border-radius: 8px;
             font-size: 13px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .social-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .social-header h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 12px;
-            letter-spacing: -0.02em;
-        }
-
-        .social-header p {
-            font-size: 1rem;
-            color: var(--secondary);
-            max-width: 700px;
-            margin: 0 auto;
-        }
-
-        .social-controls {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 32px;
-        }
-
-        .refresh-btn {
-            padding: 12px 24px;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .refresh-btn svg {
-            width: 16px;
-            height: 16px;
-            transition: transform 0.3s ease;
-        }
-
-        .refresh-btn:hover svg { transform: rotate(180deg); }
-        .refresh-btn.loading svg { animation: spin 1s linear infinite; }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .social-loading {
-            text-align: center;
-            padding: 48px 0;
             display: none;
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
+        .popover-error.active {
+            display: block;
+        }
+
+        /* Controls Row */
+        .screening-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
         }
 
         .sources-status {
             display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
+            gap: 20px;
         }
 
         .source-indicator {
@@ -602,11 +432,82 @@
             height: 8px;
             border-radius: 50%;
             background: var(--neutral);
+            transition: background 0.3s ease;
         }
 
-        .source-dot.active { background: var(--positive); }
-        .source-dot.inactive { background: var(--negative); }
+        .source-dot.active {
+            background: var(--positive);
+        }
 
+        .source-dot.inactive {
+            background: var(--negative);
+        }
+
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .refresh-btn svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .refresh-btn.loading svg {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Loading State */
+        .screening-loading {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .loading-text {
+            color: var(--secondary);
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Table */
         .screening-table-container {
             background: var(--card-bg);
             border-radius: 16px;
@@ -620,7 +521,9 @@
             border-collapse: collapse;
         }
 
-        .screening-table thead { background: var(--neutral-light); }
+        .screening-table thead {
+            background: var(--neutral-light);
+        }
 
         .screening-table th {
             padding: 16px 20px;
@@ -634,20 +537,37 @@
             white-space: nowrap;
         }
 
-        .screening-table th.right { text-align: right; }
-        .screening-table th.center { text-align: center; }
+        .screening-table th.right {
+            text-align: right;
+        }
 
-        .screening-table tbody tr { transition: background 0.2s ease; }
-        .screening-table tbody tr:hover { background: var(--neutral-light); }
+        .screening-table th.center {
+            text-align: center;
+        }
+
+        .screening-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .screening-table tbody tr:hover {
+            background: var(--neutral-light);
+        }
 
         .screening-table td {
-            padding: 16px 20px;
+            padding: 18px 20px;
             font-size: 14px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
         }
 
-        .screening-table tbody tr:last-child td { border-bottom: none; }
+        .screening-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .stock-info {
+            display: flex;
+            flex-direction: column;
+        }
 
         .stock-symbol {
             font-weight: 700;
@@ -661,22 +581,49 @@
             margin-top: 2px;
         }
 
-        .price-cell { text-align: right; }
-        .price-value { font-weight: 600; color: var(--primary); }
+        .price-cell {
+            text-align: right;
+        }
 
-        .change-cell { text-align: right; }
+        .price-value {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 15px;
+        }
+
+        .change-cell {
+            text-align: right;
+        }
 
         .change-value {
             font-weight: 600;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: flex-end;
             gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
         }
 
-        .change-value.positive { color: var(--positive); }
-        .change-value.negative { color: var(--negative); }
-        .change-value svg { width: 14px; height: 14px; }
+        .change-value.positive {
+            color: var(--positive-dark);
+            background: var(--positive-light);
+        }
+
+        .change-value.negative {
+            color: var(--negative-dark);
+            background: var(--negative-light);
+        }
+
+        .change-value.neutral {
+            color: var(--neutral-dark);
+            background: var(--neutral-light);
+        }
+
+        .change-value svg {
+            width: 12px;
+            height: 12px;
+        }
 
         .volume-cell {
             text-align: right;
@@ -684,47 +631,85 @@
             font-weight: 500;
         }
 
-        .sentiment-cell { text-align: center; }
-
-        .trend-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            font-size: 13px;
-            font-weight: 500;
+        .sentiment-cell {
+            text-align: center;
         }
 
-        .trend-indicator.up { color: var(--positive); }
-        .trend-indicator.down { color: var(--negative); }
-        .trend-indicator svg { width: 14px; height: 14px; }
+        .sentdex-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .sentdex-value.positive {
+            color: var(--positive);
+        }
+
+        .sentdex-value.negative {
+            color: var(--negative);
+        }
+
+        .sentdex-value.neutral {
+            color: var(--neutral);
+        }
+
+        .sentdex-value svg {
+            width: 14px;
+            height: 14px;
+        }
 
         .news-score {
             font-weight: 600;
-            color: var(--primary);
+            font-size: 14px;
+        }
+
+        .news-score.positive {
+            color: var(--positive);
+        }
+
+        .news-score.negative {
+            color: var(--negative);
+        }
+
+        .news-score.neutral {
+            color: var(--neutral);
         }
 
         .no-data {
             color: var(--secondary);
             font-style: italic;
+            font-size: 13px;
         }
 
-        .composite-cell { text-align: center; }
+        .composite-cell {
+            text-align: center;
+        }
 
         .composite-score {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             min-width: 56px;
-            padding: 8px 14px;
+            padding: 10px 16px;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 15px;
+            color: white;
         }
 
-        .composite-score.positive { background: var(--positive); color: white; }
-        .composite-score.negative { background: var(--negative); color: white; }
-        .composite-score.neutral { background: var(--neutral); color: white; }
+        .composite-score.positive {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .composite-score.negative {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .composite-score.neutral {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
 
         .table-footer {
             padding: 16px 20px;
@@ -736,27 +721,39 @@
             align-items: center;
         }
 
-        .table-footer-timestamp { font-weight: 500; }
-
+        /* No Data State */
         .no-screening-data {
-            padding: 60px 20px;
+            padding: 80px 20px;
             text-align: center;
             color: var(--secondary);
             display: none;
         }
 
         .no-screening-data svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.4;
         }
 
         .no-screening-data p {
-            font-size: 15px;
-            margin-bottom: 20px;
+            font-size: 16px;
+            margin-bottom: 24px;
         }
 
+        .no-screening-data button {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Explainer */
         .explainer-section {
             background: var(--card-bg);
             border-radius: 16px;
@@ -784,8 +781,6 @@
 
         .explainer-toggle:hover {
             background: var(--neutral-light);
-            transform: none;
-            box-shadow: none;
         }
 
         .explainer-toggle svg {
@@ -795,7 +790,9 @@
             color: var(--secondary);
         }
 
-        .explainer-toggle.active svg { transform: rotate(180deg); }
+        .explainer-toggle.active svg {
+            transform: rotate(180deg);
+        }
 
         .explainer-content {
             max-height: 0;
@@ -803,22 +800,35 @@
             transition: max-height 0.3s ease;
         }
 
-        .explainer-content.active { max-height: 800px; }
+        .explainer-content.active {
+            max-height: 1000px;
+        }
 
-        .explainer-inner { padding: 0 24px 24px; }
+        .explainer-inner {
+            padding: 0 24px 24px;
+        }
 
-        .explainer-item { margin-bottom: 20px; }
-        .explainer-item:last-child { margin-bottom: 0; }
+        .explainer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .explainer-item {
+            padding: 20px;
+            background: var(--neutral-light);
+            border-radius: 12px;
+        }
 
         .explainer-item h4 {
             font-size: 14px;
             font-weight: 600;
             color: var(--primary);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .explainer-item p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--secondary);
             line-height: 1.6;
         }
@@ -831,41 +841,479 @@
             font-size: 13px;
             color: var(--neutral-dark);
             font-style: italic;
+            grid-column: 1 / -1;
+        }
+
+        /* ==================== SECTION DIVIDER ==================== */
+
+        .section-divider {
+            margin: 80px 0 60px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .section-divider span {
+            background: var(--background);
+            padding: 0 24px;
+            position: relative;
+            color: var(--secondary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* ==================== NEWS SENTIMENT SECTION ==================== */
+
+        .news-section header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .news-section h2 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .news-section .subtitle {
+            font-size: 1rem;
+            color: var(--secondary);
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .input-wrapper {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 12px;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            padding: 14px 18px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+            width: 100%;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+        }
+
+        input[type="number"] {
+            width: 100px;
+        }
+
+        .analyze-btn {
+            padding: 14px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            align-self: end;
+        }
+
+        .analyze-btn:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .news-loading {
+            text-align: center;
+            padding: 48px 0;
+            display: none;
+        }
+
+        .progress-container {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 24px;
+            background: var(--border);
+            border-radius: 12px;
+            height: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 50%, var(--primary) 100%);
+            background-size: 200% 100%;
+            border-radius: 12px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: shimmer 2s linear infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .error-message {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #fecaca;
+        }
+
+        .news-results {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Chart Section */
+        .chart-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 60px;
+        }
+
+        .pie-chart {
+            width: 240px;
+            height: 240px;
+        }
+
+        .pie-chart svg {
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            margin-right: 12px;
+        }
+
+        .legend-label {
+            font-weight: 600;
+            color: var(--primary);
+            margin-right: 8px;
+        }
+
+        .legend-value {
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        /* Summary Cards */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .metric-card.positive::before { background: var(--positive); }
+        .metric-card.negative::before { background: var(--negative); }
+        .metric-card.neutral::before { background: var(--neutral); }
+
+        .metric-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 12px;
+        }
+
+        .metric-value {
+            font-size: 2.75rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .metric-card.positive .metric-value { color: var(--positive); }
+        .metric-card.negative .metric-value { color: var(--negative); }
+        .metric-card.neutral .metric-value { color: var(--neutral); }
+
+        .metric-percentage {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        /* Articles */
+        .articles-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .articles-header {
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .articles-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .article {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .article:last-child {
+            border-bottom: none;
+        }
+
+        .article:hover {
+            background: var(--background);
+            margin: 0 -16px;
+            padding: 20px 16px;
+            border-radius: 8px;
+        }
+
+        .article-title {
+            margin-bottom: 10px;
+        }
+
+        .article-title a {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+            line-height: 1.5;
+            transition: color 0.2s ease;
+        }
+
+        .article-title a:hover {
+            color: var(--accent);
+        }
+
+        .article-metadata {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.positive { background: var(--positive-light); color: var(--positive-dark); }
+        .badge.negative { background: var(--negative-light); color: var(--negative-dark); }
+        .badge.neutral { background: var(--neutral-light); color: var(--neutral-dark); }
+
+        .article-detail {
+            font-size: 13px;
+            color: var(--secondary);
         }
 
         /* ==================== RESPONSIVE ==================== */
 
         @media (max-width: 1100px) {
-            .screening-table-container { overflow-x: auto; }
-            .screening-table { min-width: 700px; }
+            .screening-table-container {
+                overflow-x: auto;
+            }
+
+            .screening-table {
+                min-width: 700px;
+            }
+
+            .explainer-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
-        @media (max-width: 968px) {
-            .summary-grid { grid-template-columns: 1fr; }
-            .input-wrapper { grid-template-columns: 1fr; }
-            input[type="number"] { width: 100%; }
-            h1 { font-size: 2.25rem; }
-            .author-credit { position: static; text-align: center; margin-bottom: 20px; }
-            .chart-section { flex-direction: column; }
-            .chart-legend { margin-left: 0; margin-top: 32px; }
-            .navbar { padding: 0 20px; }
-            .nav-link { padding: 8px 12px; font-size: 13px; }
-            .social-header h2 { font-size: 1.75rem; }
+        @media (max-width: 768px) {
+            .screening-header h1 {
+                font-size: 2rem;
+            }
+
+            .ticker-selection {
+                padding: 24px;
+            }
+
+            .screening-controls {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .sources-status {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .chart-section {
+                flex-direction: column;
+                gap: 32px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-wrapper {
+                grid-template-columns: 1fr;
+            }
+
+            input[type="number"] {
+                width: 100%;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+
+            .nav-link {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
         }
 
-        @media (max-width: 640px) {
-            body { padding-top: 64px; }
-            .container { padding: 24px 16px; }
-            .search-section, .articles-container { padding: 24px; }
-            h1 { font-size: 1.875rem; }
-            .subtitle { font-size: 1rem; }
-            .metric-value { font-size: 2.5rem; }
-            .pie-chart { width: 220px; height: 220px; }
-            .nav-links { gap: 4px; }
-            .nav-link { padding: 6px 10px; font-size: 12px; }
-            .social-header h2 { font-size: 1.5rem; }
-            .sources-status { flex-direction: column; align-items: center; gap: 8px; }
-            .table-footer { flex-direction: column; gap: 8px; text-align: center; }
+        @media (max-width: 480px) {
+            body {
+                padding-top: 64px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .screening-header h1 {
+                font-size: 1.75rem;
+            }
+
+            .nav-links {
+                gap: 4px;
+            }
+
+            .nav-link {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .ticker-chip {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .table-footer {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -882,474 +1330,470 @@
     <div class="container">
         <div class="author-credit">Noah Cowley</div>
 
-        <header>
-            <h1>Sentiment Analyzer</h1>
-            <p class="subtitle">Real-time financial sentiment analyzer using bidirectional encoder representations from transformers to evaluate market news scraped from Google News. Like any other natural language processing model, Finsent is NOT infallible and should be used with caution.</p>
-        </header>
-
-        <div class="search-section">
-            <div class="input-wrapper">
-                <div class="input-group">
-                    <label class="input-label">Enter a company, cryptocurrency, or commodity, and enter a query amount no more than 7. One query translates to roughly 5 articles after duplication removal.</label>
-                    <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="gold">
-                </div>
-                <div class="input-group">
-                    <label class="input-label"></label>
-                    <input type="number" id="numArticles" min="1" max="20" value="5" placeholder="Count">
-                </div>
-                <button onclick="analyzeSentiment()" id="analyzeBtn">Analyze</button>
-            </div>
-
-            <div class="loading" id="loading">
-                <div class="progress-container">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-                <p class="loading-text" id="loadingText">Analyzing market sentiment...</p>
-            </div>
-
-            <div class="error-message" id="error"></div>
-        </div>
-
-        <div class="results" id="results">
-            <div class="chart-section">
-                <div class="pie-chart">
-                    <svg viewBox="0 0 200 200" id="pieChartSvg"></svg>
-                </div>
-                <div class="chart-legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--positive);"></div>
-                        <span class="legend-label">Positive</span>
-                        <span class="legend-value" id="legendPositive">0 (0%)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--negative);"></div>
-                        <span class="legend-label">Negative</span>
-                        <span class="legend-value" id="legendNegative">0 (0%)</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: var(--neutral);"></div>
-                        <span class="legend-label">Neutral</span>
-                        <span class="legend-value" id="legendNeutral">0 (0%)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="summary-grid">
-                <div class="metric-card positive">
-                    <div class="metric-label">Positive</div>
-                    <div class="metric-value" id="positiveCount">0</div>
-                    <div class="metric-percentage" id="positivePercent">0%</div>
-                </div>
-                <div class="metric-card negative">
-                    <div class="metric-label">Negative</div>
-                    <div class="metric-value" id="negativeCount">0</div>
-                    <div class="metric-percentage" id="negativePercent">0%</div>
-                </div>
-                <div class="metric-card neutral">
-                    <div class="metric-label">Neutral</div>
-                    <div class="metric-value" id="neutralCount">0</div>
-                    <div class="metric-percentage" id="neutralPercent">0%</div>
-                </div>
-            </div>
-
-            <div class="articles-container">
-                <div class="articles-header">
-                    <h2 id="articlesTitle">Recent Articles</h2>
-                </div>
-                <div id="articlesList"></div>
-            </div>
-        </div>
-
         <!-- ==================== SOCIAL SCREENING SECTION ==================== -->
-        
+
+        <section class="screening-section">
+            <div class="screening-header">
+                <h1>Social Screener</h1>
+                <p>Track your watchlist with real-time price data, Sentdex 30-day sentiment scores, and news sentiment analysis. Customize your tickers below.</p>
+            </div>
+
+            <!-- Ticker Selection -->
+            <div class="ticker-selection">
+                <div class="ticker-selection-header">
+                    <span class="ticker-selection-title">Your Watchlist</span>
+                    <span class="ticker-count"><span id="tickerCountNum">5</span> / 10 tickers</span>
+                </div>
+                <div class="ticker-chips" id="tickerChips">
+                    <!-- Chips will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="screening-controls">
+                <div class="sources-status">
+                    <div class="source-indicator">
+                        <div class="source-dot" id="marketDataStatus"></div>
+                        <span>Market Data</span>
+                    </div>
+                    <div class="source-indicator">
+                        <div class="source-dot" id="sentdexStatus"></div>
+                        <span>Sentdex (30d)</span>
+                    </div>
+                    <div class="source-indicator">
+                        <div class="source-dot" id="newsStatus"></div>
+                        <span>News Sentiment</span>
+                    </div>
+                </div>
+                <button class="refresh-btn" onclick="loadScreeningData()" id="refreshBtn">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh Data
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div class="screening-loading" id="screeningLoading">
+                <div class="spinner"></div>
+                <p class="loading-text">Fetching market data and sentiment scores...</p>
+            </div>
+
+            <!-- Results Table -->
+            <div id="screeningResults">
+                <div class="screening-table-container" id="tableContainer">
+                    <table class="screening-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th class="right">Price</th>
+                                <th class="right">Change</th>
+                                <th class="right">Volume</th>
+                                <th class="center">Sentdex</th>
+                                <th class="center">News</th>
+                                <th class="center">Composite</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screeningTableBody">
+                        </tbody>
+                    </table>
+                    <div class="table-footer">
+                        <span id="stockCount">0 stocks</span>
+                        <span id="dataTimestamp">Last updated: --</span>
+                    </div>
+                </div>
+
+                <div class="no-screening-data" id="noScreeningData">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Unable to fetch screening data. Please try again.</p>
+                    <button onclick="loadScreeningData()">Retry</button>
+                </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="explainer-section">
+                <button class="explainer-toggle" id="screeningExplainerToggle" onclick="toggleScreeningExplainer()">
+                    <span>How does the social screener work?</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+                <div class="explainer-content" id="screeningExplainerContent">
+                    <div class="explainer-inner">
+                        <div class="explainer-grid">
+                            <div class="explainer-item">
+                                <h4>Market Data</h4>
+                                <p>Real-time stock prices, daily change percentages, and trading volume from Yahoo Finance.</p>
+                            </div>
+                            <div class="explainer-item">
+                                <h4>Sentdex Score</h4>
+                                <p>30-day aggregated sentiment from financial news. Ranges from -6 (very bearish) to +6 (very bullish). Arrow shows trend direction.</p>
+                            </div>
+                            <div class="explainer-item">
+                                <h4>News Sentiment</h4>
+                                <p>Real-time sentiment from recent Google News headlines using VADER analysis. Score 0-100 where 50 is neutral.</p>
+                            </div>
+                            <div class="explainer-item">
+                                <h4>Composite Score</h4>
+                                <p>Weighted average: Sentdex (1.5x weight for 30-day reliability) + News (1x). Green = bullish (60+), Red = bearish (40-).</p>
+                            </div>
+                            <div class="explainer-note">
+                                Data is cached for 5 minutes. Sentiment analysis should supplement fundamental research, not replace it. Past sentiment doesn't guarantee future performance.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== SECTION DIVIDER ==================== -->
+
         <div class="section-divider">
-            <span>Social Screening</span>
+            <span>Deep News Analysis</span>
         </div>
 
-        <div class="social-header">
-            <h2>Market Social Screener</h2>
-            <p>Track popular stocks with aggregated sentiment data from Sentdex and real-time news analysis. Combines price action with sentiment signals to identify market trends.</p>
-        </div>
+        <!-- ==================== NEWS SENTIMENT SECTION ==================== -->
 
-        <div class="social-controls">
-            <button class="refresh-btn" onclick="loadSocialScreening()" id="refreshBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh Data
-            </button>
-        </div>
+        <section class="news-section">
+            <header>
+                <h2>News Sentiment Analyzer</h2>
+                <p class="subtitle">Deep-dive into news sentiment for any company, cryptocurrency, or commodity. Analyzes article content using FinBERT transformer models.</p>
+            </header>
 
-        <div class="sources-status" id="sourcesStatus">
-            <div class="source-indicator">
-                <div class="source-dot" id="yahooStatus"></div>
-                <span>Market Data</span>
-            </div>
-            <div class="source-indicator">
-                <div class="source-dot" id="sentdexStatus"></div>
-                <span>Sentdex</span>
-            </div>
-            <div class="source-indicator">
-                <div class="source-dot" id="newsStatus"></div>
-                <span>News Sentiment</span>
-            </div>
-        </div>
-
-        <div class="social-loading" id="socialLoading">
-            <div class="spinner"></div>
-            <p class="loading-text">Fetching market data...</p>
-        </div>
-
-        <div id="socialResults">
-            <div class="screening-table-container" id="tableContainer">
-                <table class="screening-table">
-                    <thead>
-                        <tr>
-                            <th>Symbol</th>
-                            <th class="right">Price</th>
-                            <th class="right">Change</th>
-                            <th class="right">Volume</th>
-                            <th class="center">Sentdex</th>
-                            <th class="center">News</th>
-                            <th class="center">Composite</th>
-                        </tr>
-                    </thead>
-                    <tbody id="screeningTableBody">
-                    </tbody>
-                </table>
-                <div class="table-footer">
-                    <span id="stockCount">0 stocks</span>
-                    <span class="table-footer-timestamp" id="dataTimestamp">Last updated: --</span>
+            <div class="search-section">
+                <div class="input-wrapper">
+                    <div class="input-group">
+                        <label class="input-label">Enter a ticker, company name, or asset</label>
+                        <input type="text" id="newsTickerInput" placeholder="e.g., TSLA, Bitcoin, Gold">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Articles per query</label>
+                        <input type="number" id="numArticles" min="1" max="15" value="5">
+                    </div>
+                    <button class="analyze-btn" onclick="analyzeNewsSentiment()" id="analyzeBtn">Analyze</button>
                 </div>
+
+                <div class="news-loading" id="newsLoading">
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <p class="loading-text" id="newsLoadingText">Analyzing sentiment...</p>
+                </div>
+
+                <div class="error-message" id="newsError"></div>
             </div>
 
-            <div class="no-screening-data" id="noScreeningData">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p>Unable to fetch screening data. Please try again.</p>
-                <button onclick="loadSocialScreening()">Retry</button>
-            </div>
-        </div>
-
-        <div class="explainer-section">
-            <button class="explainer-toggle" id="socialExplainerToggle" onclick="toggleSocialExplainer()">
-                <span>How does social screening work?</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-            <div class="explainer-content" id="socialExplainerContent">
-                <div class="explainer-inner">
-                    <div class="explainer-item">
-                        <h4>Market Data</h4>
-                        <p>Real-time price, change, and volume data for popular stocks. High volume often indicates significant market interest or news events.</p>
+            <div class="news-results" id="newsResults">
+                <div class="chart-section">
+                    <div class="pie-chart">
+                        <svg viewBox="0 0 200 200" id="pieChartSvg"></svg>
                     </div>
-                    <div class="explainer-item">
-                        <h4>Sentdex (30-Day Sentiment)</h4>
-                        <p>Aggregated sentiment from news sources over 30 days. Scores range from -6 (very negative) to +6 (very positive). The arrow indicates trend direction.</p>
-                    </div>
-                    <div class="explainer-item">
-                        <h4>News Sentiment</h4>
-                        <p>Real-time sentiment analysis of recent Google News headlines using VADER. Scores are normalized to 0-100 scale where 50 is neutral.</p>
-                    </div>
-                    <div class="explainer-item">
-                        <h4>Composite Score</h4>
-                        <p>A weighted average of available sentiment sources normalized to 0-100. Scores above 60 are bullish (green), below 40 are bearish (red).</p>
-                    </div>
-                    <div class="explainer-note">
-                        Sentiment data should be used as one factor among many in investment research. Data is cached for 10 minutes to ensure fast loading.
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--positive);"></div>
+                            <span class="legend-label">Positive</span>
+                            <span class="legend-value" id="legendPositive">0 (0%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--negative);"></div>
+                            <span class="legend-label">Negative</span>
+                            <span class="legend-value" id="legendNegative">0 (0%)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: var(--neutral);"></div>
+                            <span class="legend-label">Neutral</span>
+                            <span class="legend-value" id="legendNeutral">0 (0%)</span>
+                        </div>
                     </div>
                 </div>
+
+                <div class="summary-grid">
+                    <div class="metric-card positive">
+                        <div class="metric-label">Positive</div>
+                        <div class="metric-value" id="positiveCount">0</div>
+                        <div class="metric-percentage" id="positivePercent">0%</div>
+                    </div>
+                    <div class="metric-card negative">
+                        <div class="metric-label">Negative</div>
+                        <div class="metric-value" id="negativeCount">0</div>
+                        <div class="metric-percentage" id="negativePercent">0%</div>
+                    </div>
+                    <div class="metric-card neutral">
+                        <div class="metric-label">Neutral</div>
+                        <div class="metric-value" id="neutralCount">0</div>
+                        <div class="metric-percentage" id="neutralPercent">0%</div>
+                    </div>
+                </div>
+
+                <div class="articles-container">
+                    <div class="articles-header">
+                        <h3 id="articlesTitle">Analyzed Articles</h3>
+                    </div>
+                    <div id="articlesList"></div>
+                </div>
             </div>
+        </section>
+    </div>
+
+    <!-- Add Ticker Modal -->
+    <div class="popover-overlay" id="popoverOverlay" onclick="closeAddTickerPopover()"></div>
+    <div class="add-ticker-popover" id="addTickerPopover">
+        <button class="popover-close" onclick="closeAddTickerPopover()">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <div class="popover-title">Add Ticker</div>
+        <div class="popover-subtitle">Enter a stock symbol to add to your watchlist</div>
+        <div class="popover-input-group">
+            <input type="text" class="popover-input" id="newTickerInput" placeholder="e.g., TSLA" maxlength="5" onkeypress="handleAddTickerKeypress(event)">
+            <button class="popover-add-btn" onclick="addTicker()">Add</button>
         </div>
+        <div class="popover-error" id="popoverError">Error message here</div>
     </div>
 
     <script>
-        let progressInterval;
+        // ==================== STATE ====================
 
-        // ==================== NEWS SENTIMENT FUNCTIONS ====================
+        const API_BASE = 'https://finsent-backend.onrender.com';
+        const DEFAULT_TICKERS = ['AAPL', 'AMZN', 'GOOGL', 'META', 'NVDA'];
+        const MAX_TICKERS = 10;
 
-        async function analyzeSentiment() {
-            const ticker = document.getElementById('tickerInput').value.trim();
-            const numArticles = parseInt(document.getElementById('numArticles').value) || 10;
+        let currentTickers = [...DEFAULT_TICKERS];
 
+        // ==================== TICKER MANAGEMENT ====================
+
+        function loadTickersFromStorage() {
+            const saved = localStorage.getItem('finsent_tickers');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        currentTickers = parsed.slice(0, MAX_TICKERS);
+                    }
+                } catch (e) {
+                    currentTickers = [...DEFAULT_TICKERS];
+                }
+            }
+        }
+
+        function saveTickersToStorage() {
+            localStorage.setItem('finsent_tickers', JSON.stringify(currentTickers));
+        }
+
+        function renderTickerChips() {
+            const container = document.getElementById('tickerChips');
+            container.innerHTML = '';
+
+            currentTickers.forEach(ticker => {
+                const chip = document.createElement('div');
+                chip.className = 'ticker-chip';
+                chip.innerHTML = `
+                    <span>${ticker}</span>
+                    <button class="remove-btn" onclick="removeTicker('${ticker}')" title="Remove ${ticker}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                container.appendChild(chip);
+            });
+
+            // Add button
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-ticker-btn' + (currentTickers.length >= MAX_TICKERS ? ' disabled' : '');
+            addBtn.onclick = openAddTickerPopover;
+            addBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Ticker
+            `;
+            container.appendChild(addBtn);
+
+            // Update count
+            document.getElementById('tickerCountNum').textContent = currentTickers.length;
+        }
+
+        function removeTicker(ticker) {
+            if (currentTickers.length <= 1) {
+                alert('You must have at least one ticker.');
+                return;
+            }
+            currentTickers = currentTickers.filter(t => t !== ticker);
+            saveTickersToStorage();
+            renderTickerChips();
+            loadScreeningData();
+        }
+
+        function openAddTickerPopover() {
+            if (currentTickers.length >= MAX_TICKERS) return;
+            document.getElementById('popoverOverlay').classList.add('active');
+            document.getElementById('addTickerPopover').classList.add('active');
+            document.getElementById('newTickerInput').value = '';
+            document.getElementById('popoverError').classList.remove('active');
+            document.getElementById('newTickerInput').focus();
+        }
+
+        function closeAddTickerPopover() {
+            document.getElementById('popoverOverlay').classList.remove('active');
+            document.getElementById('addTickerPopover').classList.remove('active');
+        }
+
+        function handleAddTickerKeypress(event) {
+            if (event.key === 'Enter') {
+                addTicker();
+            }
+        }
+
+        function addTicker() {
+            const input = document.getElementById('newTickerInput');
+            const errorEl = document.getElementById('popoverError');
+            const ticker = input.value.trim().toUpperCase();
+
+            // Validation
             if (!ticker) {
-                showError('Please enter a ticker or asset name');
+                errorEl.textContent = 'Please enter a ticker symbol.';
+                errorEl.classList.add('active');
                 return;
             }
 
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('analyzeBtn').disabled = true;
-
-            const progressBar = document.getElementById('progressBar');
-            const loadingText = document.getElementById('loadingText');
-            progressBar.style.width = '0%';
-
-            const stages = [
-                { percent: 20, text: 'Fetching news articles...' },
-                { percent: 40, text: 'Processing content...' },
-                { percent: 60, text: 'Analyzing sentiment...' },
-                { percent: 80, text: 'Compiling results...' },
-                { percent: 95, text: 'Almost done...' }
-            ];
-
-            let stageIndex = 0;
-            progressInterval = setInterval(() => {
-                if (stageIndex < stages.length) {
-                    progressBar.style.width = stages[stageIndex].percent + '%';
-                    loadingText.textContent = stages[stageIndex].text;
-                    stageIndex++;
-                }
-            }, 800);
-
-            try {
-                const response = await fetch('https://finsent-backend.onrender.com/api/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ticker: ticker, num_articles: numArticles })
-                });
-
-                if (!response.ok) throw new Error('Failed to analyze sentiment');
-
-                const data = await response.json();
-                progressBar.style.width = '100%';
-                loadingText.textContent = 'Complete!';
-
-                setTimeout(() => displayResults(data), 500);
-
-            } catch (error) {
-                showError('Unable to connect to the API. Please try again later.');
-                console.error(error);
-            } finally {
-                clearInterval(progressInterval);
-                setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('analyzeBtn').disabled = false;
-                }, 500);
+            if (!/^[A-Z]{1,5}$/.test(ticker)) {
+                errorEl.textContent = 'Invalid ticker format. Use 1-5 letters.';
+                errorEl.classList.add('active');
+                return;
             }
+
+            if (currentTickers.includes(ticker)) {
+                errorEl.textContent = `${ticker} is already in your watchlist.`;
+                errorEl.classList.add('active');
+                return;
+            }
+
+            if (currentTickers.length >= MAX_TICKERS) {
+                errorEl.textContent = `Maximum ${MAX_TICKERS} tickers allowed.`;
+                errorEl.classList.add('active');
+                return;
+            }
+
+            // Add ticker
+            currentTickers.push(ticker);
+            saveTickersToStorage();
+            closeAddTickerPopover();
+            renderTickerChips();
+            loadScreeningData();
         }
 
-        function createPieChart(positive, negative, neutral) {
-            const total = positive + negative + neutral;
-            if (total === 0) return;
+        // ==================== SOCIAL SCREENING ====================
 
-            const svg = document.getElementById('pieChartSvg');
-            svg.innerHTML = '';
-
-            const radius = 80, centerX = 100, centerY = 100, strokeWidth = 40;
-
-            const data = [
-                { value: positive, color: '#10b981' },
-                { value: negative, color: '#ef4444' },
-                { value: neutral, color: '#6b7280' }
-            ];
-
-            let currentAngle = 0;
-
-            data.forEach((item) => {
-                if (item.value === 0) return;
-
-                const percentage = item.value / total;
-                const angle = percentage * 360;
-                const largeArcFlag = angle > 180 ? 1 : 0;
-
-                const startX = centerX + radius * Math.cos((currentAngle * Math.PI) / 180);
-                const startY = centerY + radius * Math.sin((currentAngle * Math.PI) / 180);
-
-                const endAngle = currentAngle + angle;
-                const endX = centerX + radius * Math.cos((endAngle * Math.PI) / 180);
-                const endY = centerY + radius * Math.sin((endAngle * Math.PI) / 180);
-
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', `M ${centerX} ${centerY} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`);
-                path.setAttribute('fill', item.color);
-                path.setAttribute('stroke', '#ffffff');
-                path.setAttribute('stroke-width', '2');
-
-                svg.appendChild(path);
-                currentAngle = endAngle;
-            });
-
-            const centerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            centerCircle.setAttribute('cx', centerX);
-            centerCircle.setAttribute('cy', centerY);
-            centerCircle.setAttribute('r', radius - strokeWidth);
-            centerCircle.setAttribute('fill', '#ffffff');
-            svg.appendChild(centerCircle);
-        }
-
-        function animateValue(element, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                element.textContent = Math.floor(progress * (end - start) + start);
-                if (progress < 1) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        function displayResults(data) {
-            animateValue(document.getElementById('positiveCount'), 0, data.summary.Positive.count, 1000);
-            animateValue(document.getElementById('negativeCount'), 0, data.summary.Negative.count, 1000);
-            animateValue(document.getElementById('neutralCount'), 0, data.summary.Neutral.count, 1000);
-
-            document.getElementById('positivePercent').textContent = data.summary.Positive.percentage + '%';
-            document.getElementById('negativePercent').textContent = data.summary.Negative.percentage + '%';
-            document.getElementById('neutralPercent').textContent = data.summary.Neutral.percentage + '%';
-
-            document.getElementById('legendPositive').textContent = `${data.summary.Positive.count} (${data.summary.Positive.percentage}%)`;
-            document.getElementById('legendNegative').textContent = `${data.summary.Negative.count} (${data.summary.Negative.percentage}%)`;
-            document.getElementById('legendNeutral').textContent = `${data.summary.Neutral.count} (${data.summary.Neutral.percentage}%)`;
-
-            createPieChart(data.summary.Positive.count, data.summary.Negative.count, data.summary.Neutral.count);
-
-            document.getElementById('articlesTitle').textContent = `${data.ticker.toUpperCase()} Analysis — ${data.total_articles} Articles`;
-
-            const articlesList = document.getElementById('articlesList');
-            articlesList.innerHTML = '';
-
-            data.articles.forEach((article, index) => {
-                const articleDiv = document.createElement('div');
-                articleDiv.className = 'article';
-                articleDiv.style.opacity = '0';
-                articleDiv.style.transform = 'translateY(20px)';
-
-                const sentimentClass = article.sentiment.toLowerCase();
-                const publishDate = new Date(article.published).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-
-                articleDiv.innerHTML = `
-                    <div class="article-title">
-                        <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
-                    </div>
-                    <div class="article-metadata">
-                        <span class="badge ${sentimentClass}">${article.sentiment}</span>
-                        <span class="article-detail">Score: ${article.polarity}</span>
-                        <span class="article-detail">${publishDate}</span>
-                    </div>
-                `;
-
-                articlesList.appendChild(articleDiv);
-
-                setTimeout(() => {
-                    articleDiv.style.transition = 'all 0.4s ease';
-                    articleDiv.style.opacity = '1';
-                    articleDiv.style.transform = 'translateY(0)';
-                }, index * 50);
-            });
-
-            document.getElementById('results').style.display = 'block';
-            setTimeout(() => document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        // ==================== SOCIAL SCREENING FUNCTIONS ====================
-
-        async function loadSocialScreening() {
+        async function loadScreeningData() {
             const refreshBtn = document.getElementById('refreshBtn');
-            const socialLoading = document.getElementById('socialLoading');
-            const noDataDiv = document.getElementById('noScreeningData');
+            const loading = document.getElementById('screeningLoading');
             const tableContainer = document.getElementById('tableContainer');
-            const tableBody = document.getElementById('screeningTableBody');
+            const noData = document.getElementById('noScreeningData');
 
+            // Reset states
             refreshBtn.classList.add('loading');
             refreshBtn.disabled = true;
-            socialLoading.style.display = 'block';
-            noDataDiv.style.display = 'none';
-            tableContainer.style.display = 'block';
+            loading.style.display = 'block';
+            tableContainer.style.display = 'none';
+            noData.style.display = 'none';
 
             // Reset indicators
-            ['yahooStatus', 'sentdexStatus', 'newsStatus'].forEach(id => {
+            ['marketDataStatus', 'sentdexStatus', 'newsStatus'].forEach(id => {
                 document.getElementById(id).className = 'source-dot';
             });
 
             try {
-                const response = await fetch('https://finsent-backend.onrender.com/api/social-screening');
-                
-                if (!response.ok) throw new Error('Failed to fetch data');
+                const response = await fetch(`${API_BASE}/api/social-screening`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tickers: currentTickers })
+                });
+
+                if (!response.ok) throw new Error('API request failed');
 
                 const data = await response.json();
 
-                // Update indicators
-                document.getElementById('yahooStatus').className = 'source-dot ' + (data.sources.yahoo_finance ? 'active' : 'inactive');
+                // Update source indicators
+                document.getElementById('marketDataStatus').className = 'source-dot ' + (data.sources.market_data ? 'active' : 'inactive');
                 document.getElementById('sentdexStatus').className = 'source-dot ' + (data.sources.sentdex ? 'active' : 'inactive');
-                document.getElementById('newsStatus').className = 'source-dot ' + (data.sources.twitter_activity ? 'active' : 'inactive');
+                document.getElementById('newsStatus').className = 'source-dot ' + (data.sources.news_sentiment ? 'active' : 'inactive');
 
                 if (!data.stocks || data.stocks.length === 0) {
                     tableContainer.style.display = 'none';
-                    noDataDiv.style.display = 'block';
+                    noData.style.display = 'block';
                 } else {
-                    displaySocialScreeningData(data);
+                    displayScreeningResults(data);
+                    tableContainer.style.display = 'block';
                 }
 
             } catch (error) {
-                console.error('Social screening error:', error);
+                console.error('Screening error:', error);
                 tableContainer.style.display = 'none';
-                noDataDiv.style.display = 'block';
+                noData.style.display = 'block';
             } finally {
                 refreshBtn.classList.remove('loading');
                 refreshBtn.disabled = false;
-                socialLoading.style.display = 'none';
+                loading.style.display = 'none';
             }
         }
 
-        function displaySocialScreeningData(data) {
-            const tableBody = document.getElementById('screeningTableBody');
-            const tableContainer = document.getElementById('tableContainer');
-            const noDataDiv = document.getElementById('noScreeningData');
-            
-            tableBody.innerHTML = '';
-            tableContainer.style.display = 'block';
-            noDataDiv.style.display = 'none';
+        function displayScreeningResults(data) {
+            const tbody = document.getElementById('screeningTableBody');
+            tbody.innerHTML = '';
 
             data.stocks.forEach((stock, index) => {
                 const row = document.createElement('tr');
                 row.style.opacity = '0';
                 row.style.transform = 'translateY(10px)';
 
-                const changeClass = stock.pct_change >= 0 ? 'positive' : 'negative';
-                const changePrefix = stock.pct_change >= 0 ? '+' : '';
-                const changeArrow = stock.pct_change >= 0 
-                    ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>'
-                    : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>';
+                // Change styling
+                let changeClass = 'neutral';
+                let changePrefix = '';
+                let changeArrow = '';
+                if (stock.pct_change > 0) {
+                    changeClass = 'positive';
+                    changePrefix = '+';
+                    changeArrow = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>';
+                } else if (stock.pct_change < 0) {
+                    changeClass = 'negative';
+                    changeArrow = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>';
+                }
 
                 // Sentdex display
                 let sentdexHtml = '<span class="no-data">—</span>';
                 if (stock.sentdex_sentiment !== null) {
-                    const trendArrow = stock.sentdex_trend === 'up' 
+                    const sentdexClass = stock.sentdex_sentiment > 0 ? 'positive' : stock.sentdex_sentiment < 0 ? 'negative' : 'neutral';
+                    const trendArrow = stock.sentdex_trend === 'up'
                         ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" /></svg>'
                         : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>';
-                    sentdexHtml = `<span class="trend-indicator ${stock.sentdex_trend}">${stock.sentdex_sentiment.toFixed(1)} ${trendArrow}</span>`;
+                    sentdexHtml = `<span class="sentdex-value ${sentdexClass}">${stock.sentdex_sentiment > 0 ? '+' : ''}${stock.sentdex_sentiment.toFixed(1)} ${trendArrow}</span>`;
                 }
 
                 // News sentiment display
                 let newsHtml = '<span class="no-data">—</span>';
                 if (stock.news_sentiment !== null) {
-                    newsHtml = `<span class="news-score">${stock.news_sentiment.toFixed(0)}</span>`;
+                    const newsClass = stock.news_sentiment >= 60 ? 'positive' : stock.news_sentiment <= 40 ? 'negative' : 'neutral';
+                    newsHtml = `<span class="news-score ${newsClass}">${stock.news_sentiment.toFixed(0)}</span>`;
                 }
 
                 // Composite score
-                let compositeHtml = '<span class="no-data">—</span>';
-                if (stock.composite_score !== null) {
-                    compositeHtml = `<span class="composite-score ${stock.sentiment_status}">${stock.composite_score.toFixed(0)}</span>`;
-                }
+                const compositeClass = stock.sentiment_status || 'neutral';
+                const compositeHtml = `<span class="composite-score ${compositeClass}">${stock.composite_score.toFixed(0)}</span>`;
 
                 row.innerHTML = `
                     <td>
-                        <div class="stock-symbol">${stock.symbol}</div>
-                        <div class="stock-name">${stock.name || ''}</div>
+                        <div class="stock-info">
+                            <span class="stock-symbol">${stock.symbol}</span>
+                            <span class="stock-name">${stock.name || ''}</span>
+                        </div>
                     </td>
                     <td class="price-cell"><span class="price-value">$${stock.price.toFixed(2)}</span></td>
                     <td class="change-cell">
-                        <span class="change-value ${changeClass}">${changeArrow} ${changePrefix}${stock.pct_change.toFixed(2)}%</span>
+                        <span class="change-value ${changeClass}">${changeArrow}${changePrefix}${stock.pct_change.toFixed(2)}%</span>
                     </td>
                     <td class="volume-cell">${formatVolume(stock.volume)}</td>
                     <td class="sentiment-cell">${sentdexHtml}</td>
@@ -1357,13 +1801,14 @@
                     <td class="composite-cell">${compositeHtml}</td>
                 `;
 
-                tableBody.appendChild(row);
+                tbody.appendChild(row);
 
+                // Animate in
                 setTimeout(() => {
                     row.style.transition = 'all 0.3s ease';
                     row.style.opacity = '1';
                     row.style.transform = 'translateY(0)';
-                }, index * 30);
+                }, index * 50);
             });
 
             document.getElementById('stockCount').textContent = `${data.stocks.length} stocks`;
@@ -1371,25 +1816,233 @@
         }
 
         function formatVolume(volume) {
+            if (!volume) return '—';
             if (volume >= 1e9) return (volume / 1e9).toFixed(2) + 'B';
             if (volume >= 1e6) return (volume / 1e6).toFixed(2) + 'M';
             if (volume >= 1e3) return (volume / 1e3).toFixed(1) + 'K';
             return volume.toLocaleString();
         }
 
-        function toggleSocialExplainer() {
-            document.getElementById('socialExplainerToggle').classList.toggle('active');
-            document.getElementById('socialExplainerContent').classList.toggle('active');
+        function toggleScreeningExplainer() {
+            document.getElementById('screeningExplainerToggle').classList.toggle('active');
+            document.getElementById('screeningExplainerContent').classList.toggle('active');
         }
 
-        // ==================== EVENT LISTENERS ====================
+        // ==================== NEWS SENTIMENT ====================
 
-        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') analyzeSentiment();
+        let progressInterval;
+
+        async function analyzeNewsSentiment() {
+            const ticker = document.getElementById('newsTickerInput').value.trim();
+            const numArticles = parseInt(document.getElementById('numArticles').value) || 5;
+
+            if (!ticker) {
+                showNewsError('Please enter a ticker or asset name');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('newsLoading').style.display = 'block';
+            document.getElementById('newsResults').style.display = 'none';
+            document.getElementById('newsError').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = '0%';
+
+            const stages = [
+                { percent: 15, text: 'Fetching news articles...' },
+                { percent: 35, text: 'Scraping article content...' },
+                { percent: 55, text: 'Analyzing with FinBERT...' },
+                { percent: 75, text: 'Processing results...' },
+                { percent: 90, text: 'Finalizing...' }
+            ];
+
+            let stageIndex = 0;
+            progressInterval = setInterval(() => {
+                if (stageIndex < stages.length) {
+                    progressBar.style.width = stages[stageIndex].percent + '%';
+                    document.getElementById('newsLoadingText').textContent = stages[stageIndex].text;
+                    stageIndex++;
+                }
+            }, 1000);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker: ticker, num_articles: numArticles })
+                });
+
+                if (!response.ok) throw new Error('Analysis failed');
+
+                const data = await response.json();
+
+                progressBar.style.width = '100%';
+                document.getElementById('newsLoadingText').textContent = 'Complete!';
+
+                setTimeout(() => displayNewsResults(data), 400);
+
+            } catch (error) {
+                showNewsError('Unable to analyze sentiment. Please try again.');
+                console.error(error);
+            } finally {
+                clearInterval(progressInterval);
+                setTimeout(() => {
+                    document.getElementById('newsLoading').style.display = 'none';
+                    document.getElementById('analyzeBtn').disabled = false;
+                }, 400);
+            }
+        }
+
+        function displayNewsResults(data) {
+            // Update counts with animation
+            animateValue(document.getElementById('positiveCount'), 0, data.summary.Positive.count, 800);
+            animateValue(document.getElementById('negativeCount'), 0, data.summary.Negative.count, 800);
+            animateValue(document.getElementById('neutralCount'), 0, data.summary.Neutral.count, 800);
+
+            // Update percentages
+            document.getElementById('positivePercent').textContent = data.summary.Positive.percentage + '%';
+            document.getElementById('negativePercent').textContent = data.summary.Negative.percentage + '%';
+            document.getElementById('neutralPercent').textContent = data.summary.Neutral.percentage + '%';
+
+            // Update legend
+            document.getElementById('legendPositive').textContent = `${data.summary.Positive.count} (${data.summary.Positive.percentage}%)`;
+            document.getElementById('legendNegative').textContent = `${data.summary.Negative.count} (${data.summary.Negative.percentage}%)`;
+            document.getElementById('legendNeutral').textContent = `${data.summary.Neutral.count} (${data.summary.Neutral.percentage}%)`;
+
+            // Draw pie chart
+            createPieChart(data.summary.Positive.count, data.summary.Negative.count, data.summary.Neutral.count);
+
+            // Update title
+            document.getElementById('articlesTitle').textContent = `${data.ticker.toUpperCase()} — ${data.total_articles} Articles Analyzed`;
+
+            // Render articles
+            const articlesList = document.getElementById('articlesList');
+            articlesList.innerHTML = '';
+
+            data.articles.forEach((article, index) => {
+                const div = document.createElement('div');
+                div.className = 'article';
+                div.style.opacity = '0';
+                div.style.transform = 'translateY(15px)';
+
+                const sentimentClass = article.sentiment.toLowerCase();
+                const date = new Date(article.published).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+
+                div.innerHTML = `
+                    <div class="article-title">
+                        <a href="${article.link}" target="_blank" rel="noopener noreferrer">${article.title}</a>
+                    </div>
+                    <div class="article-metadata">
+                        <span class="badge ${sentimentClass}">${article.sentiment}</span>
+                        <span class="article-detail">Score: ${article.polarity}</span>
+                        <span class="article-detail">${date}</span>
+                    </div>
+                `;
+
+                articlesList.appendChild(div);
+
+                setTimeout(() => {
+                    div.style.transition = 'all 0.3s ease';
+                    div.style.opacity = '1';
+                    div.style.transform = 'translateY(0)';
+                }, index * 40);
+            });
+
+            document.getElementById('newsResults').style.display = 'block';
+
+            // Scroll to results
+            setTimeout(() => {
+                document.getElementById('newsResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        function createPieChart(positive, negative, neutral) {
+            const total = positive + negative + neutral;
+            const svg = document.getElementById('pieChartSvg');
+            svg.innerHTML = '';
+
+            if (total === 0) return;
+
+            const radius = 80;
+            const cx = 100, cy = 100;
+
+            const segments = [
+                { value: positive, color: '#10b981' },
+                { value: negative, color: '#ef4444' },
+                { value: neutral, color: '#6b7280' }
+            ];
+
+            let currentAngle = 0;
+
+            segments.forEach(seg => {
+                if (seg.value === 0) return;
+
+                const angle = (seg.value / total) * 360;
+                const largeArc = angle > 180 ? 1 : 0;
+
+                const startX = cx + radius * Math.cos((currentAngle * Math.PI) / 180);
+                const startY = cy + radius * Math.sin((currentAngle * Math.PI) / 180);
+
+                const endAngle = currentAngle + angle;
+                const endX = cx + radius * Math.cos((endAngle * Math.PI) / 180);
+                const endY = cy + radius * Math.sin((endAngle * Math.PI) / 180);
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${cx} ${cy} L ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY} Z`);
+                path.setAttribute('fill', seg.color);
+                path.setAttribute('stroke', '#fff');
+                path.setAttribute('stroke-width', '2');
+                svg.appendChild(path);
+
+                currentAngle = endAngle;
+            });
+
+            // Center hole
+            const center = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            center.setAttribute('cx', cx);
+            center.setAttribute('cy', cy);
+            center.setAttribute('r', 45);
+            center.setAttribute('fill', '#fff');
+            svg.appendChild(center);
+        }
+
+        function animateValue(el, start, end, duration) {
+            let startTime = null;
+            const step = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                el.textContent = Math.floor(progress * (end - start) + start);
+                if (progress < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function showNewsError(message) {
+            const el = document.getElementById('newsError');
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+
+        // ==================== INIT ====================
+
+        document.getElementById('newsTickerInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyzeNewsSentiment();
         });
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadSocialScreening();
+        // Close popover on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAddTickerPopover();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTickersFromStorage();
+            renderTickerChips();
+            loadScreeningData();
         });
     </script>
 </body>
