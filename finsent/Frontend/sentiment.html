@@ -728,7 +728,6 @@
             border-radius: 8px;
             font-size: 13px;
             color: var(--neutral-dark);
-            font-style: italic;
         }
 
         /* Section Divider */
@@ -1271,7 +1270,7 @@
 
         <header>
             <h1>Sentiment Analyzer</h1>
-            <p class="subtitle">Track real-time social sentiment from StockTwits, X/Twitter, and financial news. Customize your watchlist with up to 10 tickers.</p>
+            <p class="subtitle">Tracks real-time sentiment from X, StockTwits (a investing social platform), and financial news from yfinance in a watchlist format. The deep-dive option allows for stock-specific, credible news sentiment data only via bidirectional encoder representations from transformers.</p>
         </header>
 
         <!-- Social Screener Section -->
@@ -1361,7 +1360,7 @@
                         </div>
                         <div class="explainer-item">
                             <h4>News Sentiment (0-100)</h4>
-                            <p>Analyzed from recent Google News articles using NLP. Scores above 60 indicate positive coverage, below 40 indicates negative.</p>
+                            <p>Analyzed from recent Google News articles using natural language processing. Scores above 60 indicate positive coverage, below 40 indicates negative.</p>
                         </div>
                         <div class="explainer-item">
                             <h4>Composite Score</h4>
@@ -1383,11 +1382,11 @@
         <!-- Original News Analyzer -->
         <div class="search-section">
             <h2>News Sentiment Analyzer</h2>
-            <p class="section-subtitle">Deep analysis of news articles using FinBERT/VADER models</p>
+            <p class="section-subtitle">Deep analysis of news articles using bidirectional encoder representations from transformers to interpret articles scraped from Google News.</p>
             
             <div class="input-wrapper">
                 <div class="input-group">
-                    <label class="input-label">Enter a company, cryptocurrency, or commodity. Queries translate to ~5 articles each.</label>
+                    <label class="input-label">Enter a company, cryptocurrency, or commodity, and a query amount less than 10. One query translates to ~5 articles.</label>
                     <input type="text" id="tickerInput" placeholder="Enter ticker or asset name" value="gold">
                 </div>
                 <div class="input-group">
