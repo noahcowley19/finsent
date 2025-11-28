@@ -23,11 +23,40 @@ vader_analyzer = SentimentIntensityAnalyzer()
 _finbert_available = None
 _finbert_last_check = 0
 
-# Cache for social screening data
+# Cache for social screening data - longer TTL to reduce load
 _social_cache = {
     'data': None,
     'timestamp': 0,
-    'ttl': 300  # 5 minutes cache
+    'ttl': 600  # 10 minutes cache
+}
+
+# Predefined stock info to avoid slow API calls
+STOCK_INFO = {
+    'AAPL': 'Apple Inc.',
+    'MSFT': 'Microsoft Corp.',
+    'GOOGL': 'Alphabet Inc.',
+    'AMZN': 'Amazon.com Inc.',
+    'NVDA': 'NVIDIA Corp.',
+    'META': 'Meta Platforms',
+    'TSLA': 'Tesla Inc.',
+    'AMD': 'AMD Inc.',
+    'INTC': 'Intel Corp.',
+    'NFLX': 'Netflix Inc.',
+    'BA': 'Boeing Co.',
+    'DIS': 'Walt Disney Co.',
+    'V': 'Visa Inc.',
+    'JPM': 'JPMorgan Chase',
+    'WMT': 'Walmart Inc.',
+    'COIN': 'Coinbase Global',
+    'PLTR': 'Palantir Tech.',
+    'F': 'Ford Motor Co.',
+    'GM': 'General Motors',
+    'AAL': 'American Airlines',
+    'BAC': 'Bank of America',
+    'C': 'Citigroup Inc.',
+    'PYPL': 'PayPal Holdings',
+    'UBER': 'Uber Tech.',
+    'SPY': 'SPDR S&P 500 ETF'
 }
 
 
@@ -328,85 +357,86 @@ def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
 
 # ==================== SOCIAL SCREENING FUNCTIONS ====================
 
-def get_most_active_stocks_yfinance():
-    """Get most active stocks using yfinance."""
+def get_stock_data_fast():
+    """Get stock data quickly using yfinance with minimal tickers."""
     try:
-        # List of commonly active tickers to check
-        active_tickers = [
-            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD', 'INTC', 'NFLX',
-            'BA', 'DIS', 'V', 'JPM', 'WMT', 'PFE', 'KO', 'PEP', 'MCD', 'NKE',
-            'COIN', 'PLTR', 'SOFI', 'HOOD', 'RIVN', 'LCID', 'F', 'GM', 'AAL', 'UAL',
-            'BAC', 'C', 'WFC', 'GS', 'MS', 'PYPL', 'SQ', 'SHOP', 'ROKU', 'SNAP',
-            'UBER', 'LYFT', 'ABNB', 'ZM', 'DOCU', 'CRWD', 'NET', 'DDOG', 'SNOW', 'SPY'
-        ]
+        # Use only reliable, high-volume tickers
+        tickers = list(STOCK_INFO.keys())
+        
+        # Download all at once - much faster than individual calls
+        print(f"Downloading data for {len(tickers)} tickers...")
+        data = yf.download(
+            tickers, 
+            period='2d', 
+            group_by='ticker', 
+            progress=False, 
+            threads=True,
+            timeout=20
+        )
         
         results = []
         
-        # Fetch data for all tickers using yfinance
-        tickers_str = ' '.join(active_tickers)
-        data = yf.download(tickers_str, period='2d', group_by='ticker', progress=False, threads=True)
-        
-        for ticker in active_tickers:
+        for ticker in tickers:
             try:
-                # Handle both single and multi-ticker data structures
-                if len(active_tickers) == 1:
+                # Get ticker data from the download
+                if len(tickers) == 1:
                     ticker_data = data
                 else:
                     if ticker not in data.columns.get_level_values(0):
                         continue
                     ticker_data = data[ticker]
                 
+                # Skip if no data
                 if ticker_data.empty or len(ticker_data) < 1:
                     continue
                 
-                # Get the latest row
+                # Get latest values
                 latest = ticker_data.iloc[-1]
                 
-                close_price = float(latest.get('Close', 0))
-                open_price = float(latest.get('Open', close_price))
-                volume = int(latest.get('Volume', 0))
+                close_price = latest.get('Close')
+                open_price = latest.get('Open')
+                volume = latest.get('Volume')
                 
-                # Get previous close for accurate change calculation
-                if len(ticker_data) >= 2:
-                    prev_close = float(ticker_data.iloc[-2].get('Close', open_price))
-                else:
-                    prev_close = open_price
+                # Skip if missing critical data
+                if close_price is None or volume is None:
+                    continue
+                
+                close_price = float(close_price)
+                volume = int(float(volume))
                 
                 if close_price == 0 or volume == 0:
                     continue
                 
-                # Calculate change
+                # Calculate change from previous day
+                if len(ticker_data) >= 2:
+                    prev_close = float(ticker_data.iloc[-2].get('Close', close_price))
+                else:
+                    prev_close = float(open_price) if open_price else close_price
+                
                 change = close_price - prev_close
                 pct_change = ((close_price - prev_close) / prev_close * 100) if prev_close > 0 else 0
                 
-                # Get company name using info (cached by yfinance)
-                try:
-                    stock = yf.Ticker(ticker)
-                    name = stock.info.get('shortName', ticker)
-                    if name and len(name) > 30:
-                        name = name[:27] + '...'
-                except:
-                    name = ticker
-                
                 results.append({
                     'symbol': ticker,
-                    'name': name,
+                    'name': STOCK_INFO.get(ticker, ticker),
                     'price': round(close_price, 2),
                     'change': round(change, 2),
                     'pct_change': round(pct_change, 2),
                     'volume': volume
                 })
+                
             except Exception as e:
                 print(f"Error processing {ticker}: {e}")
                 continue
         
-        # Sort by volume (most active first)
+        # Sort by volume
         results.sort(key=lambda x: x['volume'], reverse=True)
+        print(f"Successfully processed {len(results)} tickers")
         
-        return results[:25]
+        return results
         
     except Exception as e:
-        print(f"Error fetching yfinance data: {e}")
+        print(f"Error in get_stock_data_fast: {e}")
         return []
 
 
@@ -415,9 +445,9 @@ def scrape_sentdex_sentiment():
     try:
         url = 'http://www.sentdex.com/financial-analysis/?tf=30d'
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        response = requests.get(url, headers=headers, timeout=15)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -432,7 +462,6 @@ def scrape_sentdex_sentiment():
                     sentiment = ticker_info[3].get_text().strip()
                     mentions = ticker_info[2].get_text().strip()
                     
-                    # Determine trend direction
                     trend_up = ticker_info[4].find('span', {"class": "glyphicon glyphicon-chevron-up"})
                     trend = 'up' if trend_up else 'down'
                     
@@ -452,121 +481,116 @@ def scrape_sentdex_sentiment():
                             'mentions': mentions_val,
                             'trend': trend
                         }
-            except Exception as e:
+            except:
                 continue
         
         return result
     except Exception as e:
         print(f"Error scraping Sentdex: {e}")
+        return {}
+
+
+def generate_news_sentiment_batch(symbols):
+    """Generate sentiment from news headlines for multiple symbols at once."""
+    results = {}
     
-    return {}
-
-
-def scrape_stocktwits_trending():
-    """Scrape trending stocks from StockTwits as alternative to TradeFollowers."""
-    try:
-        url = 'https://api.stocktwits.com/api/2/trending/symbols.json'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            result = {}
+    def get_sentiment_for_symbol(symbol):
+        try:
+            rss_url = f"https://news.google.com/rss/search?q={symbol}+stock"
+            feed = feedparser.parse(rss_url)
             
-            symbols = data.get('symbols', [])
-            for i, symbol_data in enumerate(symbols[:30]):
-                symbol = symbol_data.get('symbol', '').upper()
-                if symbol:
-                    # Use ranking as activity score
-                    result[symbol] = {
-                        'sector': symbol_data.get('sector', 'N/A'),
-                        'twitter_score': max(0, 100 - (i * 3)),  # Higher rank = higher score
-                        'watchlist_count': symbol_data.get('watchlist_count', 0)
-                    }
+            if not feed.entries:
+                return symbol, None
             
-            return result
-    except Exception as e:
-        print(f"Error scraping StockTwits: {e}")
+            sentiments = []
+            for entry in feed.entries[:3]:  # Only 3 headlines for speed
+                title = entry.get('title', '')
+                if title:
+                    scores = vader_analyzer.polarity_scores(title)
+                    sentiments.append(scores['compound'])
+            
+            if sentiments:
+                avg_sentiment = sum(sentiments) / len(sentiments)
+                normalized = (avg_sentiment + 1) * 50
+                return symbol, round(normalized, 2)
+            
+            return symbol, None
+        except:
+            return symbol, None
     
-    return {}
-
-
-def generate_sentiment_from_news(symbol):
-    """Generate sentiment score from recent news for a symbol."""
-    try:
-        # Quick news sentiment check
-        rss_url = f"https://news.google.com/rss/search?q={symbol}+stock"
-        feed = feedparser.parse(rss_url)
+    # Process in parallel with timeout
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(get_sentiment_for_symbol, s): s for s in symbols}
         
-        if not feed.entries:
-            return None
-        
-        # Analyze up to 5 recent headlines
-        sentiments = []
-        for entry in feed.entries[:5]:
-            title = entry.get('title', '')
-            if title:
-                scores = vader_analyzer.polarity_scores(title)
-                sentiments.append(scores['compound'])
-        
-        if sentiments:
-            avg_sentiment = sum(sentiments) / len(sentiments)
-            # Convert from -1 to 1 scale to 0-100 scale
-            normalized = (avg_sentiment + 1) * 50
-            return round(normalized, 2)
-        
-    except:
-        pass
+        for future in as_completed(futures, timeout=15):
+            try:
+                symbol, sentiment = future.result(timeout=3)
+                if sentiment is not None:
+                    results[symbol] = sentiment
+            except:
+                continue
     
-    return None
+    return results
 
 
 def get_social_screening_data():
     """
     Get combined social screening data from multiple sources.
-    Returns merged data from yfinance, Sentdex, and StockTwits.
+    Optimized for speed and reliability.
     """
     global _social_cache
     
-    # Check cache
+    # Check cache first
     if _social_cache['data'] is not None and (time.time() - _social_cache['timestamp']) < _social_cache['ttl']:
+        print("Returning cached social screening data")
         return _social_cache['data']
     
-    results = {
-        'most_active': [],
-        'sentdex': {},
-        'stocktwits': {},
-    }
+    print("Fetching fresh social screening data...")
+    start_time = time.time()
     
-    # Scrape all sources in parallel
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        future_yfinance = executor.submit(get_most_active_stocks_yfinance)
-        future_sentdex = executor.submit(scrape_sentdex_sentiment)
-        future_stocktwits = executor.submit(scrape_stocktwits_trending)
-        
-        try:
-            results['most_active'] = future_yfinance.result(timeout=45)
-        except Exception as e:
-            print(f"yfinance timeout/error: {e}")
-            results['most_active'] = []
-        
-        try:
-            results['sentdex'] = future_sentdex.result(timeout=20)
-        except Exception as e:
-            print(f"Sentdex timeout/error: {e}")
-            results['sentdex'] = {}
-        
-        try:
-            results['stocktwits'] = future_stocktwits.result(timeout=15)
-        except Exception as e:
-            print(f"StockTwits timeout/error: {e}")
-            results['stocktwits'] = {}
+    # Fetch stock data (this is the main data source)
+    stocks = get_stock_data_fast()
     
-    # Merge data
+    if not stocks:
+        print("No stock data available")
+        return {
+            'stocks': [],
+            'sources': {
+                'yahoo_finance': False,
+                'sentdex': False,
+                'twitter_strength': False,
+                'twitter_activity': False
+            },
+            'total_stocks': 0,
+            'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        }
+    
+    # Get symbols for sentiment lookup
+    symbols = [s['symbol'] for s in stocks]
+    
+    # Fetch additional data in parallel
+    sentdex_data = {}
+    news_sentiment = {}
+    
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        sentdex_future = executor.submit(scrape_sentdex_sentiment)
+        news_future = executor.submit(generate_news_sentiment_batch, symbols)
+        
+        try:
+            sentdex_data = sentdex_future.result(timeout=12)
+        except Exception as e:
+            print(f"Sentdex fetch failed: {e}")
+            sentdex_data = {}
+        
+        try:
+            news_sentiment = news_future.result(timeout=18)
+        except Exception as e:
+            print(f"News sentiment fetch failed: {e}")
+            news_sentiment = {}
+    
+    # Merge all data
     merged_stocks = []
-    for stock in results['most_active']:
+    for stock in stocks:
         symbol = stock['symbol']
         
         merged = {
@@ -579,7 +603,6 @@ def get_social_screening_data():
             'sentdex_sentiment': None,
             'sentdex_mentions': None,
             'sentdex_trend': None,
-            'twitter_sector': None,
             'twitter_strength_score': None,
             'twitter_activity_score': None,
             'news_sentiment': None,
@@ -587,73 +610,57 @@ def get_social_screening_data():
         }
         
         # Add Sentdex data
-        if symbol in results['sentdex']:
-            sentdex = results['sentdex'][symbol]
-            merged['sentdex_sentiment'] = sentdex['sentiment']
-            merged['sentdex_mentions'] = sentdex['mentions']
-            merged['sentdex_trend'] = sentdex['trend']
+        if symbol in sentdex_data:
+            merged['sentdex_sentiment'] = sentdex_data[symbol]['sentiment']
+            merged['sentdex_mentions'] = sentdex_data[symbol]['mentions']
+            merged['sentdex_trend'] = sentdex_data[symbol]['trend']
         
-        # Add StockTwits data (as Twitter alternative)
-        if symbol in results['stocktwits']:
-            stocktwits = results['stocktwits'][symbol]
-            merged['twitter_sector'] = stocktwits.get('sector')
-            merged['twitter_strength_score'] = stocktwits.get('twitter_score')
-            merged['twitter_activity_score'] = stocktwits.get('twitter_score')
-        
-        # Generate news-based sentiment if no other sentiment data
-        if merged['sentdex_sentiment'] is None and merged['twitter_strength_score'] is None:
-            news_sent = generate_sentiment_from_news(symbol)
-            if news_sent is not None:
-                merged['news_sentiment'] = news_sent
+        # Add news sentiment
+        if symbol in news_sentiment:
+            merged['news_sentiment'] = news_sentiment[symbol]
         
         # Calculate composite score
         scores = []
         
         if merged['sentdex_sentiment'] is not None:
-            # Normalize sentdex sentiment (typically -6 to 6) to 0-100
             normalized_sentdex = ((merged['sentdex_sentiment'] + 6) / 12) * 100
             scores.append(normalized_sentdex)
-        
-        if merged['twitter_strength_score'] is not None:
-            scores.append(merged['twitter_strength_score'])
         
         if merged['news_sentiment'] is not None:
             scores.append(merged['news_sentiment'])
         
-        # If no sentiment data, use price change as a rough indicator
+        # If no sentiment data, use price change as indicator
         if not scores:
-            # Convert price change to 0-100 scale (capped at ±10%)
             pct = max(-10, min(10, merged['pct_change']))
             price_score = ((pct + 10) / 20) * 100
             scores.append(price_score)
         
-        if scores:
-            merged['composite_score'] = round(sum(scores) / len(scores), 2)
+        merged['composite_score'] = round(sum(scores) / len(scores), 2)
+        
+        # Determine sentiment status
+        if merged['composite_score'] >= 60:
+            merged['sentiment_status'] = 'positive'
+        elif merged['composite_score'] <= 40:
+            merged['sentiment_status'] = 'negative'
+        else:
+            merged['sentiment_status'] = 'neutral'
         
         merged_stocks.append(merged)
     
-    # Sort by composite score (highest first), then by volume
+    # Sort by composite score
     merged_stocks.sort(key=lambda x: (x['composite_score'] or 0, x['volume']), reverse=True)
     
-    # Determine overall sentiment for each stock
-    for stock in merged_stocks:
-        sentiment_status = 'neutral'
-        if stock['composite_score'] is not None:
-            if stock['composite_score'] >= 60:
-                sentiment_status = 'positive'
-            elif stock['composite_score'] <= 40:
-                sentiment_status = 'negative'
-        
-        stock['sentiment_status'] = sentiment_status
+    elapsed = time.time() - start_time
+    print(f"Social screening completed in {elapsed:.2f}s")
     
     # Build response
     response_data = {
-        'stocks': merged_stocks[:25],
+        'stocks': merged_stocks,
         'sources': {
-            'yahoo_finance': len(results['most_active']) > 0,
-            'sentdex': len(results['sentdex']) > 0,
-            'twitter_strength': len(results['stocktwits']) > 0,
-            'twitter_activity': len(results['stocktwits']) > 0
+            'yahoo_finance': len(stocks) > 0,
+            'sentdex': len(sentdex_data) > 0,
+            'twitter_strength': False,  # Not using Twitter anymore
+            'twitter_activity': len(news_sentiment) > 0  # Using news instead
         },
         'total_stocks': len(merged_stocks),
         'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
