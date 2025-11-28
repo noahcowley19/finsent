@@ -677,7 +677,7 @@ def social_screening():
                 sources_status['stocktwits'] = True
                 result['stocktwits'] = stocktwits['score']
                 result['stocktwits_display'] = f"{stocktwits['score']:.0f}"
-                result['stocktwits_detail'] = f"🐂 {stocktwits['bullish']} / 🐻 {stocktwits['bearish']}"
+                result['stocktwits_detail'] = f"B {stocktwits['bullish']} / S {stocktwits['bearish']}"
             
             # Get X/Twitter sentiment
             x_sent = get_x_sentiment(ticker)
