@@ -30,9 +30,11 @@
             --neutral-dark: #374151;
             --primary: #1e293b;
             --secondary: #64748b;
+            --tertiary: #94a3b8;
             --background: #f8fafc;
             --card-bg: #ffffff;
             --border: #e2e8f0;
+            --border-light: #f1f5f9;
             --shadow: rgba(15, 23, 42, 0.08);
             --shadow-hover: rgba(15, 23, 42, 0.12);
         }
@@ -108,84 +110,334 @@
 
         .hero {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 48px;
         }
 
         .hero h1 {
             font-size: 3.5rem;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             letter-spacing: -0.03em;
         }
 
         .hero .subtitle {
-            font-size: 1.25rem;
+            font-size: 1.125rem;
             color: var(--secondary);
             font-weight: 400;
             letter-spacing: -0.01em;
-            max-width: 600px;
-            margin: 0 auto;
         }
 
-        /* Market Status Badge */
-        .market-status {
-            display: inline-flex;
+        /* Main Layout - Three Columns */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 200px 1fr 200px;
+            gap: 40px;
+            align-items: start;
+        }
+
+        /* Sidebar Styles - Ultra Subtle */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar:hover {
+            opacity: 1;
+        }
+
+        .sidebar-widget {
+            padding: 0;
+        }
+
+        .widget-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .widget-title {
+            font-size: 10px;
             font-weight: 600;
-            margin-top: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--tertiary);
         }
 
-        .market-status.positive {
-            background: var(--positive-light);
-            color: var(--positive-dark);
+        .widget-action {
+            font-size: 10px;
+            color: var(--tertiary);
+            text-decoration: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            transition: color 0.2s;
         }
 
-        .market-status.negative {
-            background: var(--negative-light);
-            color: var(--negative-dark);
+        .widget-action:hover {
+            color: var(--secondary);
         }
 
-        .market-status.neutral {
-            background: var(--neutral-light);
+        /* Market Overview Widget */
+        .market-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .market-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+
+        .market-symbol {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--secondary);
+        }
+
+        .market-data {
+            text-align: right;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .market-price {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--neutral-dark);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .market-change {
+            font-size: 10px;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .market-change.positive { color: var(--positive); }
+        .market-change.negative { color: var(--negative); }
+        .market-change.neutral { color: var(--tertiary); }
+
+        /* Watchlist Widget */
+        .watchlist-empty {
+            text-align: center;
+            padding: 20px 8px;
+            color: var(--tertiary);
+            font-size: 11px;
+        }
+
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+
+        .watchlist-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .watchlist-symbol {
+            font-size: 11px;
+            font-weight: 600;
             color: var(--neutral-dark);
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
+        .watchlist-remove {
+            font-size: 12px;
+            color: var(--tertiary);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+            opacity: 0;
+            transition: opacity 0.2s, color 0.2s;
         }
 
-        .market-status.positive .status-dot {
-            background: var(--positive);
+        .watchlist-item:hover .watchlist-remove {
+            opacity: 1;
         }
 
-        .market-status.negative .status-dot {
-            background: var(--negative);
+        .watchlist-remove:hover {
+            color: var(--negative);
         }
 
-        .market-status.neutral .status-dot {
-            background: var(--neutral);
+        .watchlist-data {
+            text-align: right;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .watchlist-price {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--neutral-dark);
+            font-variant-numeric: tabular-nums;
         }
 
-        /* Features Grid */
+        .watchlist-change {
+            font-size: 10px;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .watchlist-change.positive { color: var(--positive); }
+        .watchlist-change.negative { color: var(--negative); }
+        .watchlist-change.neutral { color: var(--tertiary); }
+
+        .add-watchlist {
+            display: flex;
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .add-watchlist input {
+            flex: 1;
+            padding: 5px 8px;
+            font-size: 10px;
+            font-family: inherit;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--card-bg);
+            color: var(--primary);
+            text-transform: uppercase;
+            transition: border-color 0.2s;
+        }
+
+        .add-watchlist input::placeholder {
+            text-transform: none;
+            color: var(--tertiary);
+        }
+
+        .add-watchlist input:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .add-watchlist button {
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 500;
+            font-family: inherit;
+            background: var(--neutral-light);
+            color: var(--secondary);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-watchlist button:hover {
+            background: var(--border);
+            color: var(--primary);
+        }
+
+        .watchlist-count {
+            font-size: 9px;
+            color: var(--tertiary);
+            text-align: right;
+            margin-top: 6px;
+        }
+
+        /* News Widget */
+        .news-list-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .news-item-compact {
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .news-item-compact:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .news-title-compact {
+            font-size: 11px;
+            font-weight: 400;
+            color: var(--secondary);
+            text-decoration: none;
+            line-height: 1.5;
+            display: block;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            transition: color 0.2s;
+        }
+
+        .news-title-compact:hover {
+            color: var(--primary);
+        }
+
+        .news-meta-compact {
+            font-size: 9px;
+            color: var(--tertiary);
+            margin-top: 3px;
+        }
+
+        /* Earnings Widget */
+        .earnings-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .earnings-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 0;
+        }
+
+        .earnings-date {
+            font-size: 9px;
+            font-weight: 500;
+            color: var(--tertiary);
+            min-width: 36px;
+        }
+
+        .earnings-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .earnings-ticker {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--neutral-dark);
+        }
+
+        .earnings-name {
+            font-size: 9px;
+            color: var(--tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Features Grid - Center Column (Primary Focus) */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 24px;
-            max-width: 1100px;
-            margin: 0 auto 48px;
         }
 
         .feature-card {
@@ -281,414 +533,12 @@
             transform: translateX(4px);
         }
 
-        /* Section Title */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 1.125rem;
-            font-weight: 700;
-            color: var(--primary);
-            letter-spacing: -0.01em;
-        }
-
-        .section-subtitle {
-            font-size: 13px;
-            color: var(--secondary);
-        }
-
-        .refresh-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: 'Inter', sans-serif;
-            background: var(--neutral-light);
-            color: var(--secondary);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .refresh-btn:hover {
-            background: var(--border);
-            color: var(--primary);
-        }
-
-        .refresh-btn svg {
-            width: 14px;
-            height: 14px;
-        }
-
-        .refresh-btn.loading svg {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Market Overview Cards */
-        .market-overview {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-
-        .index-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px var(--shadow);
-            border: 1px solid var(--border);
-            transition: all 0.2s ease;
-        }
-
-        .index-card:hover {
-            box-shadow: 0 4px 12px var(--shadow-hover);
-            transform: translateY(-2px);
-        }
-
-        .index-name {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 8px;
-        }
-
-        .index-price {
-            font-size: 1.375rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 4px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .index-change {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .index-change.positive {
-            background: var(--positive-light);
-            color: var(--positive-dark);
-        }
-
-        .index-change.negative {
-            background: var(--negative-light);
-            color: var(--negative-dark);
-        }
-
-        .index-change.neutral {
-            background: var(--neutral-light);
-            color: var(--neutral-dark);
-        }
-
-        /* Dashboard Grid */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        .dashboard-card {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 1px 3px var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .dashboard-card.full-width {
-            grid-column: 1 / -1;
-        }
-
-        .card-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 16px;
-        }
-
-        /* Asset Grid */
-        .asset-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-        }
-
-        .asset-item {
-            background: var(--background);
-            border-radius: 10px;
-            padding: 14px;
-            transition: all 0.2s ease;
-        }
-
-        .asset-item:hover {
-            background: var(--neutral-light);
-        }
-
-        .asset-name {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            margin-bottom: 6px;
-        }
-
-        .asset-price {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 4px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .asset-change {
-            font-size: 12px;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .asset-change.positive {
-            color: var(--positive);
-        }
-
-        .asset-change.negative {
-            color: var(--negative);
-        }
-
-        .asset-change.neutral {
-            color: var(--neutral);
-        }
-
-        /* Movers Section */
-        .movers-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 16px;
-            background: var(--neutral-light);
-            padding: 4px;
-            border-radius: 10px;
-            width: fit-content;
-        }
-
-        .mover-tab {
-            padding: 8px 16px;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: 'Inter', sans-serif;
-            color: var(--secondary);
-            background: transparent;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .mover-tab:hover {
-            color: var(--primary);
-        }
-
-        .mover-tab.active {
-            background: var(--card-bg);
-            color: var(--primary);
-            box-shadow: 0 1px 3px var(--shadow);
-        }
-
-        .movers-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .mover-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--background);
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .mover-item:hover {
-            background: var(--neutral-light);
-        }
-
-        .mover-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .mover-symbol {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--primary);
-            min-width: 60px;
-        }
-
-        .mover-name {
-            font-size: 13px;
-            color: var(--secondary);
-            max-width: 150px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .mover-data {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .mover-price {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .mover-change {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            min-width: 70px;
-            justify-content: center;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .mover-change.positive {
-            background: var(--positive-light);
-            color: var(--positive-dark);
-        }
-
-        .mover-change.negative {
-            background: var(--negative-light);
-            color: var(--negative-dark);
-        }
-
-        /* News Section */
-        .news-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .news-item {
-            padding: 14px;
-            background: var(--background);
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .news-item:hover {
-            background: var(--neutral-light);
-        }
-
-        .news-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary);
-            text-decoration: none;
-            line-height: 1.4;
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .news-title:hover {
-            color: #0f172a;
-        }
-
-        .news-meta {
-            display: flex;
-            gap: 12px;
-            font-size: 12px;
-            color: var(--secondary);
-        }
-
-        .news-source {
-            font-weight: 500;
-        }
-
-        /* Events & Earnings */
-        .events-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-        }
-
-        .event-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .event-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: var(--background);
-            border-radius: 10px;
-        }
-
-        .event-date {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--primary);
-            background: var(--neutral-light);
-            padding: 6px 10px;
-            border-radius: 6px;
-            min-width: 60px;
-            text-align: center;
-        }
-
-        .event-info {
-            flex: 1;
-        }
-
-        .event-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .event-type {
-            font-size: 11px;
-            color: var(--secondary);
-        }
-
         /* Loading States */
         .loading-placeholder {
-            background: linear-gradient(90deg, var(--neutral-light) 25%, var(--background) 50%, var(--neutral-light) 75%);
+            background: linear-gradient(90deg, var(--border-light) 25%, var(--background) 50%, var(--border-light) 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s infinite;
-            border-radius: 8px;
+            border-radius: 3px;
         }
 
         @keyframes shimmer {
@@ -696,24 +546,13 @@
             100% { background-position: -200% 0; }
         }
 
-        .skeleton-card {
-            height: 100px;
-        }
-
-        .skeleton-item {
-            height: 50px;
+        .skeleton-row {
+            height: 20px;
             margin-bottom: 8px;
         }
 
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--secondary);
-        }
-
-        .empty-state p {
-            font-size: 14px;
+        .skeleton-row:last-child {
+            margin-bottom: 0;
         }
 
         /* Footer */
@@ -739,44 +578,61 @@
             text-decoration: underline;
         }
 
-        .last-updated {
-            font-size: 12px;
-            color: var(--secondary);
-            margin-top: 12px;
-        }
-
         /* Responsive Design */
         @media (max-width: 1200px) {
-            .market-overview {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .asset-grid {
-                grid-template-columns: repeat(3, 1fr);
+            .main-layout {
+                grid-template-columns: 180px 1fr 180px;
+                gap: 32px;
             }
         }
 
-        @media (max-width: 968px) {
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 24px;
+                opacity: 1;
+            }
+
+            .sidebar.left {
+                order: 2;
+            }
+
+            .sidebar.right {
+                order: 3;
+            }
+
+            .features-container {
+                order: 1;
+            }
+
             .features-grid {
+                max-width: 640px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
                 grid-template-columns: 1fr;
                 gap: 20px;
-                max-width: 500px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
             }
 
             .feature-card.featured {
                 grid-column: 1;
             }
 
-            .feature-card {
-                padding: 28px 24px;
-            }
-
             .hero h1 {
                 font-size: 2.5rem;
-            }
-
-            .hero .subtitle {
-                font-size: 1.1rem;
             }
 
             .navbar {
@@ -797,25 +653,9 @@
             .container {
                 padding: 32px 16px;
             }
-
-            .market-overview {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .asset-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .events-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 480px) {
             body {
                 padding-top: 64px;
             }
@@ -833,37 +673,12 @@
                 font-size: 12px;
             }
 
+            .feature-card {
+                padding: 24px 20px;
+            }
+
             .feature-card h2 {
                 font-size: 1.125rem;
-            }
-
-            .market-overview {
-                grid-template-columns: 1fr;
-            }
-
-            .index-card {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .index-card > div:first-child {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .asset-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .mover-name {
-                display: none;
-            }
-
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
             }
         }
     </style>
@@ -884,160 +699,114 @@
 
         <div class="hero">
             <h1>Finsent</h1>
-            <p class="subtitle">Free financial intelligence tools :)</p>
-            <div class="market-status neutral" id="marketStatus">
-                <div class="status-dot"></div>
-                <span id="marketStatusText">Loading...</span>
-            </div>
+            <p class="subtitle">Free financial intelligence tools</p>
         </div>
 
-        <!-- Features Grid -->
-        <div class="features-grid">
-            <div class="feature-card featured">
-                <h2>Stock Search</h2>
-                <p>A comprehensive stock search with charts, metrics, ratings, financial health indicators, and real-time news.</p>
-                <a href="/search" class="feature-btn">
-                    Launch Search
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                </a>
-            </div>
-
-            <div class="feature-card">
-                <h2>Sentiment Analyzer</h2>
-                <p>Real-time market sentiment using transformer models and social data.</p>
-                <a href="/sentiment" class="feature-btn">
-                    Launch Sentiment
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                </a>
-            </div>
-
-            <div class="feature-card">
-                <h2>Financial Analyzer</h2>
-                <p>Academic scoring models: Piotroski F-Score, Altman Z-Score, and Beneish M-Score.</p>
-                <a href="/financials" class="feature-btn">
-                    Launch Financials
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                </a>
-            </div>
-
-            <div class="feature-card">
-                <h2>Insider Trading</h2>
-                <p>Track insider buying/selling activity and institutional ownership changes.</p>
-                <a href="/insider" class="feature-btn">
-                    Launch Insider
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                </a>
-            </div>
-        </div>
-
-        <!-- Market Overview Section -->
-        <div class="section-header">
-            <div>
-                <h2 class="section-title">Market Overview</h2>
-                <p class="section-subtitle">Major indices and market data</p>
-            </div>
-            <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Refresh
-            </button>
-        </div>
-
-        <!-- Market Indices -->
-        <div class="market-overview" id="indicesContainer">
-            <div class="index-card loading-placeholder skeleton-card"></div>
-            <div class="index-card loading-placeholder skeleton-card"></div>
-            <div class="index-card loading-placeholder skeleton-card"></div>
-            <div class="index-card loading-placeholder skeleton-card"></div>
-            <div class="index-card loading-placeholder skeleton-card"></div>
-        </div>
-
-        <!-- Dashboard Grid -->
-        <div class="dashboard-grid">
-            <!-- Futures -->
-            <div class="dashboard-card">
-                <div class="card-title">Futures</div>
-                <div class="asset-grid" id="futuresContainer">
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                </div>
-            </div>
-
-            <!-- Forex -->
-            <div class="dashboard-card">
-                <div class="card-title">Forex</div>
-                <div class="asset-grid" id="forexContainer">
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                </div>
-            </div>
-
-            <!-- Crypto -->
-            <div class="dashboard-card">
-                <div class="card-title">Cryptocurrency</div>
-                <div class="asset-grid" id="cryptoContainer">
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="asset-item loading-placeholder" style="height: 70px;"></div>
-                </div>
-            </div>
-
-            <!-- Market Movers -->
-            <div class="dashboard-card">
-                <div class="card-title">Market Movers</div>
-                <div class="movers-tabs">
-                    <button class="mover-tab active" data-tab="gainers" onclick="switchMoversTab('gainers')">Gainers</button>
-                    <button class="mover-tab" data-tab="losers" onclick="switchMoversTab('losers')">Losers</button>
-                    <button class="mover-tab" data-tab="most_active" onclick="switchMoversTab('most_active')">Active</button>
-                </div>
-                <div class="movers-list" id="moversContainer">
-                    <div class="mover-item loading-placeholder" style="height: 50px;"></div>
-                    <div class="mover-item loading-placeholder" style="height: 50px;"></div>
-                    <div class="mover-item loading-placeholder" style="height: 50px;"></div>
-                </div>
-            </div>
-
-            <!-- News -->
-            <div class="dashboard-card">
-                <div class="card-title">Market News</div>
-                <div class="news-list" id="newsContainer">
-                    <div class="news-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="news-item loading-placeholder" style="height: 70px;"></div>
-                    <div class="news-item loading-placeholder" style="height: 70px;"></div>
-                </div>
-            </div>
-
-            <!-- Events & Earnings -->
-            <div class="dashboard-card">
-                <div class="card-title">Upcoming Events</div>
-                <div class="events-grid">
-                    <div>
-                        <div style="font-size: 12px; font-weight: 600; color: var(--secondary); margin-bottom: 10px;">EARNINGS</div>
-                        <div class="event-list" id="earningsContainer">
-                            <div class="event-item loading-placeholder" style="height: 50px;"></div>
-                            <div class="event-item loading-placeholder" style="height: 50px;"></div>
-                        </div>
+        <div class="main-layout">
+            <!-- Left Sidebar - Markets & Watchlist -->
+            <div class="sidebar left">
+                <div class="sidebar-widget">
+                    <div class="widget-header">
+                        <span class="widget-title">Markets</span>
                     </div>
-                    <div>
-                        <div style="font-size: 12px; font-weight: 600; color: var(--secondary); margin-bottom: 10px;">FED CALENDAR</div>
-                        <div class="event-list" id="eventsContainer">
-                            <div class="event-item loading-placeholder" style="height: 50px;"></div>
-                            <div class="event-item loading-placeholder" style="height: 50px;"></div>
-                        </div>
+                    <div class="market-list" id="marketList">
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-widget">
+                    <div class="widget-header">
+                        <span class="widget-title">Watchlist</span>
+                        <button class="widget-action" onclick="clearWatchlist()" id="clearWatchlistBtn" style="display: none;">Clear</button>
+                    </div>
+                    <div id="watchlistContainer">
+                        <div class="watchlist-empty">Add up to 8 tickers</div>
+                    </div>
+                    <div class="add-watchlist">
+                        <input type="text" id="watchlistInput" placeholder="Ticker" maxlength="5">
+                        <button onclick="addToWatchlist()">Add</button>
+                    </div>
+                    <div class="watchlist-count" id="watchlistCount"></div>
+                </div>
+            </div>
+
+            <!-- Center - Feature Cards -->
+            <div class="features-container">
+                <div class="features-grid">
+                    <div class="feature-card featured">
+                        <h2>Stock Search</h2>
+                        <p>A comprehensive stock search with charts, metrics, ratings, financial health indicators, and real-time news.</p>
+                        <a href="/search" class="feature-btn">
+                            Launch Search
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="feature-card">
+                        <h2>Sentiment Analyzer</h2>
+                        <p>Real-time market sentiment using transformer models and social data.</p>
+                        <a href="/sentiment" class="feature-btn">
+                            Launch Sentiment
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="feature-card">
+                        <h2>Financial Analyzer</h2>
+                        <p>Academic scoring models: Piotroski F-Score, Altman Z-Score, and Beneish M-Score.</p>
+                        <a href="/financials" class="feature-btn">
+                            Launch Financials
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="feature-card">
+                        <h2>Insider Trading</h2>
+                        <p>Track insider buying/selling activity and institutional ownership changes.</p>
+                        <a href="/insider" class="feature-btn">
+                            Launch Insider
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar - News & Earnings -->
+            <div class="sidebar right">
+                <div class="sidebar-widget">
+                    <div class="widget-header">
+                        <span class="widget-title">News</span>
+                    </div>
+                    <div class="news-list-compact" id="newsList">
+                        <div class="skeleton-row loading-placeholder" style="height: 36px;"></div>
+                        <div class="skeleton-row loading-placeholder" style="height: 36px;"></div>
+                        <div class="skeleton-row loading-placeholder" style="height: 36px;"></div>
+                        <div class="skeleton-row loading-placeholder" style="height: 36px;"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-widget">
+                    <div class="widget-header">
+                        <span class="widget-title">Upcoming Earnings</span>
+                    </div>
+                    <div class="earnings-list" id="earningsList">
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
+                        <div class="skeleton-row loading-placeholder"></div>
                     </div>
                 </div>
             </div>
@@ -1045,270 +814,203 @@
 
         <div class="footer">
             <p>Information is not to be taken for financial advice. Consider supporting the creator at <a href="https://www.buymeacoffee.com/noahcowley">BuyMeACoffee!</a></p>
-            <p class="last-updated" id="lastUpdated"></p>
         </div>
     </div>
 
     <script>
-        let dashboardData = null;
-        let currentMoversTab = 'gainers';
+        const MAX_WATCHLIST = 8;
+        let watchlist = [];
+        let watchlistData = {};
 
-        // Load dashboard data
-        async function loadDashboard() {
-            const refreshBtn = document.getElementById('refreshBtn');
-            refreshBtn.classList.add('loading');
-            refreshBtn.disabled = true;
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWatchlistFromStorage();
+            loadDashboardData();
+            
+            document.getElementById('watchlistInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') addToWatchlist();
+            });
 
+            // Auto-refresh every 2 minutes
+            setInterval(loadDashboardData, 120000);
+        });
+
+        async function loadDashboardData() {
             try {
                 const response = await fetch('https://finsent-backend.onrender.com/api/dashboard');
                 const data = await response.json();
 
-                if (data.error) {
-                    console.error('Dashboard error:', data.error);
-                    showErrorState();
-                    return;
+                if (!data.error) {
+                    renderMarkets(data.indices);
+                    renderNews(data.news);
+                    renderEarnings(data.earnings);
                 }
-
-                dashboardData = data;
-                renderDashboard(data);
-
             } catch (error) {
                 console.error('Failed to load dashboard:', error);
-                showErrorState();
-            } finally {
-                refreshBtn.classList.remove('loading');
-                refreshBtn.disabled = false;
             }
+
+            if (watchlist.length > 0) await loadWatchlistData();
         }
 
-        // Render dashboard
-        function renderDashboard(data) {
-            renderMarketStatus(data.market_status);
-            renderIndices(data.indices);
-            renderFutures(data.futures);
-            renderForex(data.forex);
-            renderCrypto(data.crypto);
-            renderMovers(data.movers);
-            renderNews(data.news);
-            renderEarnings(data.earnings);
-            renderEvents(data.economic_events);
-            updateTimestamp(data.timestamp);
-        }
-
-        // Render market status
-        function renderMarketStatus(status) {
-            const statusEl = document.getElementById('marketStatus');
-            const statusText = document.getElementById('marketStatusText');
-
-            statusEl.className = 'market-status ' + (status.color || 'neutral');
-            statusText.textContent = status.status + (status.message ? ' • ' + status.message : '');
-        }
-
-        // Render indices
-        function renderIndices(indices) {
-            const container = document.getElementById('indicesContainer');
-
+        function renderMarkets(indices) {
+            const container = document.getElementById('marketList');
+            
             if (!indices || indices.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load indices</p></div>';
+                container.innerHTML = '<div class="watchlist-empty">Unable to load</div>';
                 return;
             }
 
-            container.innerHTML = indices.map(index => `
-                <div class="index-card">
-                    <div>
-                        <div class="index-name">${index.short_name}</div>
-                        <div class="index-price">${index.price_display}</div>
-                    </div>
-                    <div class="index-change ${index.status}">${index.change_pct_display}</div>
-                </div>
-            `).join('');
-        }
-
-        // Render futures
-        function renderFutures(futures) {
-            const container = document.getElementById('futuresContainer');
-
-            if (!futures || futures.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load futures</p></div>';
-                return;
-            }
-
-            container.innerHTML = futures.map(item => `
-                <div class="asset-item">
-                    <div class="asset-name">${item.short_name}</div>
-                    <div class="asset-price">${item.price_display}</div>
-                    <div class="asset-change ${item.status}">${item.change_pct_display}</div>
-                </div>
-            `).join('');
-        }
-
-        // Render forex
-        function renderForex(forex) {
-            const container = document.getElementById('forexContainer');
-
-            if (!forex || forex.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load forex</p></div>';
-                return;
-            }
-
-            container.innerHTML = forex.map(item => `
-                <div class="asset-item">
-                    <div class="asset-name">${item.short_name}</div>
-                    <div class="asset-price">${item.price_display}</div>
-                    <div class="asset-change ${item.status}">${item.change_pct_display}</div>
-                </div>
-            `).join('');
-        }
-
-        // Render crypto
-        function renderCrypto(crypto) {
-            const container = document.getElementById('cryptoContainer');
-
-            if (!crypto || crypto.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load crypto</p></div>';
-                return;
-            }
-
-            container.innerHTML = crypto.map(item => `
-                <div class="asset-item">
-                    <div class="asset-name">${item.short_name}</div>
-                    <div class="asset-price">${item.price_display}</div>
-                    <div class="asset-change ${item.status}">${item.change_pct_display}</div>
-                </div>
-            `).join('');
-        }
-
-        // Switch movers tab
-        function switchMoversTab(tab) {
-            currentMoversTab = tab;
-
-            // Update tab styles
-            document.querySelectorAll('.mover-tab').forEach(t => {
-                t.classList.remove('active');
-                if (t.dataset.tab === tab) {
-                    t.classList.add('active');
-                }
-            });
-
-            // Re-render movers
-            if (dashboardData && dashboardData.movers) {
-                renderMovers(dashboardData.movers);
-            }
-        }
-
-        // Render movers
-        function renderMovers(movers) {
-            const container = document.getElementById('moversContainer');
-
-            if (!movers) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load movers</p></div>';
-                return;
-            }
-
-            const data = movers[currentMoversTab] || [];
-
-            if (data.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No data available</p></div>';
-                return;
-            }
-
-            container.innerHTML = data.map(item => `
-                <div class="mover-item">
-                    <div class="mover-info">
-                        <span class="mover-symbol">${item.symbol}</span>
-                        <span class="mover-name">${item.name}</span>
-                    </div>
-                    <div class="mover-data">
-                        <span class="mover-price">${item.price_display}</span>
-                        <span class="mover-change ${item.status}">${item.change_pct_display}</span>
+            container.innerHTML = indices.map(item => `
+                <div class="market-item">
+                    <span class="market-symbol">${item.short_name}</span>
+                    <div class="market-data">
+                        <span class="market-price">${item.price_display}</span>
+                        <span class="market-change ${item.status}">${item.change_pct_display}</span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Render news
         function renderNews(news) {
-            const container = document.getElementById('newsContainer');
-
+            const container = document.getElementById('newsList');
+            
             if (!news || news.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>Unable to load news</p></div>';
+                container.innerHTML = '<div class="watchlist-empty">No news available</div>';
                 return;
             }
 
-            container.innerHTML = news.slice(0, 5).map(item => `
-                <div class="news-item">
-                    <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="news-title">
-                        ${item.title}
-                    </a>
-                    <div class="news-meta">
-                        <span class="news-source">${item.source}</span>
-                        <span>${item.published}</span>
-                    </div>
+            container.innerHTML = news.slice(0, 4).map(item => `
+                <div class="news-item-compact">
+                    <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="news-title-compact">${item.title}</a>
+                    <div class="news-meta-compact">${item.source}</div>
                 </div>
             `).join('');
         }
 
-        // Render earnings
         function renderEarnings(earnings) {
-            const container = document.getElementById('earningsContainer');
-
+            const container = document.getElementById('earningsList');
+            
             if (!earnings || earnings.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No upcoming earnings</p></div>';
+                container.innerHTML = '<div class="watchlist-empty">No upcoming earnings</div>';
                 return;
             }
 
-            container.innerHTML = earnings.slice(0, 3).map(item => `
-                <div class="event-item">
-                    <div class="event-date">${item.date}</div>
-                    <div class="event-info">
-                        <div class="event-title">${item.ticker}</div>
-                        <div class="event-type">${item.name}</div>
+            container.innerHTML = earnings.slice(0, 6).map(item => `
+                <div class="earnings-item">
+                    <div class="earnings-date">${item.date}</div>
+                    <div class="earnings-info">
+                        <div class="earnings-ticker">${item.ticker}</div>
+                        <div class="earnings-name">${item.name}</div>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Render events
-        function renderEvents(events) {
-            const container = document.getElementById('eventsContainer');
+        function loadWatchlistFromStorage() {
+            const saved = localStorage.getItem('finsent_watchlist');
+            if (saved) {
+                try {
+                    watchlist = JSON.parse(saved).slice(0, MAX_WATCHLIST);
+                    renderWatchlist();
+                    loadWatchlistData();
+                } catch (e) {
+                    watchlist = [];
+                }
+            }
+        }
 
-            if (!events || events.length === 0) {
-                container.innerHTML = '<div class="empty-state" style="padding: 20px;"><p>No upcoming events</p></div>';
+        function saveWatchlistToStorage() {
+            localStorage.setItem('finsent_watchlist', JSON.stringify(watchlist));
+        }
+
+        async function loadWatchlistData() {
+            if (watchlist.length === 0) return;
+
+            try {
+                const response = await fetch('https://finsent-backend.onrender.com/api/social-screening', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tickers: watchlist })
+                });
+
+                const data = await response.json();
+
+                if (data.results) {
+                    data.results.forEach(item => {
+                        watchlistData[item.ticker] = {
+                            price: item.price_display,
+                            change: item.change_display,
+                            status: item.pct_change > 0 ? 'positive' : item.pct_change < 0 ? 'negative' : 'neutral'
+                        };
+                    });
+                    renderWatchlist();
+                }
+            } catch (error) {
+                console.error('Failed to load watchlist data:', error);
+            }
+        }
+
+        function renderWatchlist() {
+            const container = document.getElementById('watchlistContainer');
+            const clearBtn = document.getElementById('clearWatchlistBtn');
+            const countEl = document.getElementById('watchlistCount');
+
+            if (watchlist.length === 0) {
+                container.innerHTML = '<div class="watchlist-empty">Add up to 8 tickers</div>';
+                clearBtn.style.display = 'none';
+                countEl.textContent = '';
                 return;
             }
 
-            container.innerHTML = events.slice(0, 3).map(item => `
-                <div class="event-item">
-                    <div class="event-date">${item.date}</div>
-                    <div class="event-info">
-                        <div class="event-title">${item.event}</div>
-                        <div class="event-type">${item.type}</div>
+            clearBtn.style.display = 'block';
+            countEl.textContent = `${watchlist.length}/${MAX_WATCHLIST}`;
+
+            container.innerHTML = watchlist.map(ticker => {
+                const data = watchlistData[ticker] || { price: '—', change: '—', status: 'neutral' };
+                return `
+                    <div class="watchlist-item">
+                        <div class="watchlist-info">
+                            <span class="watchlist-symbol">${ticker}</span>
+                            <button class="watchlist-remove" onclick="removeFromWatchlist('${ticker}')">&times;</button>
+                        </div>
+                        <div class="watchlist-data">
+                            <span class="watchlist-price">${data.price}</span>
+                            <span class="watchlist-change ${data.status}">${data.change}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // Update timestamp
-        function updateTimestamp(timestamp) {
-            const el = document.getElementById('lastUpdated');
-            if (timestamp) {
-                const date = new Date(timestamp);
-                el.textContent = 'Last updated: ' + date.toLocaleString();
+        function addToWatchlist() {
+            const input = document.getElementById('watchlistInput');
+            const ticker = input.value.trim().toUpperCase();
+
+            if (!ticker || !/^[A-Z]{1,5}$/.test(ticker) || watchlist.includes(ticker) || watchlist.length >= MAX_WATCHLIST) {
+                input.style.borderColor = 'var(--negative)';
+                setTimeout(() => input.style.borderColor = '', 1000);
+                return;
             }
+
+            watchlist.push(ticker);
+            saveWatchlistToStorage();
+            renderWatchlist();
+            loadWatchlistData();
+            input.value = '';
         }
 
-        // Show error state
-        function showErrorState() {
-            document.getElementById('indicesContainer').innerHTML = '<div class="empty-state" style="grid-column: 1/-1;"><p>Failed to load market data. Please try again.</p></div>';
+        function removeFromWatchlist(ticker) {
+            watchlist = watchlist.filter(t => t !== ticker);
+            delete watchlistData[ticker];
+            saveWatchlistToStorage();
+            renderWatchlist();
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadDashboard();
-
-            // Auto-refresh every 2 minutes
-            setInterval(loadDashboard, 120000);
-        });
+        function clearWatchlist() {
+            watchlist = [];
+            watchlistData = {};
+            saveWatchlistToStorage();
+            renderWatchlist();
+        }
     </script>
 </body>
 </html>
