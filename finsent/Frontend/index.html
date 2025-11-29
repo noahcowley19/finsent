@@ -128,7 +128,6 @@
             letter-spacing: -0.01em;
         }
 
-        /* Main Layout - Single Column */
         .main-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -138,7 +137,6 @@
             margin: 0 auto;
         }
 
-        /* Features Grid - Center Column (Primary Focus) */
         .features-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -184,6 +182,33 @@
 
         .feature-card.featured .feature-btn:hover {
             background: var(--neutral-light);
+        }
+
+        .feature-card.highlight {
+            border: 2px solid var(--positive);
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        }
+
+        .feature-card.highlight h2 {
+            color: var(--positive-dark);
+        }
+
+        .feature-card.highlight p {
+            color: var(--neutral-dark);
+        }
+
+        .feature-card.highlight .new-badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--positive);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .feature-card h2 {
@@ -238,7 +263,6 @@
             transform: translateX(4px);
         }
 
-        /* Footer */
         .footer {
             text-align: center;
             margin-top: 48px;
@@ -261,7 +285,6 @@
             text-decoration: underline;
         }
 
-        /* Responsive Design */
         @media (max-width: 768px) {
             .features-grid {
                 grid-template-columns: 1fr;
@@ -331,6 +354,7 @@
             <a href="/financials" class="nav-link">Financials</a>
             <a href="/insider" class="nav-link">Insider Trading</a>
             <a href="/search" class="nav-link">Search</a>
+            <a href="/picker" class="nav-link">Today's Picks</a>
         </div>
     </nav>
 
@@ -343,7 +367,6 @@
         </div>
 
         <div class="main-layout">
-            <!-- Center - Feature Cards -->
             <div class="features-container">
                 <div class="features-grid">
                     <div class="feature-card featured">
@@ -351,6 +374,18 @@
                         <p>A comprehensive stock search with charts, metrics, ratings, financial health indicators, and real-time news.</p>
                         <a href="/search" class="feature-btn">
                             Launch Search
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </a>
+                    </div>
+
+                    <div class="feature-card highlight">
+                        <span class="new-badge">New</span>
+                        <h2>Today's Picks</h2>
+                        <p>Daily stock screener using Minervini's trend template. Automatically identifies momentum stocks in strong uptrends.</p>
+                        <a href="/picker" class="feature-btn">
+                            View Picks
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
