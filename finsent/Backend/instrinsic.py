@@ -2,7 +2,6 @@ from flask import Blueprint, request, jsonify
 import yfinance as yf
 from datetime import datetime
 import math
-import numpy as np
 
 intrinsic_bp = Blueprint('intrinsic', __name__)
 
@@ -52,6 +51,23 @@ def format_large_number(value):
         return 'N/A'
 
 
+def safe_get_statement(dataframe, keys):
+    """Safely get value from financial statement"""
+    try:
+        if dataframe is None or dataframe.empty:
+            return None
+        
+        for key in keys:
+            if key in dataframe.index:
+                value = dataframe.loc[key].iloc[0] if len(dataframe.loc[key]) > 0 else None
+                cleaned = clean_value(value)
+                if cleaned is not None:
+                    return cleaned
+        return None
+    except:
+        return None
+
+
 def get_stock_data(ticker):
     """Fetch comprehensive stock data for valuation"""
     try:
@@ -88,30 +104,8 @@ def get_stock_data(ticker):
     except Exception as e:
         return {
             'error': f'Unable to fetch data for {ticker}. Please try again.',
-            'error_type': 'fetch_error',
-            'details': str(e)
+            'error_type': 'fetch_error'
         }
-
-
-def safe_get_statement(df, row_names, column_index=0, default=None):
-    """Safely extract value from financial statement"""
-    try:
-        if df is None or df.empty:
-            return default
-        
-        # Handle both single string and list of possible names
-        if isinstance(row_names, str):
-            row_names = [row_names]
-            
-        for row_name in row_names:
-            if row_name in df.index:
-                value = df.loc[row_name].iloc[column_index]
-                if value is not None:
-                    cleaned = clean_value(float(value))
-                    return cleaned if cleaned is not None else default
-        return default
-    except:
-        return default
 
 
 def get_historical_fcf(cash_flow):
@@ -122,41 +116,23 @@ def get_historical_fcf(cash_flow):
         
         fcf_list = []
         
-        # Try to get Free Cash Flow directly, or calculate it
-        for i in range(min(5, len(cash_flow.columns))):
-            try:
-                date = cash_flow.columns[i]
-                year = date.year if hasattr(date, 'year') else str(date)[:4]
-                
-                # Try direct FCF first
-                fcf = safe_get_statement(cash_flow, ['Free Cash Flow', 'FreeCashFlow'], i)
-                
-                # If not available, calculate from Operating CF - CapEx
-                if fcf is None:
-                    ocf = safe_get_statement(cash_flow, [
-                        'Operating Cash Flow',
-                        'Cash Flow From Continuing Operating Activities',
-                        'Total Cash From Operating Activities'
-                    ], i)
-                    capex = safe_get_statement(cash_flow, [
-                        'Capital Expenditure',
-                        'Capital Expenditures',
-                        'Purchase Of PPE'
-                    ], i)
-                    
-                    if ocf is not None and capex is not None:
-                        fcf = ocf + capex  # CapEx is typically negative
-                    elif ocf is not None:
-                        fcf = ocf
-                
-                if fcf is not None:
-                    fcf_list.append({
-                        'year': str(year),
-                        'value': fcf,
-                        'display': format_large_number(fcf)
-                    })
-            except:
+        for i, col in enumerate(cash_flow.columns):
+            year = col.year
+            fcf = safe_get_statement(cash_flow[[col]], [
+                'Free Cash Flow',
+                'Operating Cash Flow'
+            ])
+            
+            if fcf is None:
                 continue
+            
+            fcf_list.append({
+                'year': str(year),
+                'value': fcf
+            })
+            
+            if len(fcf_list) >= 5:
+                break
         
         return fcf_list[::-1]  # Reverse to chronological order
         
@@ -255,9 +231,7 @@ def calculate_dcf_value(data):
             base_growth = 5.0  # Conservative default
         
         # Cap growth rates
-        growth_5y = min(25, max(-5, base_growth))
-        growth_6_10y = growth_5y * 0.6  # Fade growth
-        growth_11_20y = min(growth_6_10y * 0.5, 4)  # Terminal fade
+        growth_rate = min(25, max(-5, base_growth))
         terminal_growth = 2.5  # Long-term GDP growth
         
         # Get discount rate
@@ -282,19 +256,12 @@ def calculate_dcf_value(data):
         if not shares_outstanding:
             return None, "Unable to determine shares outstanding"
         
-        # Project future cash flows
+        # Project future cash flows (5 years)
         projected_cf = []
         fcf = current_fcf
         
-        for year in range(1, 21):
-            if year <= 5:
-                growth = growth_5y / 100
-            elif year <= 10:
-                growth = growth_6_10y / 100
-            else:
-                growth = growth_11_20y / 100
-            
-            fcf = fcf * (1 + growth)
+        for year in range(1, 6):
+            fcf = fcf * (1 + growth_rate / 100)
             discounted_cf = fcf / ((1 + discount_rate / 100) ** year)
             projected_cf.append({
                 'year': year,
@@ -305,7 +272,7 @@ def calculate_dcf_value(data):
         # Calculate terminal value
         terminal_fcf = projected_cf[-1]['fcf'] * (1 + terminal_growth / 100)
         terminal_value = terminal_fcf / ((discount_rate / 100) - (terminal_growth / 100))
-        discounted_terminal = terminal_value / ((1 + discount_rate / 100) ** 20)
+        discounted_terminal = terminal_value / ((1 + discount_rate / 100) ** 5)
         
         # Sum of discounted cash flows
         sum_dcf = sum(cf['discounted'] for cf in projected_cf)
@@ -321,148 +288,15 @@ def calculate_dcf_value(data):
         
         return {
             'value': intrinsic_value,
-            'enterprise_value': enterprise_value,
-            'equity_value': equity_value,
-            'current_fcf': current_fcf,
-            'growth_5y': growth_5y,
-            'growth_6_10y': growth_6_10y,
-            'growth_11_20y': growth_11_20y,
-            'terminal_growth': terminal_growth,
+            'fcf_ttm': current_fcf,
+            'growth_rate': growth_rate,
             'discount_rate': discount_rate,
-            'total_debt': total_debt,
-            'cash': cash,
-            'shares_outstanding': shares_outstanding,
             'terminal_value': terminal_value,
-            'fcf_history': fcf_history,
-            'projected_cf': projected_cf[:5]  # First 5 years for display
+            'fcf_history': fcf_history
         }, None
         
     except Exception as e:
         return None, f"DCF calculation error: {str(e)}"
-
-
-def calculate_relative_value(data):
-    """Calculate relative valuation using peer multiples"""
-    try:
-        info = data['info']
-        
-        current_price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
-        
-        if not current_price:
-            return None, "Unable to get current price"
-        
-        valuations = []
-        
-        # P/E Based Valuation
-        trailing_pe = clean_value(info.get('trailingPE'))
-        forward_pe = clean_value(info.get('forwardPE'))
-        trailing_eps = clean_value(info.get('trailingEps'))
-        forward_eps = clean_value(info.get('forwardEps'))
-        
-        # Industry average P/E approximation (could be enhanced with sector data)
-        sector = info.get('sector', '')
-        industry_pe = get_industry_pe(sector)
-        
-        if trailing_eps and industry_pe:
-            pe_value = trailing_eps * industry_pe
-            valuations.append({
-                'method': 'P/E (Industry Avg)',
-                'value': pe_value,
-                'multiple': industry_pe,
-                'base_metric': trailing_eps,
-                'base_name': 'EPS (TTM)'
-            })
-        
-        # EV/EBITDA Based Valuation
-        ev_ebitda = clean_value(info.get('enterpriseToEbitda'))
-        ebitda = clean_value(info.get('ebitda'))
-        ev = clean_value(info.get('enterpriseValue'))
-        shares = clean_value(info.get('sharesOutstanding'))
-        total_debt = clean_value(info.get('totalDebt')) or 0
-        total_cash = clean_value(info.get('totalCash')) or 0
-        
-        industry_ev_ebitda = get_industry_ev_ebitda(sector)
-        
-        if ebitda and industry_ev_ebitda and shares:
-            target_ev = ebitda * industry_ev_ebitda
-            target_equity = target_ev - total_debt + total_cash
-            ev_value = target_equity / shares
-            valuations.append({
-                'method': 'EV/EBITDA (Industry Avg)',
-                'value': ev_value,
-                'multiple': industry_ev_ebitda,
-                'base_metric': ebitda,
-                'base_name': 'EBITDA'
-            })
-        
-        # P/S Based Valuation
-        revenue = clean_value(info.get('totalRevenue'))
-        ps_ratio = clean_value(info.get('priceToSalesTrailing12Months'))
-        
-        industry_ps = get_industry_ps(sector)
-        
-        if revenue and shares and industry_ps:
-            revenue_per_share = revenue / shares
-            ps_value = revenue_per_share * industry_ps
-            valuations.append({
-                'method': 'P/S (Industry Avg)',
-                'value': ps_value,
-                'multiple': industry_ps,
-                'base_metric': revenue,
-                'base_name': 'Revenue'
-            })
-        
-        # P/B Based Valuation
-        book_value = clean_value(info.get('bookValue'))
-        pb_ratio = clean_value(info.get('priceToBook'))
-        
-        industry_pb = get_industry_pb(sector)
-        
-        if book_value and industry_pb:
-            pb_value = book_value * industry_pb
-            valuations.append({
-                'method': 'P/B (Industry Avg)',
-                'value': pb_value,
-                'multiple': industry_pb,
-                'base_metric': book_value,
-                'base_name': 'Book Value'
-            })
-        
-        if not valuations:
-            return None, "Insufficient data for relative valuation"
-        
-        # Calculate weighted average
-        # Weight P/E and EV/EBITDA higher as they're more commonly used
-        weighted_values = []
-        weights = []
-        
-        for v in valuations:
-            if v['value'] and v['value'] > 0:
-                if 'P/E' in v['method'] or 'EV/EBITDA' in v['method']:
-                    weight = 2.0
-                else:
-                    weight = 1.0
-                weighted_values.append(v['value'] * weight)
-                weights.append(weight)
-        
-        if weighted_values:
-            avg_value = sum(weighted_values) / sum(weights)
-        else:
-            return None, "Could not calculate relative value"
-        
-        return {
-            'value': avg_value,
-            'methods': valuations,
-            'current_price': current_price,
-            'sector': sector,
-            'company_pe': trailing_pe,
-            'company_ev_ebitda': ev_ebitda,
-            'company_ps': ps_ratio,
-            'company_pb': pb_ratio
-        }, None
-        
-    except Exception as e:
-        return None, f"Relative valuation error: {str(e)}"
 
 
 def get_industry_pe(sector):
@@ -501,44 +335,80 @@ def get_industry_ev_ebitda(sector):
     return sector_ev.get(sector, 12)
 
 
-def get_industry_ps(sector):
-    """Get approximate industry P/S by sector"""
-    sector_ps = {
-        'Technology': 6,
-        'Healthcare': 4,
-        'Financial Services': 3,
-        'Consumer Cyclical': 1.5,
-        'Consumer Defensive': 2,
-        'Industrials': 2,
-        'Energy': 1,
-        'Utilities': 2,
-        'Real Estate': 8,
-        'Basic Materials': 1.5,
-        'Communication Services': 3,
-    }
-    return sector_ps.get(sector, 2)
-
-
-def get_industry_pb(sector):
-    """Get approximate industry P/B by sector"""
-    sector_pb = {
-        'Technology': 6,
-        'Healthcare': 4,
-        'Financial Services': 1.3,
-        'Consumer Cyclical': 4,
-        'Consumer Defensive': 5,
-        'Industrials': 4,
-        'Energy': 1.5,
-        'Utilities': 1.8,
-        'Real Estate': 2,
-        'Basic Materials': 2,
-        'Communication Services': 3,
-    }
-    return sector_pb.get(sector, 3)
+def calculate_relative_value(data):
+    """Calculate relative valuation using peer multiples"""
+    try:
+        info = data['info']
+        
+        current_price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
+        
+        if not current_price:
+            return None, "Unable to get current price"
+        
+        valuations = []
+        
+        # P/E Based Valuation
+        trailing_eps = clean_value(info.get('trailingEps'))
+        sector = info.get('sector', '')
+        industry_pe = get_industry_pe(sector)
+        
+        if trailing_eps and industry_pe:
+            pe_value = trailing_eps * industry_pe
+            valuations.append({
+                'method': 'P/E (Industry Avg)',
+                'value': pe_value,
+                'multiple': industry_pe,
+                'base_metric': trailing_eps,
+                'base_name': 'EPS (TTM)'
+            })
+        
+        # EV/EBITDA Based Valuation
+        ebitda = clean_value(info.get('ebitda'))
+        shares = clean_value(info.get('sharesOutstanding'))
+        total_debt = clean_value(info.get('totalDebt')) or 0
+        cash = clean_value(info.get('totalCash')) or 0
+        industry_ev = get_industry_ev_ebitda(sector)
+        
+        if ebitda and shares and industry_ev:
+            ev = ebitda * industry_ev
+            equity_value = ev - total_debt + cash
+            ev_value = equity_value / shares
+            valuations.append({
+                'method': 'EV/EBITDA',
+                'value': ev_value,
+                'multiple': industry_ev,
+                'base_metric': ebitda,
+                'base_name': 'EBITDA'
+            })
+        
+        if not valuations:
+            return None, "Could not calculate relative value"
+        
+        # Calculate weighted average
+        if len(valuations) > 0:
+            weights = [1.0] * len(valuations)
+            weighted_values = [v['value'] * w for v, w in zip(valuations, weights)]
+            avg_value = sum(weighted_values) / sum(weights)
+        else:
+            return None, "Could not calculate relative value"
+        
+        return {
+            'value': avg_value,
+            'methods': valuations,
+            'current_price': current_price,
+            'sector': sector,
+            'company_pe': clean_value(info.get('trailingPE')),
+            'company_ev_ebitda': clean_value(info.get('enterpriseToEbitda')),
+            'company_ps': clean_value(info.get('priceToSalesTrailing12Months')),
+            'company_pb': clean_value(info.get('priceToBook'))
+        }, None
+        
+    except Exception as e:
+        return None, f"Relative valuation error: {str(e)}"
 
 
 def combine_valuations(dcf_result, relative_result, info):
-    """Combine DCF and relative valuations with appropriate weighting"""
+    """Combine DCF and relative valuation with appropriate weighting"""
     try:
         dcf_value = dcf_result['value'] if dcf_result else None
         relative_value = relative_result['value'] if relative_result else None
@@ -546,8 +416,7 @@ def combine_valuations(dcf_result, relative_result, info):
         current_price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
         
         if dcf_value and relative_value:
-            # Weight DCF at 60%, relative at 40% for most stocks
-            # Adjust based on data quality
+            # Weight DCF at 60%, relative at 40%
             dcf_weight = 0.6
             relative_weight = 0.4
             
@@ -555,50 +424,32 @@ def combine_valuations(dcf_result, relative_result, info):
             
             return {
                 'intrinsic_value': combined_value,
-                'dcf_value': dcf_value,
-                'relative_value': relative_value,
-                'dcf_weight': dcf_weight * 100,
-                'relative_weight': relative_weight * 100,
                 'current_price': current_price,
-                'upside': ((combined_value / current_price) - 1) * 100 if current_price else None
+                'upside_percent': ((combined_value / current_price) - 1) * 100 if current_price else None,
+                'dcf_weight': dcf_weight * 100,
+                'relative_weight': relative_weight * 100
             }
         elif dcf_value:
             return {
                 'intrinsic_value': dcf_value,
-                'dcf_value': dcf_value,
-                'relative_value': None,
-                'dcf_weight': 100,
-                'relative_weight': 0,
                 'current_price': current_price,
-                'upside': ((dcf_value / current_price) - 1) * 100 if current_price else None
+                'upside_percent': ((dcf_value / current_price) - 1) * 100 if current_price else None,
+                'dcf_weight': 100,
+                'relative_weight': 0
             }
         elif relative_value:
             return {
                 'intrinsic_value': relative_value,
-                'dcf_value': None,
-                'relative_value': relative_value,
-                'dcf_weight': 0,
-                'relative_weight': 100,
                 'current_price': current_price,
-                'upside': ((relative_value / current_price) - 1) * 100 if current_price else None
+                'upside_percent': ((relative_value / current_price) - 1) * 100 if current_price else None,
+                'dcf_weight': 0,
+                'relative_weight': 100
             }
         else:
             return None
             
     except Exception as e:
         return None
-
-
-def get_valuation_status(upside):
-    """Determine valuation status based on upside potential"""
-    if upside is None:
-        return 'neutral'
-    if upside > 20:
-        return 'positive'  # Undervalued
-    elif upside < -20:
-        return 'negative'  # Overvalued
-    else:
-        return 'neutral'  # Fairly valued
 
 
 def get_company_info(info):
@@ -626,10 +477,7 @@ def get_company_info(info):
         'price': current_price,
         'price_display': f"${current_price:.2f}" if current_price else 'N/A',
         'market_cap': market_cap,
-        'market_cap_display': market_cap_display,
-        'beta': clean_value(info.get('beta')),
-        'fifty_two_high': clean_value(info.get('fiftyTwoWeekHigh')),
-        'fifty_two_low': clean_value(info.get('fiftyTwoWeekLow'))
+        'market_cap_display': market_cap_display
     }
 
 
@@ -685,33 +533,19 @@ def analyze_intrinsic():
         
         # Build response
         response = {
-            'ticker': ticker,
             'company': company,
-            'valuation': {
-                'intrinsic_value': safe_round(combined['intrinsic_value'], 2),
-                'intrinsic_value_display': f"${combined['intrinsic_value']:.2f}" if combined['intrinsic_value'] else 'N/A',
-                'current_price': safe_round(combined['current_price'], 2),
-                'current_price_display': f"${combined['current_price']:.2f}" if combined['current_price'] else 'N/A',
-                'upside': safe_round(combined['upside'], 1),
-                'upside_display': f"{combined['upside']:+.1f}%" if combined['upside'] else 'N/A',
-                'status': get_valuation_status(combined['upside']),
-                'dcf_weight': combined['dcf_weight'],
-                'relative_weight': combined['relative_weight']
-            },
+            'intrinsic_value': safe_round(combined['intrinsic_value'], 2),
+            'intrinsic_value_display': f"${combined['intrinsic_value']:.2f}" if combined['intrinsic_value'] else 'N/A',
+            'upside_percent': safe_round(combined['upside_percent'], 1),
             'dcf': {
                 'value': safe_round(dcf_result['value'], 2) if dcf_result else None,
                 'value_display': f"${dcf_result['value']:.2f}" if dcf_result else 'N/A',
-                'current_fcf': dcf_result['current_fcf'] if dcf_result else None,
-                'current_fcf_display': format_large_number(dcf_result['current_fcf']) if dcf_result else 'N/A',
-                'growth_5y': safe_round(dcf_result['growth_5y'], 1) if dcf_result else None,
-                'growth_6_10y': safe_round(dcf_result['growth_6_10y'], 1) if dcf_result else None,
-                'growth_11_20y': safe_round(dcf_result['growth_11_20y'], 1) if dcf_result else None,
-                'terminal_growth': dcf_result['terminal_growth'] if dcf_result else None,
+                'fcf_ttm': dcf_result['fcf_ttm'] if dcf_result else None,
+                'fcf_ttm_display': format_large_number(dcf_result['fcf_ttm']) if dcf_result else 'N/A',
+                'growth_rate': safe_round(dcf_result['growth_rate'], 1) if dcf_result else None,
                 'discount_rate': safe_round(dcf_result['discount_rate'], 1) if dcf_result else None,
-                'total_debt': dcf_result['total_debt'] if dcf_result else None,
-                'total_debt_display': format_large_number(dcf_result['total_debt']) if dcf_result else 'N/A',
-                'cash': dcf_result['cash'] if dcf_result else None,
-                'cash_display': format_large_number(dcf_result['cash']) if dcf_result else 'N/A',
+                'terminal_value': dcf_result['terminal_value'] if dcf_result else None,
+                'terminal_value_display': format_large_number(dcf_result['terminal_value']) if dcf_result else 'N/A',
                 'fcf_history': dcf_result['fcf_history'] if dcf_result else [],
                 'error': dcf_error
             },
@@ -725,14 +559,7 @@ def analyze_intrinsic():
                 'company_ps': safe_round(relative_result['company_ps'], 2) if relative_result else None,
                 'company_pb': safe_round(relative_result['company_pb'], 2) if relative_result else None,
                 'error': relative_error
-            },
-            'disclaimer': (
-                "This intrinsic value estimate is based on a DCF model and relative valuation multiples. "
-                "Actual values may differ significantly. Growth rate assumptions, discount rates, and industry "
-                "multiples are approximations. This is not investment advice. Always conduct thorough research "
-                "and consult a qualified financial advisor before making investment decisions."
-            ),
-            'timestamp': datetime.now().isoformat()
+            }
         }
         
         # Format relative methods for display
