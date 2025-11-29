@@ -1,1 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrinsic Value Calculator | Finsent</title>
 
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+     crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --warning-dark: #92400e;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 80px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.03em;
+        }
+
+        .hero .subtitle {
+            font-size: 1rem;
+            color: var(--secondary);
+            font-weight: 400;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-section {
+            max-width: 500px;
+            margin: 0 auto 40px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            background: var(--card-bg);
+            padding: 8px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
+            font-size: 16px;
+            font-family: inherit;
+            color: var(--primary);
+            outline: none;
+        }
+
+        .search-box input::placeholder {
+            color: var(--secondary);
+        }
+
+        .search-box button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .search-box button:hover {
+            background: var(--neutral-dark);
+        }
+
+        .search-box button:disabled {
+            background: var(--neutral);
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .company-header {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .company-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .company-main {
+            flex: 1;
+        }
+
+        .company-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .company-ticker {
+            font-size: 1rem;
+            color: var(--secondary);
+            font-weight: 500;
+        }
+
+        .company-sector {
+            font-size: 0.875rem;
+            color: var(--secondary);
+            margin-top: 8px;
+        }
+
+        .price-info {
+            text-align: right;
+        }
+
+        .current-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .price-label {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .valuation-hero {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .intrinsic-value-main {
+            margin-bottom: 24px;
+        }
+
+        .intrinsic-label {
+            font-size: 0.875rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .intrinsic-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .upside-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .upside-badge.positive {
+            background: var(--positive-light);
+            color: var(--positive-dark);
+        }
+
+        .upside-badge.negative {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+        }
+
+        .upside-badge.neutral {
+            background: var(--neutral-light);
+            color: var(--neutral-dark);
+        }
+
+        .valuation-status {
+            font-size: 1rem;
+            margin-top: 12px;
+            color: var(--secondary);
+        }
+
+        .valuation-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .breakdown-item {
+            padding: 16px;
+            background: var(--background);
+            border-radius: 12px;
+        }
+
+        .breakdown-label {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .breakdown-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .breakdown-weight {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            margin-top: 4px;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+            .valuation-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--secondary);
+        }
+
+        .metric-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--secondary);
+        }
+
+        .metric-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .method-card {
+            background: var(--background);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 10px;
+        }
+
+        .method-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .method-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .method-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .method-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .method-details {
+            font-size: 0.75rem;
+            color: var(--secondary);
+        }
+
+        .fcf-chart-container {
+            height: 200px;
+            margin-top: 16px;
+        }
+
+        .disclaimer {
+            background: var(--warning-light);
+            color: var(--warning-dark);
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-top: 24px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .disclaimer-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .assumptions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 500px) {
+            .assumptions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .assumption-item {
+            background: var(--background);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .assumption-label {
+            font-size: 0.75rem;
+            color: var(--secondary);
+            margin-bottom: 2px;
+        }
+
+        .assumption-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .comparison-bar {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--background);
+            border-radius: 12px;
+        }
+
+        .bar-container {
+            position: relative;
+            height: 40px;
+            background: linear-gradient(to right, var(--positive-light) 0%, var(--neutral-light) 50%, var(--negative-light) 100%);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .bar-marker {
+            position: absolute;
+            top: -8px;
+            bottom: -8px;
+            width: 4px;
+            background: var(--primary);
+            border-radius: 2px;
+            transform: translateX(-50%);
+        }
+
+        .bar-marker::after {
+            content: attr(data-label);
+            position: absolute;
+            bottom: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--secondary);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">Dashboard</a>
+            <a href="search.html" class="nav-link">Stock Search</a>
+            <a href="financials.html" class="nav-link">Financials</a>
+            <a href="sentiment.html" class="nav-link">Sentiment</a>
+            <a href="insider.html" class="nav-link">Insider</a>
+            <a href="intrinsic.html" class="nav-link active">Intrinsic Value</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="hero">
+            <h1>Intrinsic Value Calculator</h1>
+            <p class="subtitle">Estimate fair value using DCF and relative valuation models. Compare intrinsic value to current market price.</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" id="tickerInput" placeholder="Enter stock ticker (e.g., AAPL)" autocomplete="off">
+                <button onclick="analyzeStock()" id="analyzeBtn">Calculate</button>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Calculating intrinsic value...</p>
+        </div>
+
+        <div class="results" id="results">
+            <!-- Company Header -->
+            <div class="company-header">
+                <div class="company-info">
+                    <div class="company-main">
+                        <div class="company-name" id="companyName">-</div>
+                        <div class="company-ticker" id="companyTicker">-</div>
+                        <div class="company-sector" id="companySector">-</div>
+                    </div>
+                    <div class="price-info">
+                        <div class="price-label">Current Price</div>
+                        <div class="current-price" id="currentPrice">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Valuation Hero -->
+            <div class="valuation-hero">
+                <div class="intrinsic-value-main">
+                    <div class="intrinsic-label">Estimated Intrinsic Value</div>
+                    <div class="intrinsic-value" id="intrinsicValue">-</div>
+                    <div class="upside-badge neutral" id="upsideBadge">-</div>
+                    <div class="valuation-status" id="valuationStatus">-</div>
+                </div>
+                <div class="valuation-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">DCF Value</div>
+                        <div class="breakdown-value" id="dcfValue">-</div>
+                        <div class="breakdown-weight" id="dcfWeight">-</div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-label">Relative Value</div>
+                        <div class="breakdown-value" id="relativeValue">-</div>
+                        <div class="breakdown-weight" id="relativeWeight">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Bar -->
+            <div class="card">
+                <div class="card-title">
+                    <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Price vs Intrinsic Value
+                </div>
+                <div class="comparison-bar">
+                    <div class="bar-container" id="barContainer">
+                        <div class="bar-marker" id="priceMarker" data-label="Current"></div>
+                        <div class="bar-marker" id="intrinsicMarker" data-label="Intrinsic" style="background: var(--accent);"></div>
+                    </div>
+                    <div class="bar-labels">
+                        <span>Undervalued</span>
+                        <span>Fair Value</span>
+                        <span>Overvalued</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Cards Grid -->
+            <div class="section-grid" style="margin-top: 24px;">
+                <!-- DCF Details -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        DCF Model Details
+                    </div>
+                    <div class="assumptions-grid" id="dcfAssumptions">
+                        <!-- Populated by JS -->
+                    </div>
+                    <div class="fcf-chart-container">
+                        <canvas id="fcfChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Relative Valuation Details -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path>
+                        </svg>
+                        Relative Valuation Methods
+                    </div>
+                    <div id="relativeMethods">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Company Multiples -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Company Multiples
+                    </div>
+                    <div class="metric-list" id="companyMultiples">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Balance Sheet Items -->
+                <div class="card">
+                    <div class="card-title">
+                        <svg class="card-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                        Balance Sheet
+                    </div>
+                    <div class="metric-list" id="balanceSheet">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div class="disclaimer">
+                <div class="disclaimer-title">⚠️ Important Disclaimer</div>
+                <div id="disclaimerText">
+                    This intrinsic value estimate is based on a DCF model and relative valuation multiples. 
+                    Actual values may differ significantly. Growth rate assumptions, discount rates, and industry 
+                    multiples are approximations. This is not investment advice. Always conduct thorough research 
+                    and consult a qualified financial advisor before making investment decisions.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fcfChart = null;
+
+        async function analyzeStock() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            
+            if (!ticker) {
+                showError('Please enter a stock ticker');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const response = await fetch('/api/intrinsic', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to calculate intrinsic value');
+                }
+
+                displayResults(data);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function displayResults(data) {
+            document.getElementById('results').style.display = 'block';
+
+            // Company header
+            document.getElementById('companyName').textContent = data.company.name;
+            document.getElementById('companyTicker').textContent = data.ticker;
+            document.getElementById('companySector').textContent = `${data.company.sector} • ${data.company.industry}`;
+            document.getElementById('currentPrice').textContent = data.valuation.current_price_display;
+
+            // Main valuation
+            document.getElementById('intrinsicValue').textContent = data.valuation.intrinsic_value_display;
+            
+            const upsideBadge = document.getElementById('upsideBadge');
+            upsideBadge.textContent = data.valuation.upside_display;
+            upsideBadge.className = `upside-badge ${data.valuation.status}`;
+
+            // Valuation status text
+            const upside = data.valuation.upside;
+            let statusText = '';
+            if (upside > 20) {
+                statusText = 'Stock appears undervalued';
+            } else if (upside < -20) {
+                statusText = 'Stock appears overvalued';
+            } else {
+                statusText = 'Stock appears fairly valued';
+            }
+            document.getElementById('valuationStatus').textContent = statusText;
+
+            // Breakdown
+            document.getElementById('dcfValue').textContent = data.dcf.value_display;
+            document.getElementById('dcfWeight').textContent = `Weight: ${data.valuation.dcf_weight}%`;
+            document.getElementById('relativeValue').textContent = data.relative.value_display;
+            document.getElementById('relativeWeight').textContent = `Weight: ${data.valuation.relative_weight}%`;
+
+            // Comparison bar
+            updateComparisonBar(data.valuation.current_price, data.valuation.intrinsic_value);
+
+            // DCF assumptions
+            displayDCFAssumptions(data.dcf);
+
+            // FCF Chart
+            displayFCFChart(data.dcf.fcf_history);
+
+            // Relative methods
+            displayRelativeMethods(data.relative.methods);
+
+            // Company multiples
+            displayCompanyMultiples(data.relative);
+
+            // Balance sheet
+            displayBalanceSheet(data.dcf);
+        }
+
+        function updateComparisonBar(currentPrice, intrinsicValue) {
+            if (!currentPrice || !intrinsicValue) return;
+
+            // Calculate positions (0% = undervalued, 50% = fair, 100% = overvalued)
+            const ratio = currentPrice / intrinsicValue;
+            
+            // Map ratio to position: 0.5 ratio = 0%, 1.0 ratio = 50%, 1.5 ratio = 100%
+            const pricePos = Math.max(0, Math.min(100, (ratio - 0.5) * 100));
+            const intrinsicPos = 50; // Intrinsic value is always at center
+
+            document.getElementById('priceMarker').style.left = `${pricePos}%`;
+            document.getElementById('intrinsicMarker').style.left = `${intrinsicPos}%`;
+        }
+
+        function displayDCFAssumptions(dcf) {
+            const container = document.getElementById('dcfAssumptions');
+            
+            if (dcf.error) {
+                container.innerHTML = `<div style="color: var(--secondary); font-size: 0.875rem;">${dcf.error}</div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="assumption-item">
+                    <div class="assumption-label">Current FCF</div>
+                    <div class="assumption-value">${dcf.current_fcf_display}</div>
+                </div>
+                <div class="assumption-item">
+                    <div class="assumption-label">Discount Rate</div>
+                    <div class="assumption-value">${dcf.discount_rate}%</div>
+                </div>
+                <div class="assumption-item">
+                    <div class="assumption-label">Growth (Yr 1-5)</div>
+                    <div class="assumption-value">${dcf.growth_5y}%</div>
+                </div>
+                <div class="assumption-item">
+                    <div class="assumption-label">Growth (Yr 6-10)</div>
+                    <div class="assumption-value">${dcf.growth_6_10y}%</div>
+                </div>
+                <div class="assumption-item">
+                    <div class="assumption-label">Growth (Yr 11-20)</div>
+                    <div class="assumption-value">${dcf.growth_11_20y}%</div>
+                </div>
+                <div class="assumption-item">
+                    <div class="assumption-label">Terminal Growth</div>
+                    <div class="assumption-value">${dcf.terminal_growth}%</div>
+                </div>
+            `;
+        }
+
+        function displayFCFChart(fcfHistory) {
+            const ctx = document.getElementById('fcfChart').getContext('2d');
+            
+            if (fcfChart) {
+                fcfChart.destroy();
+            }
+
+            if (!fcfHistory || fcfHistory.length === 0) {
+                return;
+            }
+
+            const labels = fcfHistory.map(f => f.year);
+            const values = fcfHistory.map(f => f.value / 1e9); // Convert to billions
+
+            fcfChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Free Cash Flow (Billions)',
+                        data: values,
+                        backgroundColor: values.map(v => v >= 0 ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)'),
+                        borderColor: values.map(v => v >= 0 ? 'rgb(16, 185, 129)' : 'rgb(239, 68, 68)'),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `$${context.raw.toFixed(2)}B`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value + 'B';
+                                },
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayRelativeMethods(methods) {
+            const container = document.getElementById('relativeMethods');
+            
+            if (!methods || methods.length === 0) {
+                container.innerHTML = '<div style="color: var(--secondary); font-size: 0.875rem;">Insufficient data for relative valuation</div>';
+                return;
+            }
+
+            container.innerHTML = methods.map(m => `
+                <div class="method-card">
+                    <div class="method-header">
+                        <span class="method-name">${m.method}</span>
+                        <span class="method-value">${m.value_display}</span>
+                    </div>
+                    <div class="method-details">
+                        ${m.base_name}: ${m.base_display} × ${m.multiple_display}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayCompanyMultiples(relative) {
+            const container = document.getElementById('companyMultiples');
+            
+            const multiples = [
+                { label: 'P/E Ratio', value: relative.company_pe ? `${relative.company_pe}x` : 'N/A' },
+                { label: 'EV/EBITDA', value: relative.company_ev_ebitda ? `${relative.company_ev_ebitda}x` : 'N/A' },
+                { label: 'P/S Ratio', value: relative.company_ps ? `${relative.company_ps}x` : 'N/A' },
+                { label: 'P/B Ratio', value: relative.company_pb ? `${relative.company_pb}x` : 'N/A' },
+                { label: 'Sector', value: relative.sector || 'N/A' }
+            ];
+
+            container.innerHTML = multiples.map(m => `
+                <div class="metric-row">
+                    <span class="metric-label">${m.label}</span>
+                    <span class="metric-value">${m.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function displayBalanceSheet(dcf) {
+            const container = document.getElementById('balanceSheet');
+            
+            const items = [
+                { label: 'Total Debt', value: dcf.total_debt_display },
+                { label: 'Cash & Equivalents', value: dcf.cash_display },
+                { label: 'Net Debt', value: formatNetDebt(dcf.total_debt, dcf.cash) }
+            ];
+
+            container.innerHTML = items.map(item => `
+                <div class="metric-row">
+                    <span class="metric-label">${item.label}</span>
+                    <span class="metric-value">${item.value}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatNetDebt(debt, cash) {
+            if (debt === null || cash === null) return 'N/A';
+            const netDebt = debt - cash;
+            const absValue = Math.abs(netDebt);
+            
+            let formatted;
+            if (absValue >= 1e12) {
+                formatted = `$${(absValue / 1e12).toFixed(2)}T`;
+            } else if (absValue >= 1e9) {
+                formatted = `$${(absValue / 1e9).toFixed(2)}B`;
+            } else if (absValue >= 1e6) {
+                formatted = `$${(absValue / 1e6).toFixed(2)}M`;
+            } else {
+                formatted = `$${absValue.toFixed(2)}`;
+            }
+            
+            return netDebt < 0 ? `(${formatted})` : formatted;
+        }
+
+        // Event listeners
+        document.getElementById('tickerInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeStock();
+            }
+        });
+
+        // URL parameter handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticker = urlParams.get('ticker');
+            if (ticker) {
+                document.getElementById('tickerInput').value = ticker.toUpperCase();
+                analyzeStock();
+            }
+        });
+    </script>
+</body>
+</html>
