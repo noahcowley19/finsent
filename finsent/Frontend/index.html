@@ -130,7 +130,7 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 32px;
             max-width: 1100px;
             margin: 0 auto;
@@ -152,6 +152,29 @@
         .feature-card:hover {
             box-shadow: 0 8px 30px var(--shadow-hover);
             transform: translateY(-4px);
+        }
+
+        .feature-card.featured {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, var(--primary) 0%, #334155 100%);
+            color: white;
+        }
+
+        .feature-card.featured h2 {
+            color: white;
+        }
+
+        .feature-card.featured p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .feature-card.featured .feature-btn {
+            background: white;
+            color: var(--primary);
+        }
+
+        .feature-card.featured .feature-btn:hover {
+            background: var(--neutral-light);
         }
 
         .feature-card h2 {
@@ -187,6 +210,7 @@
             transition: all 0.2s ease;
             text-decoration: none;
             letter-spacing: -0.01em;
+            width: fit-content;
         }
 
         .feature-btn:hover {
@@ -232,6 +256,10 @@
                 grid-template-columns: 1fr;
                 gap: 24px;
                 max-width: 500px;
+            }
+
+            .feature-card.featured {
+                grid-column: 1;
             }
 
             .feature-card {
@@ -293,6 +321,7 @@
             <a href="/sentiment" class="nav-link">Sentiment</a>
             <a href="/financials" class="nav-link">Financials</a>
             <a href="/insider" class="nav-link">Insider Trading</a>
+            <a href="/search" class="nav-link">Search</a>
         </div>
     </nav>
 
@@ -305,6 +334,17 @@
         </div>
 
         <div class="features-grid">
+            <div class="feature-card featured">
+                <h2>Stock Search</h2>
+                <p>Comprehensive stock data with interactive charts, key metrics, analyst ratings, financial health indicators, and real-time news — all in one place. The most complete view of any stock.</p>
+                <a href="/search" class="feature-btn">
+                    Launch Search
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                </a>
+            </div>
+
             <div class="feature-card">
                 <h2>Sentiment Analyzer</h2>
                 <p>Get a real-time evaluation of market sentiment on a company, cryptocurrency, or commodity using bidirectional encoder representations from transformers.</p>
