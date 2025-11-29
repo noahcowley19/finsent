@@ -6,6 +6,7 @@ from sentiment import sentiment_bp
 from financials import financials_bp
 from insider import insider_bp
 from search import search_bp
+from dashboard import dashboard_bp
 
 
 app = Flask(__name__)
@@ -17,6 +18,7 @@ app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
+app.register_blueprint(dashboard_bp)
 
 
 @app.route('/api/health', methods=['GET'])
