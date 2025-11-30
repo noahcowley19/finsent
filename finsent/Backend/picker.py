@@ -7,6 +7,7 @@ import json
 import os
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 picker_bp = Blueprint('picker', __name__)
 
@@ -14,25 +15,47 @@ picker_bp = Blueprint('picker', __name__)
 CACHE_FILE = 'picker_cache.json'
 CACHE_DURATION = 86400  # 24 hours in seconds
 
-
-def normalize_dataframe(df):
-    """Normalize DataFrame columns from yfinance to handle multi-index"""
-    if df.empty:
-        return df
-
-    # If columns are multi-indexed, flatten them
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-
-    return df
+# Curated list of liquid, tradeable stocks (reduced from S&P 500 for performance)
+# These are well-known, liquid stocks across various sectors
+STOCK_UNIVERSE = [
+    # Technology
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'AMD', 'INTC', 'CRM',
+    'ADBE', 'ORCL', 'CSCO', 'AVGO', 'QCOM', 'TXN', 'NOW', 'INTU', 'IBM', 'AMAT',
+    'MU', 'LRCX', 'ADI', 'KLAC', 'SNPS', 'CDNS', 'MRVL', 'FTNT', 'PANW', 'CRWD',
+    # Healthcare
+    'UNH', 'JNJ', 'PFE', 'ABBV', 'MRK', 'LLY', 'TMO', 'ABT', 'DHR', 'BMY',
+    'AMGN', 'GILD', 'VRTX', 'REGN', 'ISRG', 'MDT', 'SYK', 'BSX', 'ZTS', 'CI',
+    # Financials
+    'JPM', 'BAC', 'WFC', 'GS', 'MS', 'BLK', 'SCHW', 'AXP', 'C', 'USB',
+    'PNC', 'TFC', 'COF', 'CME', 'ICE', 'CB', 'MMC', 'AON', 'SPGI', 'MCO',
+    # Consumer
+    'WMT', 'HD', 'COST', 'NKE', 'MCD', 'SBUX', 'TGT', 'LOW', 'TJX', 'ROST',
+    'DG', 'DLTR', 'YUM', 'CMG', 'DPZ', 'ORLY', 'AZO', 'ULTA', 'BBY', 'EBAY',
+    # Communication
+    'NFLX', 'DIS', 'CMCSA', 'VZ', 'T', 'TMUS', 'CHTR', 'EA', 'TTWO', 'WBD',
+    # Industrials
+    'CAT', 'DE', 'BA', 'HON', 'UPS', 'UNP', 'RTX', 'LMT', 'GE', 'MMM',
+    'EMR', 'ETN', 'ITW', 'PH', 'ROK', 'FAST', 'ODFL', 'URI', 'PWR', 'CARR',
+    # Energy
+    'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'MPC', 'PSX', 'VLO', 'OXY', 'HAL',
+    # Materials
+    'LIN', 'APD', 'SHW', 'ECL', 'DD', 'NEM', 'FCX', 'NUE', 'STLD', 'CF',
+    # Real Estate
+    'PLD', 'AMT', 'EQIX', 'SPG', 'PSA', 'DLR', 'O', 'WELL', 'AVB', 'EQR',
+    # Utilities
+    'NEE', 'DUK', 'SO', 'D', 'AEP', 'EXC', 'SRE', 'XEL', 'PEG', 'ED',
+    # Consumer Staples
+    'PG', 'KO', 'PEP', 'PM', 'MO', 'CL', 'EL', 'KMB', 'GIS', 'K',
+    'MDLZ', 'HSY', 'STZ', 'KHC', 'SJM', 'CAG', 'CPB', 'HRL', 'MKC', 'TSN'
+]
 
 
 def clean_value(value):
     """Clean NaN, Inf, and None values"""
     if value is None:
         return None
-    if isinstance(value, float):
-        if math.isnan(value) or math.isinf(value):
+    if isinstance(value, (float, np.floating)):
+        if np.isnan(value) or np.isinf(value):
             return None
     return value
 
@@ -43,279 +66,18 @@ def safe_round(value, decimals=2):
     if cleaned is None:
         return None
     try:
-        return round(cleaned, decimals)
+        return round(float(cleaned), decimals)
     except:
         return None
-
-
-def get_sp500_tickers():
-    """
-    Get S&P 500 tickers from Wikipedia.
-    Fallback to a subset if download fails.
-    """
-    try:
-        # Try to get from Wikipedia
-        url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-        tables = pd.read_html(url)
-        df = tables[0]
-        tickers = df['Symbol'].tolist()
-        # Clean tickers
-        tickers = [ticker.replace('.', '-') for ticker in tickers]
-        return tickers
-    except:
-        # Fallback to a curated list of major stocks if Wikipedia fails
-        return [
-            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B',
-            'UNH', 'JNJ', 'JPM', 'V', 'PG', 'XOM', 'MA', 'HD', 'CVX', 'MRK',
-            'ABBV', 'PEP', 'COST', 'AVGO', 'KO', 'LLY', 'WMT', 'MCD', 'CSCO',
-            'TMO', 'ABT', 'ACN', 'ORCL', 'DIS', 'VZ', 'ADBE', 'NKE', 'CMCSA',
-            'PFE', 'NFLX', 'DHR', 'CRM', 'INTC', 'AMD', 'TXN', 'PM', 'NEE',
-            'UPS', 'RTX', 'QCOM', 'HON', 'UNP', 'IBM', 'SBUX', 'INTU', 'BA',
-            'CAT', 'GE', 'LOW', 'AMGN', 'ELV', 'SPGI', 'DE', 'GS', 'BLK',
-            'AMAT', 'AXP', 'BKNG', 'LMT', 'SYK', 'MDT', 'GILD', 'ADI', 'PLD',
-            'TJX', 'CVS', 'MMC', 'AMT', 'VRTX', 'CI', 'ISRG', 'ZTS', 'ADP',
-            'REGN', 'CB', 'MO', 'SLB', 'SO', 'CME', 'NOW', 'DUK', 'PGR', 'BDX',
-            'TMUS', 'EOG', 'ITW', 'CSX', 'WM', 'CL', 'HUM', 'USB', 'BSX', 'MDLZ'
-        ]
-
-
-def calculate_rs_rating(ticker_returns, index_return):
-    """
-    Calculate Relative Strength rating (0-100 scale).
-    Higher is better - shows stock outperformance vs index.
-    """
-    if index_return == 0:
-        return 50  # Neutral if no index movement
-    
-    returns_multiple = ticker_returns / index_return
-    # Normalize to 0-100 scale
-    # RS > 1.5 = 90+, RS > 1.0 = 70+, RS < 0.5 = low
-    if returns_multiple >= 2.0:
-        rs_rating = 95
-    elif returns_multiple >= 1.5:
-        rs_rating = 85
-    elif returns_multiple >= 1.2:
-        rs_rating = 75
-    elif returns_multiple >= 1.0:
-        rs_rating = 65
-    elif returns_multiple >= 0.8:
-        rs_rating = 50
-    elif returns_multiple >= 0.5:
-        rs_rating = 35
-    else:
-        rs_rating = 20
-    
-    return rs_rating
-
-
-def check_minervini_criteria(ticker, rs_rating):
-    """
-    Check if a stock meets Mark Minervini's trend template criteria.
-    
-    Criteria:
-    1. Current price > 150-day MA > 200-day MA
-    2. 150-day MA is trending up (> 150-day MA from 20 days ago)
-    3. 200-day MA is trending up for at least 1 month
-    4. 50-day MA > 150-day MA > 200-day MA
-    5. Current price > 50-day MA
-    6. Current price >= 30% above 52-week low
-    7. Current price within 25% of 52-week high (at least 75% of high)
-    8. RS Rating >= 70 (strong relative strength)
-    """
-    try:
-        # Download 1 year of data
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
-
-        df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-        df = normalize_dataframe(df)
-
-        if df.empty or len(df) < 200:
-            return None, "Insufficient data"
-
-        # Calculate moving averages - use 'Close' for all to ensure consistency
-        df['SMA_50'] = df['Close'].rolling(window=50).mean()
-        df['SMA_150'] = df['Close'].rolling(window=150).mean()
-        df['SMA_200'] = df['Close'].rolling(window=200).mean()
-        
-        # Get current values
-        current_close = clean_value(df['Close'].iloc[-1])
-        sma_50 = clean_value(df['SMA_50'].iloc[-1])
-        sma_150 = clean_value(df['SMA_150'].iloc[-1])
-        sma_200 = clean_value(df['SMA_200'].iloc[-1])
-        
-        if None in [current_close, sma_50, sma_150, sma_200]:
-            return None, "Missing MA data"
-        
-        # 52-week high/low
-        low_52_week = clean_value(df['Low'].tail(260).min())
-        high_52_week = clean_value(df['High'].tail(260).max())
-        
-        if None in [low_52_week, high_52_week]:
-            return None, "Missing 52-week data"
-        
-        # SMA trend checks
-        sma_150_20_days_ago = clean_value(df['SMA_150'].iloc[-20]) if len(df) >= 20 else None
-        sma_200_20_days_ago = clean_value(df['SMA_200'].iloc[-20]) if len(df) >= 20 else None
-        
-        # Criteria checks
-        criteria_met = []
-        total_criteria = 8
-        
-        # 1. Current price > 150 MA > 200 MA
-        c1 = current_close > sma_150 > sma_200
-        criteria_met.append(c1)
-        
-        # 2. 150 MA trending up
-        c2 = sma_150_20_days_ago and sma_150 > sma_150_20_days_ago
-        criteria_met.append(c2)
-        
-        # 3. 200 MA trending up
-        c3 = sma_200_20_days_ago and sma_200 >= sma_200_20_days_ago
-        criteria_met.append(c3)
-        
-        # 4. 50 MA > 150 MA > 200 MA
-        c4 = sma_50 > sma_150 > sma_200
-        criteria_met.append(c4)
-        
-        # 5. Current price > 50 MA
-        c5 = current_close > sma_50
-        criteria_met.append(c5)
-        
-        # 6. Current price >= 30% above 52-week low
-        c6 = current_close >= (1.30 * low_52_week)
-        criteria_met.append(c6)
-        
-        # 7. Current price within 25% of 52-week high
-        c7 = current_close >= (0.75 * high_52_week)
-        criteria_met.append(c7)
-        
-        # 8. RS Rating >= 70
-        c8 = rs_rating >= 70
-        criteria_met.append(c8)
-        
-        # Count how many criteria met
-        num_criteria_met = sum(criteria_met)
-        
-        # Must meet all 8 criteria to be included
-        if num_criteria_met == total_criteria:
-            # Get additional info
-            stock_info = yf.Ticker(ticker).info
-            
-            stock_data = {
-                'ticker': ticker,
-                'company': stock_info.get('longName') or stock_info.get('shortName', ticker),
-                'sector': stock_info.get('sector', 'N/A'),
-                'industry': stock_info.get('industry', 'N/A'),
-                'price': safe_round(current_close, 2),
-                'price_display': f"${current_close:.2f}" if current_close else 'N/A',
-                'change_pct': None,  # Will be calculated separately
-                'rs_rating': rs_rating,
-                'sma_50': safe_round(sma_50, 2),
-                'sma_150': safe_round(sma_150, 2),
-                'sma_200': safe_round(sma_200, 2),
-                'low_52_week': safe_round(low_52_week, 2),
-                'high_52_week': safe_round(high_52_week, 2),
-                'criteria_met': f"{num_criteria_met}/{total_criteria}",
-                'market_cap': clean_value(stock_info.get('marketCap')),
-                'volume': clean_value(stock_info.get('volume'))
-            }
-            
-            # Calculate % change from previous close
-            if len(df) >= 2:
-                prev_close = clean_value(df['Close'].iloc[-2])
-                if prev_close and prev_close != 0:
-                    change_pct = ((current_close - prev_close) / prev_close) * 100
-                    stock_data['change_pct'] = safe_round(change_pct, 2)
-            
-            return stock_data, None
-        else:
-            return None, f"Only {num_criteria_met}/{total_criteria} criteria met"
-            
-    except Exception as e:
-        return None, f"Error: {str(e)}"
-
-
-def run_minervini_screener():
-    """
-    Run the complete Minervini screening process.
-    Returns list of stocks meeting all criteria.
-    """
-    print("Starting Minervini screener...")
-    
-    # Get S&P 500 tickers
-    tickers = get_sp500_tickers()
-    print(f"Screening {len(tickers)} stocks...")
-    
-    # Calculate index return for RS rating
-    try:
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=365)
-        index_df = yf.download('^GSPC', start=start_date, end=end_date, progress=False)
-        index_df = normalize_dataframe(index_df)
-
-        if not index_df.empty:
-            index_return = (index_df['Close'].iloc[-1] / index_df['Close'].iloc[0]) - 1
-        else:
-            index_return = 0.20  # Default 20% if index data fails
-    except Exception as e:
-        print(f"Error downloading index data: {e}")
-        index_return = 0.20
-    
-    print(f"S&P 500 return: {index_return*100:.2f}%")
-    
-    # First pass: Calculate RS ratings for all stocks
-    rs_ratings = {}
-    valid_tickers = []
-    
-    for ticker in tickers:
-        try:
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=365)
-            df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-            df = normalize_dataframe(df)
-
-            if not df.empty and len(df) >= 200:
-                stock_return = (df['Close'].iloc[-1] / df['Close'].iloc[0]) - 1
-                rs_rating = calculate_rs_rating(stock_return, index_return)
-
-                # Only continue with stocks that have RS >= 70
-                if rs_rating >= 70:
-                    rs_ratings[ticker] = rs_rating
-                    valid_tickers.append(ticker)
-
-            time.sleep(0.05)  # Rate limiting
-
-        except Exception as e:
-            print(f"Error calculating RS for {ticker}: {e}")
-            continue
-
-    print(f"Found {len(valid_tickers)} stocks with RS >= 70")
-
-    # Second pass: Apply full Minervini criteria to high RS stocks
-    minervini_picks = []
-
-    for ticker in valid_tickers:
-        rs_rating = rs_ratings[ticker]
-        stock_data, error = check_minervini_criteria(ticker, rs_rating)
-
-        if stock_data:
-            minervini_picks.append(stock_data)
-            print(f"✓ {ticker} - RS: {rs_rating}")
-
-        time.sleep(0.05)  # Rate limiting
-    
-    # Sort by RS rating (highest first)
-    minervini_picks.sort(key=lambda x: x['rs_rating'], reverse=True)
-    
-    print(f"\nScreener complete: {len(minervini_picks)} stocks meet all criteria")
-    
-    return minervini_picks
 
 
 def format_large_number(value):
     """Format large numbers with suffixes"""
     if value is None:
+        return 'N/A'
+    try:
+        value = float(value)
+    except:
         return 'N/A'
     abs_value = abs(value)
     if abs_value >= 1e12:
@@ -332,6 +94,10 @@ def format_volume(value):
     """Format volume numbers"""
     if value is None:
         return 'N/A'
+    try:
+        value = float(value)
+    except:
+        return 'N/A'
     if value >= 1e9:
         return f"{value/1e9:.2f}B"
     elif value >= 1e6:
@@ -340,6 +106,304 @@ def format_volume(value):
         return f"{value/1e3:.1f}K"
     else:
         return f"{value:,.0f}"
+
+
+def download_batch_data(tickers, period='1y'):
+    """
+    Download historical data for multiple tickers in a single batch request.
+    This is MUCH faster than individual downloads.
+    """
+    try:
+        # Download all tickers at once
+        data = yf.download(
+            tickers=tickers,
+            period=period,
+            interval='1d',
+            progress=False,
+            threads=True,
+            group_by='ticker'
+        )
+        return data
+    except Exception as e:
+        print(f"Batch download error: {e}")
+        return None
+
+
+def download_index_data():
+    """Download S&P 500 index data for RS calculation"""
+    try:
+        index_df = yf.download('^GSPC', period='1y', interval='1d', progress=False)
+        if not index_df.empty:
+            # Handle multi-index columns
+            if isinstance(index_df.columns, pd.MultiIndex):
+                index_df.columns = index_df.columns.get_level_values(0)
+            return index_df
+    except Exception as e:
+        print(f"Index download error: {e}")
+    return None
+
+
+def get_ticker_info_batch(tickers):
+    """Get company info for multiple tickers using threading"""
+    info_dict = {}
+    
+    def fetch_info(ticker):
+        try:
+            stock = yf.Ticker(ticker)
+            info = stock.info
+            return ticker, {
+                'longName': info.get('longName') or info.get('shortName', ticker),
+                'shortName': info.get('shortName', ticker),
+                'sector': info.get('sector', 'N/A'),
+                'industry': info.get('industry', 'N/A'),
+                'marketCap': info.get('marketCap'),
+                'volume': info.get('volume')
+            }
+        except:
+            return ticker, None
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(fetch_info, t): t for t in tickers}
+        for future in as_completed(futures, timeout=60):
+            try:
+                ticker, info = future.result(timeout=5)
+                if info:
+                    info_dict[ticker] = info
+            except:
+                pass
+    
+    return info_dict
+
+
+def calculate_minervini_picks(batch_data, index_df, tickers):
+    """
+    Calculate Minervini criteria for all tickers using batch data.
+    This processes everything in memory without additional API calls.
+    """
+    if batch_data is None or batch_data.empty:
+        return []
+    
+    # Calculate index return for RS rating
+    if index_df is not None and not index_df.empty:
+        try:
+            index_close = index_df['Close']
+            if isinstance(index_close, pd.DataFrame):
+                index_close = index_close.iloc[:, 0]
+            index_return = (float(index_close.iloc[-1]) / float(index_close.iloc[0])) - 1
+        except:
+            index_return = 0.15  # Default 15%
+    else:
+        index_return = 0.15
+    
+    qualifying_stocks = []
+    
+    for ticker in tickers:
+        try:
+            # Extract data for this ticker
+            if len(tickers) == 1:
+                ticker_data = batch_data.copy()
+            else:
+                try:
+                    ticker_data = batch_data[ticker].copy()
+                except KeyError:
+                    continue
+            
+            # Handle multi-index columns
+            if isinstance(ticker_data.columns, pd.MultiIndex):
+                ticker_data.columns = ticker_data.columns.get_level_values(0)
+            
+            # Skip if not enough data
+            if ticker_data.empty or len(ticker_data) < 200:
+                continue
+            
+            # Get close prices - handle both Series and DataFrame
+            close = ticker_data['Close']
+            if isinstance(close, pd.DataFrame):
+                close = close.iloc[:, 0]
+            close = close.dropna()
+            
+            if len(close) < 200:
+                continue
+            
+            # Calculate moving averages
+            sma_50 = close.rolling(window=50).mean()
+            sma_150 = close.rolling(window=150).mean()
+            sma_200 = close.rolling(window=200).mean()
+            
+            # Get current values
+            current_close = clean_value(float(close.iloc[-1]))
+            current_sma_50 = clean_value(float(sma_50.iloc[-1]))
+            current_sma_150 = clean_value(float(sma_150.iloc[-1]))
+            current_sma_200 = clean_value(float(sma_200.iloc[-1]))
+            
+            if any(v is None for v in [current_close, current_sma_50, current_sma_150, current_sma_200]):
+                continue
+            
+            # Get high/low for 52-week calculations
+            high = ticker_data['High']
+            low = ticker_data['Low']
+            if isinstance(high, pd.DataFrame):
+                high = high.iloc[:, 0]
+            if isinstance(low, pd.DataFrame):
+                low = low.iloc[:, 0]
+            
+            high_52_week = clean_value(float(high.tail(260).max()))
+            low_52_week = clean_value(float(low.tail(260).min()))
+            
+            if high_52_week is None or low_52_week is None:
+                continue
+            
+            # Calculate RS Rating
+            try:
+                stock_return = (current_close / float(close.iloc[0])) - 1
+                if index_return != 0:
+                    returns_multiple = stock_return / index_return
+                else:
+                    returns_multiple = 1.0
+                
+                # Convert to RS rating (0-100 scale)
+                if returns_multiple >= 2.0:
+                    rs_rating = 95
+                elif returns_multiple >= 1.5:
+                    rs_rating = 85
+                elif returns_multiple >= 1.2:
+                    rs_rating = 75
+                elif returns_multiple >= 1.0:
+                    rs_rating = 65
+                elif returns_multiple >= 0.8:
+                    rs_rating = 50
+                elif returns_multiple >= 0.5:
+                    rs_rating = 35
+                else:
+                    rs_rating = 20
+            except:
+                rs_rating = 50
+            
+            # SMA trend checks (get values from 20 days ago)
+            try:
+                sma_150_20_ago = clean_value(float(sma_150.iloc[-20])) if len(sma_150) >= 20 else None
+                sma_200_20_ago = clean_value(float(sma_200.iloc[-20])) if len(sma_200) >= 20 else None
+            except:
+                sma_150_20_ago = None
+                sma_200_20_ago = None
+            
+            # Check all 8 Minervini criteria
+            criteria_results = []
+            
+            # 1. Current price > 150 MA > 200 MA
+            c1 = current_close > current_sma_150 > current_sma_200
+            criteria_results.append(c1)
+            
+            # 2. 150 MA trending up
+            c2 = sma_150_20_ago is not None and current_sma_150 > sma_150_20_ago
+            criteria_results.append(c2)
+            
+            # 3. 200 MA trending up (or flat)
+            c3 = sma_200_20_ago is not None and current_sma_200 >= sma_200_20_ago
+            criteria_results.append(c3)
+            
+            # 4. 50 MA > 150 MA > 200 MA
+            c4 = current_sma_50 > current_sma_150 > current_sma_200
+            criteria_results.append(c4)
+            
+            # 5. Current price > 50 MA
+            c5 = current_close > current_sma_50
+            criteria_results.append(c5)
+            
+            # 6. Current price >= 30% above 52-week low
+            c6 = current_close >= (1.30 * low_52_week)
+            criteria_results.append(c6)
+            
+            # 7. Current price within 25% of 52-week high
+            c7 = current_close >= (0.75 * high_52_week)
+            criteria_results.append(c7)
+            
+            # 8. RS Rating >= 70
+            c8 = rs_rating >= 70
+            criteria_results.append(c8)
+            
+            num_criteria_met = sum(criteria_results)
+            
+            # Must meet all 8 criteria
+            if num_criteria_met == 8:
+                # Calculate day change
+                change_pct = None
+                if len(close) >= 2:
+                    prev_close = clean_value(float(close.iloc[-2]))
+                    if prev_close and prev_close != 0:
+                        change_pct = ((current_close - prev_close) / prev_close) * 100
+                
+                qualifying_stocks.append({
+                    'ticker': ticker,
+                    'price': current_close,
+                    'change_pct': safe_round(change_pct, 2),
+                    'rs_rating': rs_rating,
+                    'sma_50': safe_round(current_sma_50, 2),
+                    'sma_150': safe_round(current_sma_150, 2),
+                    'sma_200': safe_round(current_sma_200, 2),
+                    'low_52_week': safe_round(low_52_week, 2),
+                    'high_52_week': safe_round(high_52_week, 2),
+                    'criteria_met': f"{num_criteria_met}/8"
+                })
+                
+        except Exception as e:
+            # Skip stocks that error
+            continue
+    
+    return qualifying_stocks
+
+
+def run_minervini_screener():
+    """
+    Run the complete Minervini screening process using efficient batch operations.
+    """
+    print(f"Starting Minervini screener with {len(STOCK_UNIVERSE)} stocks...")
+    start_time = time.time()
+    
+    # Step 1: Download index data
+    print("Downloading index data...")
+    index_df = download_index_data()
+    
+    # Step 2: Download all stock data in one batch
+    print("Downloading stock data (batch)...")
+    batch_data = download_batch_data(STOCK_UNIVERSE, period='1y')
+    
+    if batch_data is None or batch_data.empty:
+        print("Failed to download batch data")
+        return []
+    
+    # Step 3: Calculate Minervini criteria for all stocks
+    print("Calculating Minervini criteria...")
+    qualifying_stocks = calculate_minervini_picks(batch_data, index_df, STOCK_UNIVERSE)
+    
+    print(f"Found {len(qualifying_stocks)} stocks meeting all criteria")
+    
+    # Step 4: Get company info for qualifying stocks only (much fewer API calls)
+    if qualifying_stocks:
+        qualifying_tickers = [s['ticker'] for s in qualifying_stocks]
+        print(f"Fetching info for {len(qualifying_tickers)} qualifying stocks...")
+        info_dict = get_ticker_info_batch(qualifying_tickers)
+        
+        # Merge info into results
+        for stock in qualifying_stocks:
+            ticker = stock['ticker']
+            info = info_dict.get(ticker, {})
+            stock['company'] = info.get('longName') or info.get('shortName', ticker)
+            stock['sector'] = info.get('sector', 'N/A')
+            stock['industry'] = info.get('industry', 'N/A')
+            stock['market_cap'] = info.get('marketCap')
+            stock['volume'] = info.get('volume')
+            stock['price_display'] = f"${stock['price']:.2f}" if stock['price'] else 'N/A'
+            stock['market_cap_display'] = format_large_number(stock['market_cap'])
+            stock['volume_display'] = format_volume(stock['volume'])
+    
+    # Sort by RS rating
+    qualifying_stocks.sort(key=lambda x: x['rs_rating'], reverse=True)
+    
+    elapsed = time.time() - start_time
+    print(f"Screener complete in {elapsed:.1f} seconds")
+    
+    return qualifying_stocks
 
 
 def load_cache():
@@ -375,6 +439,37 @@ def save_cache(data):
         print(f"Error saving cache: {e}")
 
 
+def build_response(minervini_picks):
+    """Build the API response from picks data"""
+    # Calculate statistics
+    avg_rs = np.mean([s['rs_rating'] for s in minervini_picks]) if minervini_picks else 0
+    
+    # Count sectors
+    sector_counts = {}
+    for stock in minervini_picks:
+        sector = stock.get('sector', 'Unknown')
+        sector_counts[sector] = sector_counts.get(sector, 0) + 1
+    
+    return {
+        'timestamp': datetime.now().isoformat(),
+        'next_update': (datetime.now() + timedelta(seconds=CACHE_DURATION)).isoformat(),
+        'portfolios': {
+            'minervini': {
+                'name': 'Minervini Momentum',
+                'description': 'Stocks meeting Mark Minervini\'s trend template criteria: strong uptrends, price above key moving averages, and superior relative strength.',
+                'strategy': 'Growth momentum stocks with established uptrends',
+                'count': len(minervini_picks),
+                'stocks': minervini_picks,
+                'statistics': {
+                    'avg_rs_rating': safe_round(avg_rs, 1),
+                    'sectors': sector_counts,
+                    'total_stocks': len(minervini_picks)
+                }
+            }
+        }
+    }
+
+
 @picker_bp.route('/api/picks', methods=['GET'])
 def get_picks():
     """
@@ -387,51 +482,13 @@ def get_picks():
         
         if cached:
             print("Returning cached picks")
-            return jsonify(cached)
+            return jsonify(cached['data'])
         
         # Run screener if no valid cache
         print("Running fresh screener...")
         minervini_picks = run_minervini_screener()
         
-        # Calculate statistics
-        avg_rs = np.mean([s['rs_rating'] for s in minervini_picks]) if minervini_picks else 0
-        
-        # Count sectors
-        sector_counts = {}
-        for stock in minervini_picks:
-            sector = stock.get('sector', 'Unknown')
-            sector_counts[sector] = sector_counts.get(sector, 0) + 1
-        
-        # Format stocks for response
-        for stock in minervini_picks:
-            if stock.get('market_cap'):
-                stock['market_cap_display'] = format_large_number(stock['market_cap'])
-            else:
-                stock['market_cap_display'] = 'N/A'
-            
-            if stock.get('volume'):
-                stock['volume_display'] = format_volume(stock['volume'])
-            else:
-                stock['volume_display'] = 'N/A'
-        
-        response = {
-            'timestamp': datetime.now().isoformat(),
-            'next_update': (datetime.now() + timedelta(seconds=CACHE_DURATION)).isoformat(),
-            'portfolios': {
-                'minervini': {
-                    'name': 'Minervini Momentum',
-                    'description': 'Stocks meeting Mark Minervini\'s trend template criteria: strong uptrends, price above key moving averages, and superior relative strength.',
-                    'strategy': 'Growth momentum stocks with established uptrends',
-                    'count': len(minervini_picks),
-                    'stocks': minervini_picks,
-                    'statistics': {
-                        'avg_rs_rating': safe_round(avg_rs, 1),
-                        'sectors': sector_counts,
-                        'total_stocks': len(minervini_picks)
-                    }
-                }
-            }
-        }
+        response = build_response(minervini_picks)
         
         # Save to cache
         save_cache(response)
@@ -440,6 +497,8 @@ def get_picks():
         
     except Exception as e:
         print(f"Error in get_picks: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'error': f'An error occurred: {str(e)}',
             'error_type': 'server_error'
@@ -450,19 +509,31 @@ def get_picks():
 def refresh_picks():
     """
     Force refresh the picks (clears cache and runs screener).
-    Can be used for manual updates.
     """
     try:
         # Clear cache
         if os.path.exists(CACHE_FILE):
             os.remove(CACHE_FILE)
+            print("Cache cleared")
         
         # Run screener
-        return get_picks()
+        print("Running fresh screener (forced refresh)...")
+        minervini_picks = run_minervini_screener()
+        
+        response = build_response(minervini_picks)
+        
+        # Save to cache
+        save_cache(response)
+        
+        return jsonify(response)
         
     except Exception as e:
+        print(f"Refresh failed: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
-            'error': f'Refresh failed: {str(e)}'
+            'error': f'Refresh failed: {str(e)}',
+            'error_type': 'server_error'
         }), 500
 
 
@@ -486,5 +557,29 @@ def picks_health():
         'service': 'stock_picker',
         'cache_status': cache_status,
         'cache_age_seconds': cache_age,
-        'cache_duration': CACHE_DURATION
+        'cache_duration': CACHE_DURATION,
+        'stock_universe_size': len(STOCK_UNIVERSE)
     })
+```
+
+---
+
+## 2. `/Backend/Procfile`
+```
+web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 600 --worker-class gthread --max-requests 100 --max-requests-jitter 20 --graceful-timeout 300
+```
+
+---
+
+## 3. `/Backend/requirements.txt`
+```
+Flask
+flask-cors
+feedparser
+requests
+beautifulsoup4
+vaderSentiment
+yfinance
+gunicorn
+pandas
+numpy
