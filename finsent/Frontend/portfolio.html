@@ -1,1 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Tracker | Finsent</title>
+
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+     crossorigin="anonymous"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --positive: #10b981;
+            --positive-light: #d1fae5;
+            --positive-dark: #065f46;
+            --negative: #ef4444;
+            --negative-light: #fee2e2;
+            --negative-dark: #991b1b;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --neutral-dark: #374151;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --warning-dark: #92400e;
+            --primary: #1e293b;
+            --secondary: #64748b;
+            --tertiary: #94a3b8;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow: rgba(15, 23, 42, 0.08);
+            --shadow-hover: rgba(15, 23, 42, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-top: 80px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 1px 3px var(--shadow);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: var(--neutral-light);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .author-credit {
+            position: absolute;
+            top: 0;
+            right: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--secondary);
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .portfolio-section {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 1px 3px var(--shadow);
+            margin-bottom: 32px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 24px;
+            letter-spacing: -0.01em;
+        }
+
+        .input-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--secondary);
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            padding: 12px 16px;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            background: var(--background);
+            color: var(--primary);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(30, 41, 59, 0.05);
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: -0.01em;
+        }
+
+        button:hover {
+            background: #0f172a;
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--neutral-light);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--tertiary);
+        }
+
+        .btn-secondary.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--negative);
+        }
+
+        .btn-danger:hover {
+            background: var(--negative-dark);
+        }
+
+        .positions-list {
+            margin-top: 24px;
+        }
+
+        .position-item {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .position-item:hover {
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .position-info {
+            flex: 1;
+        }
+
+        .position-ticker {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .position-details {
+            font-size: 14px;
+            color: var(--secondary);
+        }
+
+        .position-value {
+            text-align: right;
+            margin-right: 16px;
+        }
+
+        .value-amount {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .gain-loss {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .gain-loss.positive {
+            color: var(--positive);
+        }
+
+        .gain-loss.negative {
+            color: var(--negative);
+        }
+
+        .portfolio-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .overview-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .overview-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary);
+        }
+
+        .overview-card.positive::before {
+            background: var(--positive);
+        }
+
+        .overview-card.negative::before {
+            background: var(--negative);
+        }
+
+        .overview-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .overview-value {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .overview-subvalue {
+            font-size: 14px;
+            color: var(--secondary);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .metric-card {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .metric-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .metric-card.positive .metric-value {
+            color: var(--positive);
+        }
+
+        .metric-card.negative .metric-value {
+            color: var(--negative);
+        }
+
+        .allocation-chart {
+            margin-top: 24px;
+            height: 300px;
+        }
+
+        .stock-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .stock-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .stock-ticker {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stock-name {
+            font-size: 14px;
+            color: var(--secondary);
+            margin-top: 4px;
+        }
+
+        .stock-price {
+            text-align: right;
+        }
+
+        .price-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .capm-section {
+            background: linear-gradient(135deg, var(--primary) 0%, #334155 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        .capm-section h3 {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .capm-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .capm-result {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .capm-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 48px 0;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: var(--negative-light);
+            color: var(--negative-dark);
+            padding: 16px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid #fecaca;
+        }
+
+        .results {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 968px) {
+            .portfolio-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .input-form {
+                grid-template-columns: 1fr;
+            }
+
+            .position-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .position-value {
+                margin-top: 12px;
+                margin-right: 0;
+                text-align: left;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .author-credit {
+                position: static;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+
+            .navbar {
+                padding: 0 20px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding-top: 64px;
+            }
+
+            .container {
+                padding: 24px 16px;
+            }
+
+            .portfolio-section {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 1.875rem;
+            }
+
+            .stock-analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/sentiment" class="nav-link">Sentiment</a>
+            <a href="/financials" class="nav-link">Financials</a>
+            <a href="/insider" class="nav-link">Insider Trading</a>
+            <a href="/search" class="nav-link">Search</a>
+            <a href="/portfolio" class="nav-link active">Portfolio</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="author-credit">Noah Cowley</div>
+
+        <header>
+            <h1>Portfolio Tracker</h1>
+            <p class="subtitle">Comprehensive portfolio analysis with CAPM, risk metrics, allocation tracking, and individual stock analysis.</p>
+        </header>
+
+        <div class="portfolio-section">
+            <h2 class="section-title">Add Stock Position</h2>
+            <div class="input-form">
+                <div class="input-group">
+                    <label class="input-label">Ticker Symbol</label>
+                    <input type="text" id="tickerInput" placeholder="AAPL" style="text-transform: uppercase;">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Number of Shares</label>
+                    <input type="number" id="sharesInput" placeholder="10" step="0.01" min="0">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Cost Basis (per share)</label>
+                    <input type="number" id="costBasisInput" placeholder="150.00" step="0.01" min="0">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Purchase Date</label>
+                    <input type="date" id="purchaseDateInput">
+                </div>
+            </div>
+            <button onclick="addPosition()" id="addBtn">Add Position</button>
+            <div class="error-message" id="addError"></div>
+        </div>
+
+        <div class="portfolio-section" id="positionsSection" style="display: none;">
+            <h2 class="section-title">Your Positions</h2>
+            <div class="positions-list" id="positionsList"></div>
+            <div style="margin-top: 20px; display: flex; gap: 12px;">
+                <button onclick="analyzePortfolio()" id="analyzeBtn">Analyze Portfolio</button>
+                <button onclick="clearPortfolio()" class="btn-danger">Clear All</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p class="loading-text">Analyzing portfolio...</p>
+        </div>
+
+        <div class="error-message" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="portfolio-overview" id="overview"></div>
+
+            <div class="portfolio-section">
+                <h2 class="section-title">CAPM Analysis</h2>
+                <div class="capm-section">
+                    <h3>Portfolio Expected Return (CAPM)</h3>
+                    <div class="capm-inputs">
+                        <div class="input-group">
+                            <label class="input-label" style="color: rgba(255,255,255,0.9);">Risk-Free Rate (%)</label>
+                            <input type="number" id="riskFreeRate" value="2.0" step="0.1" min="0" max="10">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" style="color: rgba(255,255,255,0.9);">Market Return (%)</label>
+                            <input type="number" id="marketReturn" value="10.0" step="0.1" min="0" max="20">
+                        </div>
+                    </div>
+                    <div class="capm-result" id="capmResult"></div>
+                </div>
+            </div>
+
+            <div class="portfolio-section">
+                <h2 class="section-title">Risk Metrics</h2>
+                <div class="metrics-grid" id="riskMetrics"></div>
+            </div>
+
+            <div class="portfolio-section">
+                <h2 class="section-title">Portfolio Allocation</h2>
+                <div id="allocationTabs" style="margin-bottom: 20px;">
+                    <button onclick="showAllocation('sector')" class="btn-secondary" id="sectorTab">By Sector</button>
+                    <button onclick="showAllocation('industry')" class="btn-secondary" id="industryTab">By Industry</button>
+                    <button onclick="showAllocation('ticker')" class="btn-secondary" id="tickerTab">By Ticker</button>
+                </div>
+                <div class="allocation-chart">
+                    <canvas id="allocationChart"></canvas>
+                </div>
+            </div>
+
+            <div class="portfolio-section">
+                <h2 class="section-title">Individual Stock Analysis</h2>
+                <div class="stock-analysis-grid" id="stockAnalyses"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let positions = [];
+        let portfolioData = null;
+        let allocationChart = null;
+        let currentAllocationType = 'sector';
+
+        // Load positions from localStorage
+        function loadPositions() {
+            const saved = localStorage.getItem('portfolio_positions');
+            if (saved) {
+                positions = JSON.parse(saved);
+                renderPositions();
+            }
+        }
+
+        // Save positions to localStorage
+        function savePositions() {
+            localStorage.setItem('portfolio_positions', JSON.stringify(positions));
+        }
+
+        // Add a new position
+        function addPosition() {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            const shares = parseFloat(document.getElementById('sharesInput').value);
+            const costBasis = parseFloat(document.getElementById('costBasisInput').value);
+            const purchaseDate = document.getElementById('purchaseDateInput').value;
+
+            const errorDiv = document.getElementById('addError');
+            errorDiv.style.display = 'none';
+
+            if (!ticker) {
+                showAddError('Please enter a ticker symbol');
+                return;
+            }
+
+            if (!shares || shares <= 0) {
+                showAddError('Please enter a valid number of shares');
+                return;
+            }
+
+            if (!costBasis || costBasis <= 0) {
+                showAddError('Please enter a valid cost basis');
+                return;
+            }
+
+            positions.push({
+                ticker: ticker,
+                shares: shares,
+                cost_basis: costBasis,
+                purchase_date: purchaseDate || new Date().toISOString().split('T')[0]
+            });
+
+            savePositions();
+            renderPositions();
+
+            // Clear form
+            document.getElementById('tickerInput').value = '';
+            document.getElementById('sharesInput').value = '';
+            document.getElementById('costBasisInput').value = '';
+            document.getElementById('purchaseDateInput').value = '';
+        }
+
+        function showAddError(message) {
+            const errorDiv = document.getElementById('addError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Render positions list
+        function renderPositions() {
+            const section = document.getElementById('positionsSection');
+            const list = document.getElementById('positionsList');
+
+            if (positions.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = '';
+
+            positions.forEach((pos, index) => {
+                const item = document.createElement('div');
+                item.className = 'position-item';
+                item.innerHTML = `
+                    <div class="position-info">
+                        <div class="position-ticker">${pos.ticker}</div>
+                        <div class="position-details">
+                            ${pos.shares} shares @ $${pos.cost_basis.toFixed(2)}
+                            ${pos.purchase_date ? ` • Purchased: ${pos.purchase_date}` : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button onclick="removePosition(${index})" class="btn-danger" style="padding: 8px 16px; font-size: 13px;">Remove</button>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Remove a position
+        function removePosition(index) {
+            positions.splice(index, 1);
+            savePositions();
+            renderPositions();
+        }
+
+        // Clear all positions
+        function clearPortfolio() {
+            if (confirm('Are you sure you want to clear all positions?')) {
+                positions = [];
+                savePositions();
+                renderPositions();
+                document.getElementById('results').style.display = 'none';
+            }
+        }
+
+        // Analyze portfolio
+        async function analyzePortfolio() {
+            if (positions.length === 0) {
+                showError('Please add at least one position');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = true;
+
+            try {
+                const riskFreeRate = parseFloat(document.getElementById('riskFreeRate')?.value || 2.0) / 100;
+                const marketReturn = parseFloat(document.getElementById('marketReturn')?.value || 10.0) / 100;
+
+                const response = await fetch('https://finsent-backend.onrender.com/api/portfolio/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        positions: positions,
+                        risk_free_rate: riskFreeRate,
+                        market_return: marketReturn
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to analyze portfolio');
+                }
+
+                portfolioData = data;
+                displayResults(data);
+
+            } catch (error) {
+                showError(error.message || 'Unable to connect to the API. Please try again later.');
+                console.error(error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        // Display results
+        function displayResults(data) {
+            displayOverview(data.portfolio_metrics);
+            displayCAPM(data.portfolio_capm);
+            displayRiskMetrics(data.risk_metrics);
+            displayAllocation(data.allocation);
+            displayStockAnalyses(data.stock_analyses);
+
+            document.getElementById('results').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('results').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 100);
+        }
+
+        // Display portfolio overview
+        function displayOverview(metrics) {
+            const container = document.getElementById('overview');
+            const totalValue = metrics.total_value || 0;
+            const totalCost = metrics.total_cost || 0;
+            const gainLoss = metrics.total_gain_loss || 0;
+            const gainLossPercent = metrics.total_gain_loss_percent || 0;
+
+            container.innerHTML = `
+                <div class="overview-card ${gainLoss >= 0 ? 'positive' : 'negative'}">
+                    <div class="overview-label">Total Portfolio Value</div>
+                    <div class="overview-value">$${totalValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="overview-subvalue">${metrics.positions_count} positions</div>
+                </div>
+                <div class="overview-card ${gainLoss >= 0 ? 'positive' : 'negative'}">
+                    <div class="overview-label">Total Gain/Loss</div>
+                    <div class="overview-value">${gainLoss >= 0 ? '+' : ''}$${gainLoss.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="overview-subvalue">${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(2)}%</div>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-label">Total Cost Basis</div>
+                    <div class="overview-value">$${totalCost.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="overview-subvalue">Initial investment</div>
+                </div>
+            `;
+        }
+
+        // Display CAPM
+        function displayCAPM(capm) {
+            const container = document.getElementById('capmResult');
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Expected Return</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${capm.expected_return}%</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Portfolio Beta</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${capm.beta}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; opacity: 0.8; margin-bottom: 4px;">Risk Premium</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">${capm.risk_premium}%</div>
+                    </div>
+                </div>
+                <div style="font-size: 14px; opacity: 0.9; line-height: 1.6;">
+                    CAPM Formula: E(R) = Rf + β(Rm - Rf)<br>
+                    Risk-Free Rate: ${capm.risk_free_rate}% | Market Return: ${capm.market_return}%
+                </div>
+            `;
+        }
+
+        // Display risk metrics
+        function displayRiskMetrics(risk) {
+            const container = document.getElementById('riskMetrics');
+            container.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-name">Portfolio Beta</div>
+                    <div class="metric-value">${risk.portfolio_beta}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name">Diversification Score</div>
+                    <div class="metric-value">${risk.diversification_score}/100</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name">Concentration Risk</div>
+                    <div class="metric-value">${risk.concentration_risk}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name">Number of Positions</div>
+                    <div class="metric-value">${risk.num_positions}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name">Sectors</div>
+                    <div class="metric-value">${risk.num_sectors}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name">Largest Position</div>
+                    <div class="metric-value">${risk.max_position_pct}%</div>
+                </div>
+            `;
+        }
+
+        // Display allocation
+        function displayAllocation(allocation) {
+            // Set sector tab as active by default
+            document.getElementById('sectorTab').classList.add('active');
+            updateAllocationChart(allocation.sector);
+        }
+
+        function showAllocation(type) {
+            currentAllocationType = type;
+            const allocation = portfolioData.allocation;
+            
+            // Update button states
+            document.getElementById('sectorTab').classList.remove('active');
+            document.getElementById('industryTab').classList.remove('active');
+            document.getElementById('tickerTab').classList.remove('active');
+            const activeTab = document.getElementById(type + 'Tab');
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            if (type === 'sector') {
+                updateAllocationChart(allocation.sector);
+            } else if (type === 'industry') {
+                updateAllocationChart(allocation.industry);
+            } else {
+                updateAllocationChart(allocation.ticker);
+            }
+        }
+
+        function updateAllocationChart(data) {
+            const ctx = document.getElementById('allocationChart').getContext('2d');
+            
+            if (allocationChart) {
+                allocationChart.destroy();
+            }
+
+            const labels = data.map(item => item.name || item.ticker);
+            const values = data.map(item => item.percentage);
+            const colors = generateColors(data.length);
+
+            allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const dataIndex = context.dataIndex;
+                                    const dollarValue = data[dataIndex].value;
+                                    return `${label}: ${value.toFixed(2)}% ($${dollarValue.toLocaleString()})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateColors(count) {
+            const colors = [
+                '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444',
+                '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+            ];
+            const result = [];
+            for (let i = 0; i < count; i++) {
+                result.push(colors[i % colors.length]);
+            }
+            return result;
+        }
+
+        // Display stock analyses
+        function displayStockAnalyses(analyses) {
+            const container = document.getElementById('stockAnalyses');
+            container.innerHTML = '';
+
+            analyses.forEach(stock => {
+                const card = document.createElement('div');
+                card.className = 'stock-card';
+                
+                const gainLossClass = stock.gain_loss >= 0 ? 'positive' : 'negative';
+                const gainLossSign = stock.gain_loss >= 0 ? '+' : '';
+                
+                card.innerHTML = `
+                    <div class="stock-header">
+                        <div>
+                            <div class="stock-ticker">${stock.ticker}</div>
+                            <div class="stock-name">${stock.name}</div>
+                        </div>
+                        <div class="stock-price">
+                            <div class="price-value">$${stock.current_price.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--secondary); margin-bottom: 4px;">Shares</div>
+                                <div style="font-weight: 600;">${stock.shares}</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--secondary); margin-bottom: 4px;">Value</div>
+                                <div style="font-weight: 600;">$${stock.current_value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div>
+                                <div style="font-size: 12px; color: var(--secondary); margin-bottom: 4px;">Gain/Loss</div>
+                                <div style="font-weight: 600; color: var(--${gainLossClass});">
+                                    ${gainLossSign}$${stock.gain_loss.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                </div>
+                            </div>
+                            <div>
+                                <div style="font-size: 12px; color: var(--secondary); margin-bottom: 4px;">Gain/Loss %</div>
+                                <div style="font-weight: 600; color: var(--${gainLossClass});">
+                                    ${gainLossSign}${stock.gain_loss_percent.toFixed(2)}%
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 11px; color: var(--secondary); margin-bottom: 4px;">Beta</div>
+                                <div style="font-weight: 600; font-size: 14px;">${stock.beta}</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 11px; color: var(--secondary); margin-bottom: 4px;">Volatility</div>
+                                <div style="font-weight: 600; font-size: 14px;">${stock.volatility || 'N/A'}%</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 11px; color: var(--secondary); margin-bottom: 4px;">CAPM Return</div>
+                                <div style="font-weight: 600; font-size: 14px;">${stock.capm.expected_return}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        // Update CAPM when inputs change
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPositions();
+            
+            const riskFreeInput = document.getElementById('riskFreeRate');
+            const marketReturnInput = document.getElementById('marketReturn');
+            
+            if (riskFreeInput && marketReturnInput) {
+                riskFreeInput.addEventListener('change', function() {
+                    if (portfolioData) {
+                        analyzePortfolio();
+                    }
+                });
+                
+                marketReturnInput.addEventListener('change', function() {
+                    if (portfolioData) {
+                        analyzePortfolio();
+                    }
+                });
+            }
+
+            // Set default purchase date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('purchaseDateInput').value = today;
+        });
+    </script>
+</body>
+</html>
 
