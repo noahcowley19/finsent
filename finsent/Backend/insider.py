@@ -27,47 +27,29 @@ def safe_round(value, decimals=2):
 
 
 def parse_percentage(value):
-    """
-    Parse a percentage value from various formats yfinance might return.
-    Returns a float between 0 and 100, or None if invalid.
-    """
     if value is None:
         return None
     
     try:
-        # Handle string formats
         if isinstance(value, str):
-            # Remove % sign and whitespace
             cleaned = value.replace('%', '').strip()
             if not cleaned:
                 return None
             value = float(cleaned)
         
-        # Convert to float if not already
         value = float(value)
         
-        # Check for NaN or Inf
         if math.isnan(value) or math.isinf(value):
             return None
         
-        # Determine if value is decimal (0-1) or percentage (0-100)
-        # Values > 1 and <= 100 are assumed to be percentages already
-        # Values <= 1 are assumed to be decimals that need * 100
-        # Values > 100 are likely errors - try to correct if possible
         if value <= 1 and value >= 0:
-            # Decimal format (e.g., 0.7066 for 70.66%)
             value = value * 100
         elif value > 100:
-            # Likely an error - value might be in basis points or double-converted
-            # Try to detect if it's a reasonable percentage * 100
             if value <= 10000:
-                # Could be basis points (7066 = 70.66%)
                 value = value / 100
             else:
-                # Too large, likely corrupted data
                 return None
         
-        # Final validation - percentage should be 0-100
         if value < 0 or value > 100:
             return None
         
@@ -425,13 +407,11 @@ def process_transactions(data, months=12):
     
     monthly_data = monthly_data[-12:]
     
-    # Process cluster alerts with more detail
     cluster_alerts = []
     for week, week_data in cluster_window.items():
         unique_buyers = {}
         unique_sellers = {}
         
-        # Dedupe by name and aggregate
         for buy in week_data['buys']:
             name = buy['name']
             if name not in unique_buyers:
@@ -446,7 +426,6 @@ def process_transactions(data, months=12):
             unique_sellers[name]['total_value'] += sell['value']
             unique_sellers[name]['total_shares'] += sell['shares']
         
-        # Format week date for display
         try:
             week_date = week_data.get('date')
             if week_date and hasattr(week_date, 'strftime'):
@@ -583,22 +562,16 @@ def process_institutional_holdings(data):
         'has_data': False
     }
     
-    # Parse major holders for summary stats
     if major_df is not None and not major_df.empty:
         try:
-            # yfinance major_holders DataFrame structure:
-            # Index contains descriptions, single column contains values
             for idx, row in major_df.iterrows():
-                # Get value from first column
                 value = row.iloc[0] if len(row) > 0 else None
-                # Get label from index or second column if exists
                 if len(row) > 1:
                     label = str(row.iloc[1])
                 else:
                     label = str(idx)
                 
                 if value is not None:
-                    # Parse the percentage value properly
                     parsed_pct = parse_percentage(value)
                     
                     if parsed_pct is not None:
@@ -610,7 +583,6 @@ def process_institutional_holdings(data):
         except Exception as e:
             pass
     
-    # Parse individual institutional holders
     if institutional_df is not None and not institutional_df.empty:
         result['has_data'] = True
         
@@ -628,7 +600,6 @@ def process_institutional_holdings(data):
                 if value is None:
                     value = 0
                 
-                # Parse percentage with proper validation
                 pct_raw = row.get('% Out', row.get('pctHeld', 0))
                 pct_out = parse_percentage(pct_raw)
                 if pct_out is None:
