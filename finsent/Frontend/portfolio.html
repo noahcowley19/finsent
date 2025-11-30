@@ -458,7 +458,7 @@
         .allocation-section {
             background: var(--card-bg);
             border-radius: 16px;
-            padding: 24px;
+            padding: 32px;
             box-shadow: 0 1px 3px var(--shadow);
             border: 1px solid var(--border);
             margin-bottom: 32px;
@@ -500,8 +500,9 @@
         }
 
         .allocation-chart {
-            height: 300px;
+            height: 500px;
             margin-top: 20px;
+            position: relative;
         }
 
         .loading {
@@ -666,8 +667,8 @@
                     <input type="number" id="sharesInput" placeholder="10" step="0.01" min="0">
                 </div>
                 <div class="input-group">
-                    <label class="input-label">Cost Basis (per share)</label>
-                    <input type="number" id="costBasisInput" placeholder="150.00" step="0.01" min="0">
+                    <label class="input-label">Total Cost Basis</label>
+                    <input type="number" id="costBasisInput" placeholder="1500.00" step="0.01" min="0">
                 </div>
                 <button onclick="addPosition()" id="addBtn">Add</button>
             </div>
@@ -690,12 +691,10 @@
                                 <th>Ticker</th>
                                 <th>Company</th>
                                 <th>Shares</th>
-                                <th>Cost Basis</th>
+                                <th>Cost Basis (per share)</th>
                                 <th>Current Price</th>
                                 <th>Today's Change $</th>
                                 <th>Today's Change %</th>
-                                <th>Overall Change $</th>
-                                <th>Overall Change %</th>
                                 <th>Current Value</th>
                                 <th>Gain/Loss $</th>
                                 <th>Gain/Loss %</th>
@@ -794,14 +793,14 @@
             }
 
             if (!costBasis || costBasis <= 0) {
-                showError('Please enter a valid cost basis');
+                showError('Please enter a valid total cost basis');
                 return;
             }
 
             positions.push({
                 ticker: ticker,
                 shares: shares,
-                cost_basis: costBasis
+                total_cost_basis: costBasis
             });
 
             savePositions();
@@ -815,10 +814,43 @@
             await analyzePortfolio();
         }
 
-        // Remove a position
-        async function removePosition(index) {
-            if (confirm(`Remove ${positions[index].ticker} from portfolio?`)) {
-                positions.splice(index, 1);
+        // Remove shares from a position
+        async function removeShares(index, ticker) {
+            const input = document.getElementById(`removeShares_${index}`);
+            const sharesToRemove = parseFloat(input.value);
+            
+            if (!sharesToRemove || sharesToRemove <= 0) {
+                showError('Please enter a valid number of shares to remove');
+                return;
+            }
+            
+            const position = positions[index];
+            if (!position || position.ticker !== ticker) {
+                showError('Position not found');
+                return;
+            }
+            
+            if (sharesToRemove > position.shares) {
+                showError(`Cannot remove more than ${position.shares} shares`);
+                return;
+            }
+            
+            if (sharesToRemove === position.shares) {
+                // Remove entire position
+                if (confirm(`Remove all ${position.shares} shares of ${ticker}?`)) {
+                    positions.splice(index, 1);
+                    savePositions();
+                    await analyzePortfolio();
+                }
+            } else {
+                // Remove partial shares
+                const newShares = position.shares - sharesToRemove;
+                const costBasisPerShare = position.total_cost_basis / position.shares;
+                const newTotalCostBasis = newShares * costBasisPerShare;
+                
+                position.shares = newShares;
+                position.total_cost_basis = newTotalCostBasis;
+                
                 savePositions();
                 await analyzePortfolio();
             }
@@ -936,10 +968,6 @@
                 const todayChange = stock.previous_close ? stock.current_price - stock.previous_close : null;
                 const todayChangePercent = stock.previous_close ? (todayChange / stock.previous_close) * 100 : null;
                 
-                // Overall price change (from cost basis)
-                const overallChange = stock.current_price - position.cost_basis;
-                const overallChangePercent = (overallChange / position.cost_basis) * 100;
-                
                 const gainLoss = stock.gain_loss || 0;
                 const gainLossPercent = stock.gain_loss_percent || 0;
                 
@@ -961,12 +989,6 @@
                     <td class="number-cell ${todayChangePercent !== null ? (todayChangePercent >= 0 ? 'positive' : 'negative') : ''}">
                         ${todayChangePercent !== null ? (todayChangePercent >= 0 ? '+' : '') + todayChangePercent.toFixed(2) + '%' : 'N/A'}
                     </td>
-                    <td class="number-cell ${overallChange >= 0 ? 'positive' : 'negative'}">
-                        ${overallChange >= 0 ? '+' : ''}$${overallChange.toFixed(2)}
-                    </td>
-                    <td class="number-cell ${overallChangePercent >= 0 ? 'positive' : 'negative'}">
-                        ${overallChangePercent >= 0 ? '+' : ''}${overallChangePercent.toFixed(2)}%
-                    </td>
                     <td class="number-cell">$${stock.current_value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="number-cell ${gainLoss >= 0 ? 'positive' : 'negative'}">
                         ${gainLoss >= 0 ? '+' : ''}$${gainLoss.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -978,7 +1000,15 @@
                     <td class="number-cell">${stock.volatility ? stock.volatility + '%' : 'N/A'}</td>
                     <td class="number-cell">${stock.capm ? stock.capm.expected_return + '%' : 'N/A'}</td>
                     <td>
-                        <button onclick="removePosition(${originalIndex})" class="btn-danger">Remove</button>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <input type="number" id="removeShares_${originalIndex}" 
+                                   placeholder="Shares" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="${position.shares}"
+                                   style="width: 80px; padding: 6px 8px; font-size: 13px; border: 1.5px solid var(--border); border-radius: 6px;">
+                            <button onclick="removeShares(${originalIndex}, '${stock.ticker}')" class="btn-danger" style="padding: 6px 12px; font-size: 12px;">Remove</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -1049,28 +1079,66 @@
                     datasets: [{
                         data: values,
                         backgroundColor: colors,
-                        borderWidth: 2,
-                        borderColor: '#ffffff'
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverBorderWidth: 4,
+                        hoverOffset: 8
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
                     plugins: {
                         legend: {
                             position: 'right',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 13,
+                                    weight: '500',
+                                    family: "'Inter', sans-serif"
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
                         },
                         tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                            padding: 12,
+                            titleFont: {
+                                size: 14,
+                                weight: '600',
+                                family: "'Inter', sans-serif"
+                            },
+                            bodyFont: {
+                                size: 13,
+                                family: "'Inter', sans-serif"
+                            },
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            displayColors: true,
                             callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
                                 label: function(context) {
                                     const label = context.label || '';
                                     const value = context.parsed || 0;
                                     const dataIndex = context.dataIndex;
                                     const dollarValue = data[dataIndex].value;
-                                    return `${label}: ${value.toFixed(2)}% ($${dollarValue.toLocaleString()})`;
+                                    return [
+                                        `${value.toFixed(2)}% of portfolio`,
+                                        `$${dollarValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                                    ];
                                 }
                             }
                         }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1000
                     }
                 }
             });
