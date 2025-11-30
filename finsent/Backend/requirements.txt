@@ -7,3 +7,4 @@ vaderSentiment
 yfinance
 gunicorn
 pandas
+numpy
