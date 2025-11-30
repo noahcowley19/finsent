@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_cors import CORS
 import os
 
@@ -12,6 +12,26 @@ from picker import picker_bp
 app = Flask(__name__)
 
 CORS(app, origins=["*"])
+
+# Global error handler for API routes to return JSON instead of HTML
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Pass through HTTP errors
+    if hasattr(e, 'code'):
+        return jsonify({
+            'error': str(e),
+            'error_type': 'http_error'
+        }), e.code
+
+    # For API routes, return JSON error
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+    # For non-API routes, let Flask handle it normally
+    raise e
 
 # Get the path to the Frontend directory
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Frontend')
