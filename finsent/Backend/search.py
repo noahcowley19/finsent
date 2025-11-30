@@ -8,14 +8,12 @@ import pandas as pd
 
 search_bp = Blueprint('search', __name__)
 
-# In-memory cache for search data
 _search_cache = {}
 _search_cache_time = {}
-SEARCH_CACHE_TTL = 300  # 5 minutes
+SEARCH_CACHE_TTL = 300
 
 
 def clean_value(value):
-    """Clean NaN, Inf, and None values"""
     if value is None:
         return None
     if isinstance(value, float):
@@ -25,7 +23,6 @@ def clean_value(value):
 
 
 def safe_round(value, decimals=2):
-    """Safely round a value"""
     cleaned = clean_value(value)
     if cleaned is None:
         return None
@@ -36,7 +33,6 @@ def safe_round(value, decimals=2):
 
 
 def format_large_number(value):
-    """Format large numbers with suffixes"""
     if value is None:
         return 'N/A'
     abs_value = abs(value)
@@ -53,7 +49,7 @@ def format_large_number(value):
 
 
 def format_number(value):
-    """Format numbers without currency symbol"""
+   
     if value is None:
         return 'N/A'
     abs_value = abs(value)
@@ -68,7 +64,7 @@ def format_number(value):
 
 
 def format_percent(value, multiply=False):
-    """Format percentage values"""
+   
     if value is None:
         return 'N/A'
     if multiply:
@@ -77,11 +73,7 @@ def format_percent(value, multiply=False):
 
 
 def get_status(value, thresholds, inverse=False):
-    """
-    Determine status based on thresholds.
-    thresholds = (low, high) - values below low are positive, above high are negative
-    inverse=True flips the logic
-    """
+
     if value is None:
         return 'neutral'
     
@@ -102,12 +94,10 @@ def get_status(value, thresholds, inverse=False):
 
 
 def get_stock_info(ticker):
-    """Get comprehensive stock information"""
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
         
-        # Validate ticker
         quote_type = info.get('quoteType', '').upper()
         if quote_type not in ['EQUITY', 'STOCK', 'ETF', '']:
             return {
@@ -135,7 +125,6 @@ def get_stock_info(ticker):
 
 
 def get_company_overview(info):
-    """Extract company overview data"""
     price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
     prev_close = clean_value(info.get('previousClose') or info.get('regularMarketPreviousClose'))
     
@@ -147,11 +136,9 @@ def get_company_overview(info):
     
     market_cap = clean_value(info.get('marketCap'))
     
-    # 52-week data
     fifty_two_high = clean_value(info.get('fiftyTwoWeekHigh'))
     fifty_two_low = clean_value(info.get('fiftyTwoWeekLow'))
     
-    # Calculate position in 52-week range
     range_position = None
     if price and fifty_two_high and fifty_two_low and fifty_two_high != fifty_two_low:
         range_position = ((price - fifty_two_low) / (fifty_two_high - fifty_two_low)) * 100
@@ -190,10 +177,8 @@ def get_company_overview(info):
 
 
 def get_valuation_metrics(info):
-    """Extract valuation metrics"""
     metrics = []
     
-    # P/E Ratio (TTM)
     pe_ttm = clean_value(info.get('trailingPE'))
     if pe_ttm and pe_ttm < 0:
         pe_ttm = None
@@ -204,7 +189,6 @@ def get_valuation_metrics(info):
         'status': get_status(pe_ttm, (15, 30)) if pe_ttm else 'neutral'
     })
     
-    # P/E Ratio (Forward)
     pe_fwd = clean_value(info.get('forwardPE'))
     if pe_fwd and pe_fwd < 0:
         pe_fwd = None
@@ -215,7 +199,6 @@ def get_valuation_metrics(info):
         'status': get_status(pe_fwd, (12, 25)) if pe_fwd else 'neutral'
     })
     
-    # P/S Ratio
     ps = clean_value(info.get('priceToSalesTrailing12Months'))
     metrics.append({
         'name': 'P/S',
@@ -224,7 +207,6 @@ def get_valuation_metrics(info):
         'status': get_status(ps, (2, 8)) if ps else 'neutral'
     })
     
-    # P/B Ratio
     pb = clean_value(info.get('priceToBook'))
     if pb and pb < 0:
         pb = None
@@ -235,7 +217,6 @@ def get_valuation_metrics(info):
         'status': get_status(pb, (1.5, 5)) if pb else 'neutral'
     })
     
-    # EV/EBITDA
     ev_ebitda = clean_value(info.get('enterpriseToEbitda'))
     if ev_ebitda and ev_ebitda < 0:
         ev_ebitda = None
@@ -246,7 +227,6 @@ def get_valuation_metrics(info):
         'status': get_status(ev_ebitda, (10, 20)) if ev_ebitda else 'neutral'
     })
     
-    # EV/Revenue
     ev_rev = clean_value(info.get('enterpriseToRevenue'))
     metrics.append({
         'name': 'EV/Revenue',
@@ -255,7 +235,6 @@ def get_valuation_metrics(info):
         'status': get_status(ev_rev, (2, 8)) if ev_rev else 'neutral'
     })
     
-    # PEG Ratio
     peg = clean_value(info.get('pegRatio'))
     metrics.append({
         'name': 'PEG',
@@ -264,7 +243,6 @@ def get_valuation_metrics(info):
         'status': get_status(peg, (1, 2)) if peg else 'neutral'
     })
     
-    # Trailing PEG
     trailing_peg = clean_value(info.get('trailingPegRatio'))
     metrics.append({
         'name': 'PEG (TTM)',
@@ -277,10 +255,8 @@ def get_valuation_metrics(info):
 
 
 def get_profitability_metrics(info):
-    """Extract profitability metrics"""
     metrics = []
     
-    # Gross Margin
     gross_margin = clean_value(info.get('grossMargins'))
     if gross_margin:
         gross_margin = gross_margin * 100
@@ -291,7 +267,6 @@ def get_profitability_metrics(info):
         'status': get_status(gross_margin, (20, 40), inverse=True) if gross_margin else 'neutral'
     })
     
-    # Operating Margin
     op_margin = clean_value(info.get('operatingMargins'))
     if op_margin:
         op_margin = op_margin * 100
@@ -302,7 +277,6 @@ def get_profitability_metrics(info):
         'status': get_status(op_margin, (10, 20), inverse=True) if op_margin else 'neutral'
     })
     
-    # Net Margin
     net_margin = clean_value(info.get('profitMargins'))
     if net_margin:
         net_margin = net_margin * 100
@@ -313,7 +287,6 @@ def get_profitability_metrics(info):
         'status': get_status(net_margin, (5, 15), inverse=True) if net_margin else 'neutral'
     })
     
-    # EBITDA Margin
     ebitda = clean_value(info.get('ebitda'))
     revenue = clean_value(info.get('totalRevenue'))
     ebitda_margin = None
@@ -326,7 +299,6 @@ def get_profitability_metrics(info):
         'status': get_status(ebitda_margin, (15, 25), inverse=True) if ebitda_margin else 'neutral'
     })
     
-    # ROE
     roe = clean_value(info.get('returnOnEquity'))
     if roe:
         roe = roe * 100
@@ -337,7 +309,6 @@ def get_profitability_metrics(info):
         'status': get_status(roe, (10, 20), inverse=True) if roe else 'neutral'
     })
     
-    # ROA
     roa = clean_value(info.get('returnOnAssets'))
     if roa:
         roa = roa * 100
@@ -352,10 +323,8 @@ def get_profitability_metrics(info):
 
 
 def get_financial_health(info):
-    """Extract financial health metrics"""
     metrics = []
     
-    # Current Ratio
     current_ratio = clean_value(info.get('currentRatio'))
     metrics.append({
         'name': 'Current Ratio',
@@ -364,7 +333,6 @@ def get_financial_health(info):
         'status': get_status(current_ratio, (1, 1.5), inverse=True) if current_ratio else 'neutral'
     })
     
-    # Quick Ratio
     quick_ratio = clean_value(info.get('quickRatio'))
     metrics.append({
         'name': 'Quick Ratio',
@@ -373,10 +341,9 @@ def get_financial_health(info):
         'status': get_status(quick_ratio, (0.8, 1.2), inverse=True) if quick_ratio else 'neutral'
     })
     
-    # Debt to Equity
     de = clean_value(info.get('debtToEquity'))
     if de:
-        de = de / 100  # yfinance returns as percentage
+        de = de / 100
     metrics.append({
         'name': 'Debt/Equity',
         'value': de,
@@ -384,7 +351,6 @@ def get_financial_health(info):
         'status': get_status(de, (0.5, 1.5)) if de else 'neutral'
     })
     
-    # Total Debt
     total_debt = clean_value(info.get('totalDebt'))
     metrics.append({
         'name': 'Total Debt',
@@ -393,7 +359,6 @@ def get_financial_health(info):
         'status': 'neutral'
     })
     
-    # Total Cash
     total_cash = clean_value(info.get('totalCash'))
     metrics.append({
         'name': 'Total Cash',
@@ -402,7 +367,6 @@ def get_financial_health(info):
         'status': 'neutral'
     })
     
-    # Cash per Share
     cash_per_share = clean_value(info.get('totalCashPerShare'))
     metrics.append({
         'name': 'Cash/Share',
@@ -415,10 +379,8 @@ def get_financial_health(info):
 
 
 def get_growth_metrics(info):
-    """Extract growth metrics"""
     metrics = []
     
-    # Revenue Growth
     rev_growth = clean_value(info.get('revenueGrowth'))
     if rev_growth:
         rev_growth = rev_growth * 100
@@ -429,7 +391,6 @@ def get_growth_metrics(info):
         'status': 'positive' if rev_growth and rev_growth > 5 else 'negative' if rev_growth and rev_growth < 0 else 'neutral'
     })
     
-    # Earnings Growth
     earn_growth = clean_value(info.get('earningsGrowth'))
     if earn_growth:
         earn_growth = earn_growth * 100
@@ -440,7 +401,6 @@ def get_growth_metrics(info):
         'status': 'positive' if earn_growth and earn_growth > 5 else 'negative' if earn_growth and earn_growth < 0 else 'neutral'
     })
     
-    # Quarterly Revenue Growth
     qtr_rev_growth = clean_value(info.get('revenueQuarterlyGrowth'))
     if qtr_rev_growth:
         qtr_rev_growth = qtr_rev_growth * 100
@@ -451,7 +411,6 @@ def get_growth_metrics(info):
         'status': 'positive' if qtr_rev_growth and qtr_rev_growth > 0 else 'negative' if qtr_rev_growth and qtr_rev_growth < 0 else 'neutral'
     })
     
-    # Quarterly Earnings Growth
     qtr_earn_growth = clean_value(info.get('earningsQuarterlyGrowth'))
     if qtr_earn_growth:
         qtr_earn_growth = qtr_earn_growth * 100
@@ -466,7 +425,6 @@ def get_growth_metrics(info):
 
 
 def get_dividend_info(info):
-    """Extract dividend information"""
     dividend_yield = clean_value(info.get('dividendYield'))
     if dividend_yield:
         dividend_yield = dividend_yield * 100
@@ -501,7 +459,6 @@ def get_dividend_info(info):
 
 
 def get_analyst_data(info):
-    """Extract analyst ratings and price targets"""
     target_high = clean_value(info.get('targetHighPrice'))
     target_low = clean_value(info.get('targetLowPrice'))
     target_mean = clean_value(info.get('targetMeanPrice'))
@@ -518,7 +475,6 @@ def get_analyst_data(info):
     
     num_analysts = clean_value(info.get('numberOfAnalystOpinions'))
     
-    # Recommendation status
     rec_status = 'neutral'
     if recommendation:
         rec_lower = recommendation.lower()
@@ -549,7 +505,6 @@ def get_analyst_data(info):
 
 
 def get_trading_info(info):
-    """Extract trading information"""
     return {
         'avg_volume_10d': format_number(clean_value(info.get('averageVolume10days'))),
         'avg_volume_3m': format_number(clean_value(info.get('averageVolume'))),
@@ -564,7 +519,6 @@ def get_trading_info(info):
 
 
 def get_company_profile(info):
-    """Extract company profile information"""
     employees = clean_value(info.get('fullTimeEmployees'))
     
     return {
@@ -583,40 +537,33 @@ def get_company_profile(info):
 
 
 def get_key_stats_grid(info, overview):
-    """Create a Finviz-style key statistics grid"""
     stats = []
     
-    # Row 1
     stats.append({'label': 'Market Cap', 'value': overview['market_cap_display']})
     stats.append({'label': 'P/E (TTM)', 'value': f"{clean_value(info.get('trailingPE')):.2f}" if clean_value(info.get('trailingPE')) else 'N/A'})
     stats.append({'label': 'EPS (TTM)', 'value': f"${clean_value(info.get('trailingEps')):.2f}" if clean_value(info.get('trailingEps')) else 'N/A'})
     stats.append({'label': 'Beta', 'value': f"{overview['beta']:.2f}" if overview['beta'] else 'N/A'})
     
-    # Row 2
     stats.append({'label': 'Revenue', 'value': format_large_number(clean_value(info.get('totalRevenue')))})
     stats.append({'label': 'P/E (Fwd)', 'value': f"{clean_value(info.get('forwardPE')):.2f}" if clean_value(info.get('forwardPE')) else 'N/A'})
     stats.append({'label': 'EPS (Fwd)', 'value': f"${clean_value(info.get('forwardEps')):.2f}" if clean_value(info.get('forwardEps')) else 'N/A'})
     stats.append({'label': '52W Range', 'value': f"${overview['fifty_two_low']:.0f} - ${overview['fifty_two_high']:.0f}" if overview['fifty_two_low'] and overview['fifty_two_high'] else 'N/A'})
     
-    # Row 3
     stats.append({'label': 'Net Income', 'value': format_large_number(clean_value(info.get('netIncomeToCommon')))})
     stats.append({'label': 'P/S', 'value': f"{clean_value(info.get('priceToSalesTrailing12Months')):.2f}" if clean_value(info.get('priceToSalesTrailing12Months')) else 'N/A'})
     stats.append({'label': 'Book/Share', 'value': f"${clean_value(info.get('bookValue')):.2f}" if clean_value(info.get('bookValue')) else 'N/A'})
     stats.append({'label': 'Dividend', 'value': f"{clean_value(info.get('dividendYield'))*100:.2f}%" if clean_value(info.get('dividendYield')) else 'N/A'})
     
-    # Row 4
     stats.append({'label': 'EBITDA', 'value': format_large_number(clean_value(info.get('ebitda')))})
     stats.append({'label': 'P/B', 'value': f"{clean_value(info.get('priceToBook')):.2f}" if clean_value(info.get('priceToBook')) else 'N/A'})
     stats.append({'label': 'Cash/Share', 'value': f"${clean_value(info.get('totalCashPerShare')):.2f}" if clean_value(info.get('totalCashPerShare')) else 'N/A'})
     stats.append({'label': 'Payout', 'value': f"{clean_value(info.get('payoutRatio'))*100:.1f}%" if clean_value(info.get('payoutRatio')) else 'N/A'})
     
-    # Row 5
     stats.append({'label': 'Volume', 'value': overview['volume_display']})
     stats.append({'label': 'EV/EBITDA', 'value': f"{clean_value(info.get('enterpriseToEbitda')):.2f}" if clean_value(info.get('enterpriseToEbitda')) else 'N/A'})
     stats.append({'label': 'Debt/Eq', 'value': f"{clean_value(info.get('debtToEquity'))/100:.2f}" if clean_value(info.get('debtToEquity')) else 'N/A'})
     stats.append({'label': 'ROE', 'value': f"{clean_value(info.get('returnOnEquity'))*100:.1f}%" if clean_value(info.get('returnOnEquity')) else 'N/A'})
     
-    # Row 6
     stats.append({'label': 'Avg Volume', 'value': overview['avg_volume_display']})
     stats.append({'label': 'PEG', 'value': f"{clean_value(info.get('pegRatio')):.2f}" if clean_value(info.get('pegRatio')) else 'N/A'})
     stats.append({'label': 'Current Ratio', 'value': f"{clean_value(info.get('currentRatio')):.2f}" if clean_value(info.get('currentRatio')) else 'N/A'})
@@ -626,7 +573,6 @@ def get_key_stats_grid(info, overview):
 
 
 def get_historical_data(stock, period='1y', interval='1d'):
-    """Get historical price data for charting"""
     try:
         hist = stock.history(period=period, interval=interval)
         
@@ -643,7 +589,6 @@ def get_historical_data(stock, period='1y', interval='1d'):
         }
         
         for date, row in hist.iterrows():
-            # Format date based on interval
             if interval in ['1h', '30m', '15m', '5m']:
                 date_str = date.strftime('%Y-%m-%d %H:%M')
             else:
@@ -664,7 +609,6 @@ def get_historical_data(stock, period='1y', interval='1d'):
 
 
 def get_news(ticker, num_articles=10):
-    """Fetch news from Google News RSS"""
     try:
         queries = [
             f"{ticker} stock",
@@ -685,7 +629,6 @@ def get_news(ticker, num_articles=10):
                     if title and title.lower() not in seen_titles:
                         seen_titles.add(title.lower())
                         
-                        # Parse published date
                         published = item.get('published', '')
                         try:
                             pub_date = datetime.strptime(published, '%a, %d %b %Y %H:%M:%S %Z')
@@ -695,7 +638,6 @@ def get_news(ticker, num_articles=10):
                             pub_display = published[:16] if published else 'Unknown'
                             pub_relative = pub_display
                         
-                        # Extract source from title (usually "Title - Source")
                         source = 'News'
                         if ' - ' in title:
                             parts = title.rsplit(' - ', 1)
@@ -721,7 +663,6 @@ def get_news(ticker, num_articles=10):
 
 
 def get_relative_time(dt):
-    """Convert datetime to relative time string"""
     now = datetime.now()
     diff = now - dt
     
@@ -741,7 +682,6 @@ def get_relative_time(dt):
 
 @search_bp.route('/api/search', methods=['POST'])
 def search_stock():
-    """Main search endpoint"""
     try:
         data = request.get_json()
         ticker = data.get('ticker', '').strip().upper()
@@ -752,14 +692,12 @@ def search_stock():
                 'error_type': 'validation'
             }), 400
         
-        # Check cache
         cache_key = ticker
         if cache_key in _search_cache:
             cache_age = (datetime.now() - _search_cache_time.get(cache_key, datetime.min)).total_seconds()
             if cache_age < SEARCH_CACHE_TTL:
                 return jsonify(_search_cache[cache_key])
         
-        # Get stock data
         stock_data = get_stock_info(ticker)
         
         if 'error' in stock_data:
@@ -768,7 +706,6 @@ def search_stock():
         info = stock_data['info']
         stock = stock_data['stock']
         
-        # Build response
         overview = get_company_overview(info)
         
         response = {
@@ -787,7 +724,6 @@ def search_stock():
             'timestamp': datetime.now().isoformat()
         }
         
-        # Cache the response
         _search_cache[cache_key] = response
         _search_cache_time[cache_key] = datetime.now()
         
@@ -802,7 +738,6 @@ def search_stock():
 
 @search_bp.route('/api/search/chart', methods=['POST'])
 def get_chart_data():
-    """Get historical data for charting"""
     try:
         data = request.get_json()
         ticker = data.get('ticker', '').strip().upper()
@@ -811,7 +746,6 @@ def get_chart_data():
         if not ticker:
             return jsonify({'error': 'Ticker is required'}), 400
         
-        # Map period to yfinance parameters
         period_map = {
             '1d': ('1d', '5m'),
             '5d': ('5d', '15m'),
@@ -846,7 +780,6 @@ def get_chart_data():
 
 @search_bp.route('/api/search/health', methods=['GET'])
 def search_health():
-    """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
         'service': 'stock_search'
