@@ -905,17 +905,27 @@
 
             try {
                 const response = await fetch('/api/picks');
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Received non-JSON response:', contentType);
+                    const text = await response.text();
+                    console.error('Response body:', text.substring(0, 500));
+                    throw new Error('Server returned an invalid response. Please check the server logs.');
+                }
+
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Failed to load picks');
+                    throw new Error(data.error || `Server error: ${response.status}`);
                 }
 
                 displayResults(data);
 
             } catch (error) {
+                console.error('Error loading picks:', error);
                 showError(error.message || 'Unable to load stock picks. Please try again later.');
-                console.error(error);
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -1104,15 +1114,26 @@
                 const response = await fetch('/api/picks/refresh', {
                     method: 'POST'
                 });
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Received non-JSON response:', contentType);
+                    const text = await response.text();
+                    console.error('Response body:', text.substring(0, 500));
+                    throw new Error('Server returned an invalid response. Please check the server logs.');
+                }
+
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Failed to refresh');
+                    throw new Error(data.error || `Server error: ${response.status}`);
                 }
 
                 displayResults(data);
 
             } catch (error) {
+                console.error('Error refreshing picks:', error);
                 showError(error.message || 'Failed to refresh picks');
             } finally {
                 btn.disabled = false;
