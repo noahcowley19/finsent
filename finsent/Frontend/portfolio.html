@@ -212,7 +212,7 @@
 
         .input-row {
             display: grid;
-            grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr auto;
+            grid-template-columns: 2fr 1.5fr 1.5fr auto;
             gap: 12px;
             align-items: end;
         }
@@ -405,18 +405,19 @@
         }
 
         .capm-section {
-            background: linear-gradient(135deg, var(--primary) 0%, #334155 100%);
-            color: white;
+            background: var(--card-bg);
             border-radius: 16px;
             padding: 32px;
             margin-bottom: 32px;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
         }
 
         .capm-title {
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 20px;
-            color: white;
+            color: var(--primary);
         }
 
         .capm-inputs {
@@ -433,22 +434,25 @@
         }
 
         .capm-result-item {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--background);
             border-radius: 12px;
             padding: 20px;
+            border: 1px solid var(--border);
         }
 
         .capm-result-label {
             font-size: 12px;
-            opacity: 0.8;
+            color: var(--secondary);
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            font-weight: 600;
         }
 
         .capm-result-value {
             font-size: 1.75rem;
             font-weight: 700;
+            color: var(--primary);
         }
 
         .allocation-section {
@@ -665,10 +669,6 @@
                     <label class="input-label">Cost Basis (per share)</label>
                     <input type="number" id="costBasisInput" placeholder="150.00" step="0.01" min="0">
                 </div>
-                <div class="input-group">
-                    <label class="input-label">Purchase Date</label>
-                    <input type="date" id="purchaseDateInput">
-                </div>
                 <button onclick="addPosition()" id="addBtn">Add</button>
             </div>
         </div>
@@ -692,8 +692,10 @@
                                 <th>Shares</th>
                                 <th>Cost Basis</th>
                                 <th>Current Price</th>
-                                <th>Price Change $</th>
-                                <th>Price Change %</th>
+                                <th>Today's Change $</th>
+                                <th>Today's Change %</th>
+                                <th>Overall Change $</th>
+                                <th>Overall Change %</th>
                                 <th>Current Value</th>
                                 <th>Gain/Loss $</th>
                                 <th>Gain/Loss %</th>
@@ -713,12 +715,12 @@
                 <div class="capm-title">Portfolio CAPM Analysis</div>
                 <div class="capm-inputs">
                     <div class="input-group">
-                        <label class="input-label" style="color: rgba(255,255,255,0.9);">Risk-Free Rate (%)</label>
-                        <input type="number" id="riskFreeRate" value="2.0" step="0.1" min="0" max="10" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">
+                        <label class="input-label">Risk-Free Rate (%)</label>
+                        <input type="number" id="riskFreeRate" value="2.0" step="0.1" min="0" max="10">
                     </div>
                     <div class="input-group">
-                        <label class="input-label" style="color: rgba(255,255,255,0.9);">Market Return (%)</label>
-                        <input type="number" id="marketReturn" value="10.0" step="0.1" min="0" max="20" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); color: white;">
+                        <label class="input-label">Market Return (%)</label>
+                        <input type="number" id="marketReturn" value="10.0" step="0.1" min="0" max="20">
                     </div>
                 </div>
                 <div class="capm-result-grid" id="capmResults"></div>
@@ -745,7 +747,7 @@
         </div>
 
         <div class="empty-state" id="emptyState">
-            <div class="empty-state-icon">📊</div>
+            <div class="empty-state-icon"></div>
             <div class="empty-state-text">No positions yet</div>
             <div class="empty-state-subtext">Add your first stock position above to get started</div>
         </div>
@@ -779,8 +781,6 @@
             const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
             const shares = parseFloat(document.getElementById('sharesInput').value);
             const costBasis = parseFloat(document.getElementById('costBasisInput').value);
-            const purchaseDate = document.getElementById('purchaseDateInput').value;
-
             hideError();
 
             if (!ticker) {
@@ -801,8 +801,7 @@
             positions.push({
                 ticker: ticker,
                 shares: shares,
-                cost_basis: costBasis,
-                purchase_date: purchaseDate || new Date().toISOString().split('T')[0]
+                cost_basis: costBasis
             });
 
             savePositions();
@@ -811,7 +810,6 @@
             document.getElementById('tickerInput').value = '';
             document.getElementById('sharesInput').value = '';
             document.getElementById('costBasisInput').value = '';
-            document.getElementById('purchaseDateInput').value = new Date().toISOString().split('T')[0];
 
             // Auto-analyze
             await analyzePortfolio();
@@ -934,8 +932,14 @@
                 const position = positionsMap[stock.ticker];
                 if (!position) return;
 
-                const priceChange = stock.current_price - position.cost_basis;
-                const priceChangePercent = (priceChange / position.cost_basis) * 100;
+                // Today's price change (from previous close)
+                const todayChange = stock.previous_close ? stock.current_price - stock.previous_close : null;
+                const todayChangePercent = stock.previous_close ? (todayChange / stock.previous_close) * 100 : null;
+                
+                // Overall price change (from cost basis)
+                const overallChange = stock.current_price - position.cost_basis;
+                const overallChangePercent = (overallChange / position.cost_basis) * 100;
+                
                 const gainLoss = stock.gain_loss || 0;
                 const gainLossPercent = stock.gain_loss_percent || 0;
                 
@@ -951,11 +955,17 @@
                     <td class="number-cell">${position.shares.toLocaleString('en-US', {maximumFractionDigits: 2})}</td>
                     <td class="number-cell">$${position.cost_basis.toFixed(2)}</td>
                     <td class="number-cell">$${stock.current_price.toFixed(2)}</td>
-                    <td class="number-cell ${priceChange >= 0 ? 'positive' : 'negative'}">
-                        ${priceChange >= 0 ? '+' : ''}$${priceChange.toFixed(2)}
+                    <td class="number-cell ${todayChange !== null ? (todayChange >= 0 ? 'positive' : 'negative') : ''}">
+                        ${todayChange !== null ? (todayChange >= 0 ? '+' : '') + '$' + todayChange.toFixed(2) : 'N/A'}
                     </td>
-                    <td class="number-cell ${priceChangePercent >= 0 ? 'positive' : 'negative'}">
-                        ${priceChangePercent >= 0 ? '+' : ''}${priceChangePercent.toFixed(2)}%
+                    <td class="number-cell ${todayChangePercent !== null ? (todayChangePercent >= 0 ? 'positive' : 'negative') : ''}">
+                        ${todayChangePercent !== null ? (todayChangePercent >= 0 ? '+' : '') + todayChangePercent.toFixed(2) + '%' : 'N/A'}
+                    </td>
+                    <td class="number-cell ${overallChange >= 0 ? 'positive' : 'negative'}">
+                        ${overallChange >= 0 ? '+' : ''}$${overallChange.toFixed(2)}
+                    </td>
+                    <td class="number-cell ${overallChangePercent >= 0 ? 'positive' : 'negative'}">
+                        ${overallChangePercent >= 0 ? '+' : ''}${overallChangePercent.toFixed(2)}%
                     </td>
                     <td class="number-cell">$${stock.current_value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="number-cell ${gainLoss >= 0 ? 'positive' : 'negative'}">
@@ -1108,9 +1118,6 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            // Set default purchase date
-            document.getElementById('purchaseDateInput').value = new Date().toISOString().split('T')[0];
-            
             // Load positions and analyze
             loadPositions();
             
