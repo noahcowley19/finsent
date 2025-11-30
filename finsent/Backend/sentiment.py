@@ -1,5 +1,4 @@
-# Made by Noah C, enhanced by Claude.ai
-# Social Screener with StockTwits, X/Twitter, and News Sentiment
+#Made by Noah Cowley and debugged w/ Claude
 from flask import Blueprint, request, jsonify
 import feedparser
 import requests
@@ -15,31 +14,24 @@ import math
 
 sentiment_bp = Blueprint('sentiment', __name__)
 
-# Hugging Face Inference API for FinBERT
 HF_API_URL = "https://api-inference.huggingface.co/models/ProsusAI/finbert"
 HF_API_TOKEN = os.environ.get('HF_API_TOKEN')
 
-# Initialize VADER as fallback
 vader_analyzer = SentimentIntensityAnalyzer()
 
-# Track which model is being used
 _finbert_available = None
 _finbert_last_check = 0
 
-# Cache for social screening data
 _screening_cache = {}
 _screening_cache_time = {}
-SCREENING_CACHE_TTL = 300  # 5 minutes
+SCREENING_CACHE_TTL = 300 
 
-# StockTwits cache
 _stocktwits_cache = {}
 _stocktwits_cache_time = {}
-STOCKTWITS_CACHE_TTL = 300  # 5 minutes
+STOCKTWITS_CACHE_TTL = 300
 
-# Default tickers for social screener
 DEFAULT_TICKERS = ['AAPL', 'AMZN', 'GOOGL', 'META', 'NVDA']
 
-# Company name mappings
 COMPANY_NAMES = {
     'AAPL': 'Apple Inc.',
     'MSFT': 'Microsoft Corporation',
@@ -123,7 +115,6 @@ COMPANY_NAMES = {
 
 
 def clean_value(value):
-    """Clean NaN, Inf, and None values"""
     if value is None:
         return None
     if isinstance(value, float):
@@ -133,7 +124,6 @@ def clean_value(value):
 
 
 def check_finbert_availability():
-    """Check if FinBERT API is responding."""
     global _finbert_available, _finbert_last_check
     
     if _finbert_available is not None and (time.time() - _finbert_last_check) < 300:
@@ -184,7 +174,6 @@ def check_finbert_availability():
 
 
 def query_finbert(text):
-    """Query FinBERT model via Hugging Face Inference API."""
     headers = {}
     if HF_API_TOKEN:
         headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
@@ -226,7 +215,6 @@ def query_finbert(text):
 
 
 def query_vader(text):
-    """Analyze sentiment using VADER (fallback)."""
     scores = vader_analyzer.polarity_scores(text)
     polarity = scores['compound']
     
@@ -241,7 +229,6 @@ def query_vader(text):
 
 
 def analyze_sentiment(text, use_finbert=True):
-    """Analyze sentiment - tries FinBERT first, falls back to VADER."""
     if use_finbert:
         result = query_finbert(text)
         if result is not None:
@@ -251,21 +238,12 @@ def analyze_sentiment(text, use_finbert=True):
     return polarity, sentiment, 'VADER'
 
 
-# =============================================================================
-# StockTwits Sentiment - Free API for user-labeled bullish/bearish posts
-# =============================================================================
-
 def get_stocktwits_sentiment(ticker):
-    """
-    Fetch sentiment from StockTwits API.
-    Returns bullish/bearish ratio based on user-labeled posts.
-    """
     global _stocktwits_cache, _stocktwits_cache_time
     
     cache_key = ticker.upper()
     current_time = time.time()
     
-    # Check cache
     if cache_key in _stocktwits_cache:
         if current_time - _stocktwits_cache_time.get(cache_key, 0) < STOCKTWITS_CACHE_TTL:
             return _stocktwits_cache[cache_key]
@@ -304,14 +282,12 @@ def get_stocktwits_sentiment(ticker):
                     bearish_count += 1
                     total_with_sentiment += 1
         
-        # Calculate sentiment score (0-100 scale)
         if total_with_sentiment > 0:
             bullish_ratio = bullish_count / total_with_sentiment
             sentiment_score = bullish_ratio * 100
         else:
-            sentiment_score = 50  # Neutral if no labeled posts
+            sentiment_score = 50 
         
-        # Get watchlist count if available
         symbol_data = data.get('symbol', {})
         watchlist_count = symbol_data.get('watchlist_count', 0)
         
@@ -325,7 +301,6 @@ def get_stocktwits_sentiment(ticker):
             'source': 'StockTwits'
         }
         
-        # Cache the result
         _stocktwits_cache[cache_key] = result
         _stocktwits_cache_time[cache_key] = current_time
         
@@ -336,24 +311,17 @@ def get_stocktwits_sentiment(ticker):
         return None
 
 
-# =============================================================================
-# X/Twitter Sentiment - Using cashtag analysis from social aggregators
-# =============================================================================
+
 
 def get_x_sentiment(ticker):
-    """
-    Get X/Twitter sentiment by analyzing cashtag discussions.
-    Uses Google News to find social media coverage and sentiment.
-    """
+    
     try:
-        # Search for recent X/Twitter discussions about the stock
         query = f"${ticker} twitter OR x.com stock"
         rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
         
         feed = feedparser.parse(rss_url)
         
         if not feed.entries:
-            # Fallback: search for general social sentiment
             query = f"{ticker} stock sentiment social media"
             rss_url = f"https://news.google.com/rss/search?q={quote(query)}&hl=en-US&gl=US&ceid=US:en"
             feed = feedparser.parse(rss_url)
@@ -361,7 +329,6 @@ def get_x_sentiment(ticker):
         if not feed.entries:
             return None
         
-        # Analyze sentiment of headlines
         positive_count = 0
         negative_count = 0
         neutral_count = 0
@@ -372,7 +339,6 @@ def get_x_sentiment(ticker):
             summary = entry.get('summary', '')
             text = f"{title} {summary}"
             
-            # Use VADER for quick sentiment
             scores = vader_analyzer.polarity_scores(text)
             compound = scores['compound']
             
@@ -387,7 +353,6 @@ def get_x_sentiment(ticker):
         if total == 0:
             return None
         
-        # Calculate score (0-100)
         sentiment_score = ((positive_count - negative_count) / total + 1) * 50
         sentiment_score = max(0, min(100, sentiment_score))
         
@@ -405,12 +370,9 @@ def get_x_sentiment(ticker):
         return None
 
 
-# =============================================================================
-# News Sentiment
-# =============================================================================
 
 def fetch_article_content(url):
-    """Fetch and extract article text content."""
+   
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -435,7 +397,6 @@ def fetch_article_content(url):
 
 
 def get_news_sentiment(ticker, num_articles=5):
-    """Get news sentiment for a ticker using Google News RSS."""
     try:
         queries = [
             f"{ticker} stock news",
@@ -457,7 +418,6 @@ def get_news_sentiment(ticker, num_articles=5):
         if not all_articles:
             return None
         
-        # Remove duplicates
         seen = set()
         unique_articles = []
         for article in all_articles:
@@ -465,7 +425,6 @@ def get_news_sentiment(ticker, num_articles=5):
                 seen.add(article['title'])
                 unique_articles.append(article)
         
-        # Analyze sentiment
         positive_count = 0
         negative_count = 0
         neutral_count = 0
@@ -486,7 +445,6 @@ def get_news_sentiment(ticker, num_articles=5):
         if total == 0:
             return None
         
-        # Calculate score (0-100)
         sentiment_score = ((positive_count - negative_count) / total + 1) * 50
         sentiment_score = max(0, min(100, sentiment_score))
         
@@ -504,12 +462,9 @@ def get_news_sentiment(ticker, num_articles=5):
         return None
 
 
-# =============================================================================
-# Stock Data via yfinance
-# =============================================================================
+
 
 def get_stock_data(tickers):
-    """Fetch stock data for multiple tickers using yfinance."""
     try:
         ticker_str = ' '.join(tickers)
         data = yf.download(ticker_str, period='5d', interval='1d', progress=False, threads=True)
@@ -529,10 +484,8 @@ def get_stock_data(tickers):
                     results[ticker] = None
                     continue
                 
-                # Get latest values
                 current_price = clean_value(float(close_data.iloc[-1]))
                 
-                # Calculate change
                 if len(close_data) >= 2:
                     prev_price = clean_value(float(close_data.iloc[-2]))
                     if prev_price and current_price:
@@ -545,7 +498,6 @@ def get_stock_data(tickers):
                     change = 0
                     pct_change = 0
                 
-                # Get volume
                 volume = clean_value(float(volume_data.iloc[-1])) if volume_data is not None and not volume_data.empty else 0
                 
                 results[ticker] = {
@@ -567,7 +519,6 @@ def get_stock_data(tickers):
 
 
 def format_volume(volume):
-    """Format volume for display."""
     if volume is None:
         return 'N/A'
     if volume >= 1e9:
@@ -579,42 +530,32 @@ def format_volume(volume):
     return str(int(volume))
 
 
-# =============================================================================
-# Social Screening Endpoint
-# =============================================================================
+
 
 @sentiment_bp.route('/api/social-screening', methods=['POST'])
 def social_screening():
-    """
-    Main social screening endpoint.
-    Returns stock data with StockTwits, X, and News sentiment.
-    """
+    
     global _screening_cache, _screening_cache_time
     
     try:
         data = request.get_json()
         tickers = data.get('tickers', DEFAULT_TICKERS)
         
-        # Validate tickers
         if not tickers:
             tickers = DEFAULT_TICKERS
         
-        # Limit to 10 tickers
         tickers = [t.upper().strip() for t in tickers[:10] if t.strip()]
         
         if not tickers:
             tickers = DEFAULT_TICKERS
         
-        # Create cache key
         cache_key = ':'.join(sorted(tickers))
         current_time = time.time()
         
-        # Check cache
         if cache_key in _screening_cache:
             if current_time - _screening_cache_time.get(cache_key, 0) < SCREENING_CACHE_TTL:
                 return jsonify(_screening_cache[cache_key])
         
-        # Fetch stock data
         stock_data = get_stock_data(tickers)
         
         results = []
@@ -628,10 +569,8 @@ def social_screening():
         for ticker in tickers:
             stock = stock_data.get(ticker)
             
-            # Get company name
             company_name = COMPANY_NAMES.get(ticker, ticker)
             
-            # Initialize result
             result = {
                 'ticker': ticker,
                 'company': company_name,
@@ -656,7 +595,6 @@ def social_screening():
                 'composite_status': 'neutral'
             }
             
-            # Add stock data
             if stock:
                 sources_status['market_data'] = True
                 result['price'] = stock['price']
@@ -671,7 +609,6 @@ def social_screening():
                 result['volume'] = stock['volume']
                 result['volume_display'] = format_volume(stock['volume'])
             
-            # Get StockTwits sentiment
             stocktwits = get_stocktwits_sentiment(ticker)
             if stocktwits:
                 sources_status['stocktwits'] = True
@@ -679,7 +616,6 @@ def social_screening():
                 result['stocktwits_display'] = f"{stocktwits['score']:.0f}"
                 result['stocktwits_detail'] = f"B {stocktwits['bullish']} / S {stocktwits['bearish']}"
             
-            # Get X/Twitter sentiment
             x_sent = get_x_sentiment(ticker)
             if x_sent:
                 sources_status['x_sentiment'] = True
@@ -688,7 +624,6 @@ def social_screening():
                 if 'positive' in x_sent:
                     result['x_detail'] = f"+{x_sent['positive']} / -{x_sent['negative']}"
             
-            # Get News sentiment
             news = get_news_sentiment(ticker, num_articles=5)
             if news:
                 sources_status['news'] = True
@@ -696,13 +631,12 @@ def social_screening():
                 result['news_display'] = f"{news['score']:.0f}"
                 result['news_detail'] = f"+{news['positive']} / -{news['negative']}"
             
-            # Calculate composite score
             scores = []
             weights = []
             
             if result['stocktwits'] is not None:
                 scores.append(result['stocktwits'])
-                weights.append(1.5)  # StockTwits weighted higher (user-labeled)
+                weights.append(1.5)  
             
             if result['x_sentiment'] is not None:
                 scores.append(result['x_sentiment'])
@@ -712,9 +646,7 @@ def social_screening():
                 scores.append(result['news_sentiment'])
                 weights.append(1.0)
             
-            # Fallback: use price momentum if no sentiment data
             if not scores and result['pct_change'] is not None:
-                # Convert pct_change to 0-100 scale
                 momentum_score = ((result['pct_change'] + 10) / 20) * 100
                 momentum_score = max(0, min(100, momentum_score))
                 scores.append(momentum_score)
@@ -745,7 +677,6 @@ def social_screening():
             'cache_ttl': SCREENING_CACHE_TTL
         }
         
-        # Cache the response
         _screening_cache[cache_key] = response
         _screening_cache_time[cache_key] = current_time
         
@@ -762,19 +693,15 @@ def social_screening():
 
 @sentiment_bp.route('/api/social-screening/defaults', methods=['GET'])
 def get_defaults():
-    """Return default tickers for social screener."""
     return jsonify({
         'tickers': DEFAULT_TICKERS,
         'max_tickers': 10
     })
 
 
-# =============================================================================
-# Original News Analysis Endpoint (for deep analysis)
-# =============================================================================
+
 
 def fetch_news_batch(queries, num_articles_per_query):
-    """Fetch news articles from Google News RSS."""
     all_articles = []
     
     for query in queries:
@@ -793,7 +720,6 @@ def fetch_news_batch(queries, num_articles_per_query):
         except:
             continue
     
-    # Remove duplicates
     seen_titles = set()
     unique_articles = []
     for article in all_articles:
@@ -837,7 +763,6 @@ def fetch_news_batch(queries, num_articles_per_query):
 
 
 def analyze_ticker_sentiment(ticker, num_articles_per_query=10):
-    """Main function to analyze sentiment for a ticker/asset."""
     
     use_finbert = check_finbert_availability()
     
@@ -934,7 +859,6 @@ def analyze():
 
 @sentiment_bp.route('/api/sentiment/health', methods=['GET'])
 def sentiment_health():
-    """Health check with model status."""
     finbert_ok = check_finbert_availability()
     
     return jsonify({
