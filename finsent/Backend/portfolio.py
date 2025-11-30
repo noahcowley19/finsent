@@ -160,8 +160,9 @@ def calculate_portfolio_metrics(positions):
     for pos in positions:
         ticker = pos.get('ticker', '').upper()
         shares = float(pos.get('shares', 0))
-        cost_basis = float(pos.get('cost_basis', 0))
-        purchase_date = pos.get('purchase_date', '')
+        # Accept total cost basis and calculate per-share cost basis
+        total_cost_basis = float(pos.get('total_cost_basis', 0))
+        cost_basis_per_share = (total_cost_basis / shares) if shares > 0 else 0
         
         stock_data = get_stock_data(ticker)
         if 'error' in stock_data:
@@ -172,7 +173,7 @@ def calculate_portfolio_metrics(positions):
             current_price = 0
         
         current_value = shares * current_price
-        cost_basis_total = shares * cost_basis
+        cost_basis_total = total_cost_basis
         gain_loss = current_value - cost_basis_total
         gain_loss_percent = (gain_loss / cost_basis_total * 100) if cost_basis_total > 0 else 0
         
@@ -183,13 +184,12 @@ def calculate_portfolio_metrics(positions):
             'ticker': ticker,
             'name': stock_data.get('name', ticker),
             'shares': shares,
-            'cost_basis': cost_basis,
+            'cost_basis': cost_basis_per_share,  # Per share for display
+            'cost_basis_total': cost_basis_total,  # Total for calculations
             'current_price': current_price,
             'current_value': current_value,
-            'cost_basis_total': cost_basis_total,
             'gain_loss': gain_loss,
             'gain_loss_percent': gain_loss_percent,
-            'purchase_date': purchase_date,
             'beta': stock_data.get('beta', 1.0),
             'sector': stock_data.get('sector', 'Unknown'),
             'industry': stock_data.get('industry', 'Unknown')
