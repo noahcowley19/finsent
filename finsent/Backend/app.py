@@ -12,7 +12,6 @@ app = Flask(__name__)
 
 CORS(app, origins=["*"])
 
-# Global error handler for API routes to return JSON instead of HTML
 @app.errorhandler(Exception)
 def handle_exception(e):
     # Pass through HTTP errors
@@ -22,17 +21,13 @@ def handle_exception(e):
             'error_type': 'http_error'
         }), e.code
 
-    # For API routes, return JSON error
     if request.path.startswith('/api/'):
         return jsonify({
             'error': f'An error occurred: {str(e)}',
             'error_type': 'server_error'
         }), 500
-
-    # For non-API routes, let Flask handle it normally
     raise e
 
-# Get the path to the Frontend directory
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Frontend')
 
 
@@ -41,7 +36,6 @@ app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
 
-# Serve frontend HTML pages
 @app.route('/')
 def index():
     return send_from_directory(FRONTEND_DIR, 'index.html')
@@ -75,4 +69,5 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
