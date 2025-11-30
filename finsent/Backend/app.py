@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 
@@ -13,12 +13,46 @@ app = Flask(__name__)
 
 CORS(app, origins=["*"])
 
+# Get the path to the Frontend directory
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Frontend')
+
 
 app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(picker_bp)
+
+
+# Serve frontend HTML pages
+@app.route('/')
+def index():
+    return send_from_directory(FRONTEND_DIR, 'index.html')
+
+
+@app.route('/picker')
+def picker():
+    return send_from_directory(FRONTEND_DIR, 'picker.html')
+
+
+@app.route('/sentiment')
+def sentiment():
+    return send_from_directory(FRONTEND_DIR, 'sentiment.html')
+
+
+@app.route('/financials')
+def financials():
+    return send_from_directory(FRONTEND_DIR, 'financials.html')
+
+
+@app.route('/insider')
+def insider():
+    return send_from_directory(FRONTEND_DIR, 'insider.html')
+
+
+@app.route('/search')
+def search():
+    return send_from_directory(FRONTEND_DIR, 'search.html')
 
 
 @app.route('/api/health', methods=['GET'])
