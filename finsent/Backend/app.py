@@ -6,6 +6,7 @@ from sentiment import sentiment_bp
 from financials import financials_bp
 from insider import insider_bp
 from search import search_bp
+from portfolio import portfolio_bp
 
 
 app = Flask(__name__)
@@ -35,6 +36,7 @@ app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
+app.register_blueprint(portfolio_bp)
 
 @app.route('/')
 def index():
@@ -59,6 +61,11 @@ def insider():
 @app.route('/search')
 def search():
     return send_from_directory(FRONTEND_DIR, 'search.html')
+
+
+@app.route('/portfolio')
+def portfolio():
+    return send_from_directory(FRONTEND_DIR, 'portfolio.html')
 
 
 @app.route('/api/health', methods=['GET'])
