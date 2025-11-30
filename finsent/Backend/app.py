@@ -6,7 +6,6 @@ from sentiment import sentiment_bp
 from financials import financials_bp
 from insider import insider_bp
 from search import search_bp
-from picker import picker_bp
 
 
 app = Flask(__name__)
@@ -41,18 +40,11 @@ app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
-app.register_blueprint(picker_bp)
-
 
 # Serve frontend HTML pages
 @app.route('/')
 def index():
     return send_from_directory(FRONTEND_DIR, 'index.html')
-
-
-@app.route('/picker')
-def picker():
-    return send_from_directory(FRONTEND_DIR, 'picker.html')
 
 
 @app.route('/sentiment')
@@ -83,3 +75,4 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
