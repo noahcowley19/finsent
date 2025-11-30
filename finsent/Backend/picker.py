@@ -15,6 +15,18 @@ CACHE_FILE = 'picker_cache.json'
 CACHE_DURATION = 86400  # 24 hours in seconds
 
 
+def normalize_dataframe(df):
+    """Normalize DataFrame columns from yfinance to handle multi-index"""
+    if df.empty:
+        return df
+
+    # If columns are multi-indexed, flatten them
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+
+    return df
+
+
 def clean_value(value):
     """Clean NaN, Inf, and None values"""
     if value is None:
@@ -114,19 +126,20 @@ def check_minervini_criteria(ticker, rs_rating):
         # Download 1 year of data
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365)
-        
+
         df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-        
+        df = normalize_dataframe(df)
+
         if df.empty or len(df) < 200:
             return None, "Insufficient data"
-        
-        # Calculate moving averages
+
+        # Calculate moving averages - use 'Close' for all to ensure consistency
         df['SMA_50'] = df['Close'].rolling(window=50).mean()
-        df['SMA_150'] = df['Adj Close'].rolling(window=150).mean()
-        df['SMA_200'] = df['Adj Close'].rolling(window=200).mean()
+        df['SMA_150'] = df['Close'].rolling(window=150).mean()
+        df['SMA_200'] = df['Close'].rolling(window=200).mean()
         
         # Get current values
-        current_close = clean_value(df['Adj Close'].iloc[-1])
+        current_close = clean_value(df['Close'].iloc[-1])
         sma_50 = clean_value(df['SMA_50'].iloc[-1])
         sma_150 = clean_value(df['SMA_150'].iloc[-1])
         sma_200 = clean_value(df['SMA_200'].iloc[-1])
@@ -210,7 +223,7 @@ def check_minervini_criteria(ticker, rs_rating):
             
             # Calculate % change from previous close
             if len(df) >= 2:
-                prev_close = clean_value(df['Adj Close'].iloc[-2])
+                prev_close = clean_value(df['Close'].iloc[-2])
                 if prev_close and prev_close != 0:
                     change_pct = ((current_close - prev_close) / prev_close) * 100
                     stock_data['change_pct'] = safe_round(change_pct, 2)
@@ -239,12 +252,14 @@ def run_minervini_screener():
         end_date = datetime.now()
         start_date = end_date - timedelta(days=365)
         index_df = yf.download('^GSPC', start=start_date, end=end_date, progress=False)
-        
+        index_df = normalize_dataframe(index_df)
+
         if not index_df.empty:
-            index_return = (index_df['Adj Close'].iloc[-1] / index_df['Adj Close'].iloc[0]) - 1
+            index_return = (index_df['Close'].iloc[-1] / index_df['Close'].iloc[0]) - 1
         else:
             index_return = 0.20  # Default 20% if index data fails
-    except:
+    except Exception as e:
+        print(f"Error downloading index data: {e}")
         index_return = 0.20
     
     print(f"S&P 500 return: {index_return*100:.2f}%")
@@ -258,36 +273,37 @@ def run_minervini_screener():
             end_date = datetime.now()
             start_date = end_date - timedelta(days=365)
             df = yf.download(ticker, start=start_date, end=end_date, progress=False)
-            
+            df = normalize_dataframe(df)
+
             if not df.empty and len(df) >= 200:
-                stock_return = (df['Adj Close'].iloc[-1] / df['Adj Close'].iloc[0]) - 1
+                stock_return = (df['Close'].iloc[-1] / df['Close'].iloc[0]) - 1
                 rs_rating = calculate_rs_rating(stock_return, index_return)
-                
+
                 # Only continue with stocks that have RS >= 70
                 if rs_rating >= 70:
                     rs_ratings[ticker] = rs_rating
                     valid_tickers.append(ticker)
-            
-            time.sleep(0.1)  # Rate limiting
-            
+
+            time.sleep(0.05)  # Rate limiting
+
         except Exception as e:
             print(f"Error calculating RS for {ticker}: {e}")
             continue
-    
+
     print(f"Found {len(valid_tickers)} stocks with RS >= 70")
-    
+
     # Second pass: Apply full Minervini criteria to high RS stocks
     minervini_picks = []
-    
+
     for ticker in valid_tickers:
         rs_rating = rs_ratings[ticker]
         stock_data, error = check_minervini_criteria(ticker, rs_rating)
-        
+
         if stock_data:
             minervini_picks.append(stock_data)
             print(f"✓ {ticker} - RS: {rs_rating}")
-        
-        time.sleep(0.1)  # Rate limiting
+
+        time.sleep(0.05)  # Rate limiting
     
     # Sort by RS rating (highest first)
     minervini_picks.sort(key=lambda x: x['rs_rating'], reverse=True)
