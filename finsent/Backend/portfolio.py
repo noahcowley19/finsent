@@ -60,6 +60,7 @@ def get_stock_data(ticker):
             }
         
         current_price = clean_value(info.get('currentPrice')) or clean_value(info.get('regularMarketPrice'))
+        previous_close = clean_value(info.get('previousClose')) or clean_value(info.get('regularMarketPreviousClose'))
         beta = clean_value(info.get('beta')) or 1.0
         sector = info.get('sector') or 'Unknown'
         industry = info.get('industry') or 'Unknown'
@@ -72,6 +73,7 @@ def get_stock_data(ticker):
             'ticker': ticker.upper(),
             'name': info.get('longName') or info.get('shortName') or ticker,
             'current_price': current_price,
+            'previous_close': previous_close,
             'beta': beta,
             'sector': sector,
             'industry': industry,
@@ -349,6 +351,7 @@ def get_individual_stock_analysis(ticker):
         return stock_data
     
     current_price = stock_data.get('current_price', 0)
+    previous_close = stock_data.get('previous_close')
     beta = stock_data.get('beta', 1.0)
     historical = stock_data.get('historical')
     
@@ -370,6 +373,7 @@ def get_individual_stock_analysis(ticker):
         'ticker': ticker.upper(),
         'name': stock_data.get('name', ticker),
         'current_price': safe_round(current_price, 2),
+        'previous_close': safe_round(previous_close, 2) if previous_close else None,
         'beta': safe_round(beta, 2),
         'volatility': volatility,
         'sharpe_ratio': sharpe,
@@ -495,5 +499,4 @@ def calculate_capm_endpoint():
             'error': f'An error occurred: {str(e)}',
             'error_type': 'server_error'
         }), 500
-
 
