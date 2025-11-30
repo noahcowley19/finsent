@@ -560,26 +560,4 @@ def picks_health():
         'cache_duration': CACHE_DURATION,
         'stock_universe_size': len(STOCK_UNIVERSE)
     })
-```
 
----
-
-## 2. `/Backend/Procfile`
-```
-web: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 600 --worker-class gthread --max-requests 100 --max-requests-jitter 20 --graceful-timeout 300
-```
-
----
-
-## 3. `/Backend/requirements.txt`
-```
-Flask
-flask-cors
-feedparser
-requests
-beautifulsoup4
-vaderSentiment
-yfinance
-gunicorn
-pandas
-numpy
