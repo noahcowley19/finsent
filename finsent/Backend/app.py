@@ -8,10 +8,20 @@ from insider import insider_bp
 from search import search_bp
 from portfolio import portfolio_bp
 
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+
 
 app = Flask(__name__)
 
 CORS(app, origins=["*"])
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["60 per minute"]  # GLOBAL LIMIT
+)
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -76,5 +86,6 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
