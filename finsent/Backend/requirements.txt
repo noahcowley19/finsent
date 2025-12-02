@@ -9,5 +9,9 @@ gunicorn
 pandas
 numpy
 flask-limiter
+re
+os
+logging
+
 
 
