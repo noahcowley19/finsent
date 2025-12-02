@@ -20,7 +20,7 @@ CORS(app, origins=["*"])
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["60 per minute"]  # GLOBAL LIMIT
+    default_limits=["15 per minute"] 
 )
 
 @app.errorhandler(Exception)
@@ -86,6 +86,7 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
 
