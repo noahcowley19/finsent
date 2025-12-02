@@ -8,5 +8,6 @@ yfinance
 gunicorn
 pandas
 numpy
+flask-limiter
 
 
