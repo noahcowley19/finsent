@@ -1754,6 +1754,11 @@
             const ticker = document.getElementById('tickerInput').value.trim();
             const numArticles = parseInt(document.getElementById('numArticles').value) || 10;
 
+            if(ticker === "ZANE") {
+                showError('YOU DISCOVERED THE EASTER EGG!! ZANE IS CHILL!!');
+                return
+            }
+
             if (!ticker) {
                 showError('Please enter a ticker or asset name');
                 return;
@@ -1988,6 +1993,7 @@
     </script>
 </body>
 </html>
+
 
 
 
