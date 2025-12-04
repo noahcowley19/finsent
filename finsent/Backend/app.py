@@ -192,7 +192,7 @@ app.register_blueprint(portfolio_bp)
 def index():
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
-@limiter.limit("5 per minute)
+@limiter.limit("5 per minute")
 @app.route('/sentiment')
 def sentiment():
     return send_from_directory(FRONTEND_DIR, 'sentiment.html')
@@ -226,6 +226,7 @@ def health():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
 
