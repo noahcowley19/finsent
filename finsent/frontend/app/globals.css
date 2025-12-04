@@ -1,1 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+@layer base {
+  * {
+    @apply box-border;
+  }
+  
+  body {
+    @apply min-h-screen bg-background text-primary antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-8 py-3.5 text-[15px] font-semibold bg-primary text-white rounded-[10px] 
+           transition-all duration-200 hover:bg-[#0f172a] hover:shadow-custom-hover 
+           hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed 
+           disabled:transform-none;
+  }
+  
+  .btn-secondary {
+    @apply px-6 py-2.5 text-sm font-semibold bg-neutral-light text-primary rounded-lg
+           transition-all duration-200 hover:bg-border;
+  }
+  
+  .input-field {
+    @apply w-full px-[18px] py-3.5 text-[15px] border-[1.5px] border-border rounded-[10px]
+           bg-background text-primary transition-all duration-200
+           focus:outline-none focus:border-primary focus:bg-card-bg focus:ring-4 
+           focus:ring-primary/5;
+  }
+  
+  .card {
+    @apply bg-card-bg rounded-2xl shadow-custom border border-border;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-custom-hover hover:-translate-y-0.5;
+  }
+}
+
+@layer utilities {
+  .spinner {
+    @apply w-10 h-10 border-3 border-border border-t-primary rounded-full;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+}
