@@ -1,14 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
-const inter = Inter({ subsets: ['latin'] });
-
 export const metadata: Metadata = {
-  title: 'Caveray | Financial Intelligence',
-  description: 'Top-notch financial intelligence tools for smart investing',
+  title: 'FinSent - Financial Sentiment Analysis',
+  description: 'AI-powered financial sentiment analysis platform for stock market insights',
 };
 
 export default function RootLayout({
@@ -18,16 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body className={inter.className}>
+      <body className="min-h-screen flex flex-col bg-background">
         <Navbar />
-        <main className="pt-20 min-h-screen">
+        <main className="flex-1 pt-16">
           {children}
         </main>
         <Footer />
