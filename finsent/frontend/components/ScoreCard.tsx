@@ -1,99 +1,95 @@
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
-type Status = 'positive' | 'negative' | 'neutral' | 'warning';
+const ArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="2"
+    className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+  </svg>
+);
 
-interface ScoreCardProps {
-  title: string;
-  score: number | string;
-  maxScore?: number;
-  interpretation: string;
-  status: Status;
-  details?: Array<{ label: string; value: number | string; passed?: boolean }>;
-  className?: string;
-}
+const features = [
+  {
+    title: 'Stock Search',
+    description: 'A comprehensive stock search with charts, metrics, ratings, financial health indicators, and real-time news.',
+    href: '/search',
+    featured: true,
+  },
+  {
+    title: 'Sentiment Analyzer',
+    description: 'Real-time market sentiment using transformer models and social data.',
+    href: '/sentiment',
+  },
+  {
+    title: 'Financial Analyzer',
+    description: 'Academic scoring models: Piotroski F-Score, Altman Z-Score, and Beneish M-Score.',
+    href: '/financials',
+  },
+  {
+    title: 'Insider Trading',
+    description: 'Track insider buying/selling activity and institutional ownership changes.',
+    href: '/insider',
+  },
+  {
+    title: 'My Portfolio',
+    description: 'A portfolio tracker with cool features, including return prediction.',
+    href: '/portfolio',
+  },
+];
 
-const statusColors: Record<Status, { bg: string; text: string; border: string }> = {
-  positive: { bg: 'bg-positive-light', text: 'text-positive-dark', border: 'border-positive' },
-  negative: { bg: 'bg-negative-light', text: 'text-negative-dark', border: 'border-negative' },
-  neutral: { bg: 'bg-neutral-light', text: 'text-neutral-dark', border: 'border-neutral' },
-  warning: { bg: 'bg-warning-light', text: 'text-warning-dark', border: 'border-warning' },
-};
-
-export default function ScoreCard({
-  title,
-  score,
-  maxScore,
-  interpretation,
-  status,
-  details,
-  className
-}: ScoreCardProps) {
-  const colors = statusColors[status];
-  
+export default function Home() {
   return (
-    <div className={cn('card', className)}>
-      <h3 className="font-semibold text-primary mb-3">{title}</h3>
-      
-      <div className={cn('rounded-lg p-4 mb-3', colors.bg)}>
-        <div className="text-center">
-          <p className={cn('text-4xl font-bold', colors.text)}>
-            {score}{maxScore && <span className="text-lg font-normal">/{maxScore}</span>}
-          </p>
-          <p className={cn('text-sm font-medium mt-1', colors.text)}>
-            {interpretation}
-          </p>
-        </div>
+    <div className="max-w-[1400px] mx-auto px-5 py-10 relative">
+      {/* Hero */}
+      <div className="text-center mb-12">
+        <h1 className="text-[3.5rem] font-bold text-primary mb-3" style={{ letterSpacing: '-0.03em' }}>
+          Caveray
+        </h1>
+        <p className="text-lg text-secondary font-normal" style={{ letterSpacing: '-0.01em' }}>
+          Top-notch financial intelligence tools for smart investing.
+        </p>
       </div>
-      
-      {details && details.length > 0 && (
-        <div className="space-y-2">
-          {details.map((detail, index) => (
-            <div key={index} className="flex justify-between items-center text-sm">
-              <span className="text-secondary">{detail.label}</span>
-              <span className={cn(
-                'font-medium',
-                detail.passed === true && 'text-positive',
-                detail.passed === false && 'text-negative',
-                detail.passed === undefined && 'text-primary'
-              )}>
-                {detail.value}
-                {detail.passed !== undefined && (
-                  <span className="ml-1">{detail.passed ? '✓' : '✗'}</span>
-                )}
-              </span>
+
+      {/* Features Grid */}
+      <div className="max-w-[900px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {features.map((feature) => (
+            <div
+              key={feature.href}
+              className={`
+                card card-hover flex flex-col relative overflow-hidden group
+                ${feature.featured ? 'md:col-span-2 card-featured' : ''}
+              `}
+            >
+              <h2
+                className={`text-xl font-bold mb-2 ${feature.featured ? 'text-white' : 'text-primary'}`}
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                {feature.title}
+              </h2>
+              <p
+                className={`text-sm mb-5 leading-relaxed flex-grow ${feature.featured ? 'text-white/80' : 'text-secondary'}`}
+              >
+                {feature.description}
+              </p>
+              <Link
+                href={feature.href}
+                className={`
+                  feature-btn
+                  ${feature.featured ? 'bg-white !text-primary hover:bg-neutral-light' : ''}
+                `}
+              >
+                Launch {feature.title}
+                <ArrowIcon />
+              </Link>
             </div>
           ))}
         </div>
-      )}
-    </div>
-  );
-}
-
-export function ScoreBar({ 
-  label, 
-  value, 
-  max, 
-  status 
-}: { 
-  label: string; 
-  value: number; 
-  max: number;
-  status: Status;
-}) {
-  const percentage = Math.min((value / max) * 100, 100);
-  const colors = statusColors[status];
-  
-  return (
-    <div className="mb-3">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-secondary">{label}</span>
-        <span className="font-medium text-primary">{value}/{max}</span>
-      </div>
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-        <div 
-          className={cn('h-full rounded-full transition-all', colors.bg.replace('-light', ''))}
-          style={{ width: `${percentage}%` }}
-        />
       </div>
     </div>
   );
