@@ -177,8 +177,6 @@ def handle_exception(e):
         }), 500
     raise e
 
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'Frontend')
-
 
 app.register_blueprint(sentiment_bp)
 app.register_blueprint(financials_bp)
@@ -186,44 +184,11 @@ app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(portfolio_bp)
 
-@app.route('/')
-def index():
-    return send_from_directory(FRONTEND_DIR, 'index.html')
-
-@limiter.limit("5 per minute")
-@app.route('/sentiment')
-def sentiment():
-    return send_from_directory(FRONTEND_DIR, 'sentiment.html')
-
-
-@app.route('/financials')
-def financials():
-    return send_from_directory(FRONTEND_DIR, 'financials.html')
-
-
-@app.route('/insider')
-def insider():
-    return send_from_directory(FRONTEND_DIR, 'insider.html')
-
-
-@app.route('/search')
-def search():
-    return send_from_directory(FRONTEND_DIR, 'search.html')
-
-
-@app.route('/portfolio')
-def portfolio():
-    return send_from_directory(FRONTEND_DIR, 'portfolio.html')
-
-
-@app.route('/api/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'healthy', 'message': 'Finsent API is running'})
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
 
