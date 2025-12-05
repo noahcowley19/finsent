@@ -88,7 +88,7 @@ export interface FinancialMetric {
   status: 'positive' | 'negative' | 'neutral';
 }
 
-export interface FinancialResponse {
+export interface FinancialsResponse {
   ticker: string;
   company: CompanyInfo;
   scores: {
