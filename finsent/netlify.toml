@@ -1,7 +1,7 @@
 [build]
-  base = "frontend"
+  base = "finsent/frontend"
   command = "npm run build"
-  publish = "out"
+  publish = "finsent/frontend/out"
 
 [build.environment]
   NODE_VERSION = "18"
