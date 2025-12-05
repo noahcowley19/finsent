@@ -222,7 +222,7 @@ export default function InsiderPage() {
             <Card>
               <CardHeader title="Top Institutional Holders" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data.institutional.holders.slice(0, 6).map((holder: any, i) => (
+                {data.institutional.holders.slice(0, 6).map((holder: any, i: number) => (
                   <div key={i} className="p-4 bg-slate-50 rounded-lg">
                     <p className="font-semibold text-primary truncate">{holder.name}</p>
                     <p className="text-sm text-secondary">
