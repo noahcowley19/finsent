@@ -106,4 +106,30 @@ class ApiClient {
 const api = new ApiClient(API_BASE_URL);
 
 // Export individual functions
-export const analyzeSentiment = (ticker: string, numArticles?: number) =>
+export const analyzeSentiment = (ticker: string, numArticles?: number) => 
+  api.analyzeSentiment(ticker, numArticles);
+
+export const getSocialScreening = (tickers?: string[]) => 
+  api.getSocialScreening(tickers);
+
+export const analyzeFinancials = (ticker: string) => 
+  api.analyzeFinancials(ticker);
+
+export const analyzeInsider = (ticker: string, months?: number) => 
+  api.analyzeInsider(ticker, months);
+
+export const searchStock = (ticker: string) => 
+  api.searchStock(ticker);
+
+export const getChartData = (ticker: string, period?: string) => 
+  api.getChartData(ticker, period);
+
+export const analyzePortfolio = (
+  positions: PortfolioPosition[],
+  riskFreeRate?: number,
+  marketReturn?: number
+) => api.analyzePortfolio(positions, riskFreeRate, marketReturn);
+
+export const healthCheck = () => api.healthCheck();
+
+export { api };
