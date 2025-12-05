@@ -220,13 +220,12 @@ export default function SentimentPage() {
 
       {activeTab === 'social' && screeningData && (
         <div className="space-y-6">
-          <MetricGrid cols={1}>
-  <MetricCard 
-    label="Stocks Screened" 
-    value={screeningData.results.length}
-    status="neutral"
-  />
-</MetricGrid>
+          <MetricCard 
+  label="Stocks Screened" 
+  value={screeningData.results.length}
+  status="neutral"
+  className="max-w-sm"
+/>
 
           <Card>
             <CardHeader title="Screening Results" subtitle="Sorted by composite score" />
