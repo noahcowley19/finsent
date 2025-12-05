@@ -1,87 +1,96 @@
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
-type Status = 'positive' | 'negative' | 'neutral' | 'warning';
+const ArrowIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="2"
+    className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-1"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+  </svg>
+);
 
-interface MetricCardProps {
-  label: string;
-  value: string | number;
-  status?: Status;
-  subtitle?: string;
-  className?: string;
-}
+const features = [
+  {
+    title: 'Stock Search',
+    description: 'A comprehensive stock search with charts, metrics, ratings, financial health indicators, and real-time news.',
+    href: '/search',
+    featured: true,
+  },
+  {
+    title: 'Sentiment Analyzer',
+    description: 'Real-time market sentiment using transformer models and social data.',
+    href: '/sentiment',
+  },
+  {
+    title: 'Financial Analyzer',
+    description: 'Academic scoring models: Piotroski F-Score, Altman Z-Score, and Beneish M-Score.',
+    href: '/financials',
+  },
+  {
+    title: 'Insider Trading',
+    description: 'Track insider buying/selling activity and institutional ownership changes.',
+    href: '/insider',
+  },
+  {
+    title: 'My Portfolio',
+    description: 'A portfolio tracker with cool features, including return prediction.',
+    href: '/portfolio',
+  },
+];
 
-const statusBorderColors: Record<Status, string> = {
-  positive: 'border-t-positive',
-  negative: 'border-t-negative',
-  neutral: 'border-t-neutral',
-  warning: 'border-t-warning',
-};
-
-const statusTextColors: Record<Status, string> = {
-  positive: 'text-positive',
-  negative: 'text-negative',
-  neutral: 'text-neutral',
-  warning: 'text-warning',
-};
-
-export default function MetricCard({ 
-  label, 
-  value, 
-  status = 'neutral',
-  subtitle,
-  className 
-}: MetricCardProps) {
+export default function Home() {
   return (
-    <div className={cn(
-      'metric-card',
-      statusBorderColors[status],
-      className
-    )}>
-      <p className="text-xs font-medium text-secondary uppercase tracking-wide mb-1">
-        {label}
-      </p>
-      <p className={cn('text-2xl font-bold', statusTextColors[status])}>
-        {value}
-      </p>
-      {subtitle && (
-        <p className="text-xs text-secondary mt-1">{subtitle}</p>
-      )}
-    </div>
-  );
-}
+    <div className="max-w-[1400px] mx-auto px-5 py-10 relative">
+      {/* Hero */}
+      <div className="text-center mb-12">
+        <h1 className="text-[3.5rem] font-bold text-primary mb-3" style={{ letterSpacing: '-0.03em' }}>
+          Caveray
+        </h1>
+        <p className="text-lg text-secondary font-normal" style={{ letterSpacing: '-0.01em' }}>
+          Top-notch financial intelligence tools for smart investing.
+        </p>
+      </div>
 
-export function MetricRow({ 
-  label, 
-  value,
-  status
-}: { 
-  label: string; 
-  value: string | number;
-  status?: Status;
-}) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-border last:border-0">
-      <span className="text-secondary text-sm">{label}</span>
-      <span className={cn(
-        'font-semibold',
-        status ? statusTextColors[status] : 'text-primary'
-      )}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-export function MetricGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: 2 | 3 | 4 }) {
-  const colClasses = {
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
-  };
-  
-  return (
-    <div className={cn('grid gap-4', colClasses[cols])}>
-      {children}
+      {/* Features Grid */}
+      <div className="max-w-[900px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {features.map((feature) => (
+            <div
+              key={feature.href}
+              className={`
+                card card-hover flex flex-col relative overflow-hidden group
+                ${feature.featured ? 'md:col-span-2 card-featured' : ''}
+              `}
+            >
+              <h2
+                className={`text-xl font-bold mb-2 ${feature.featured ? 'text-white' : 'text-primary'}`}
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                {feature.title}
+              </h2>
+              <p
+                className={`text-sm mb-5 leading-relaxed flex-grow ${feature.featured ? 'text-white/80' : 'text-secondary'}`}
+              >
+                {feature.description}
+              </p>
+              <Link
+                href={feature.href}
+                className={`
+                  feature-btn
+                  ${feature.featured ? 'bg-white !text-primary hover:bg-neutral-light' : ''}
+                `}
+              >
+                Launch {feature.title}
+                <ArrowIcon />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
