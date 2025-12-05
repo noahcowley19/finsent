@@ -20,11 +20,28 @@ import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils';
 // Helper to get score components as details array
 function getScoreDetails(score: Score): Array<{ label: string; value: string | number; passed?: boolean }> {
   if (!score.components) return [];
-  return Object.entries(score.components).map(([key, value]) => ({
-    label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: typeof value === 'boolean' ? (value ? 1 : 0) : (value ?? 'N/A'),
-    passed: typeof value === 'boolean' ? value : undefined,
-  }));
+  return Object.entries(score.components).map(([key, value]) => {
+    // Handle different value types explicitly
+    let displayValue: string | number;
+    let passed: boolean | undefined;
+    
+    if (typeof value === 'boolean') {
+      displayValue = value ? 1 : 0;
+      passed = value;
+    } else if (typeof value === 'number') {
+      displayValue = value;
+    } else if (value === null || value === undefined) {
+      displayValue = 'N/A';
+    } else {
+      displayValue = String(value);
+    }
+    
+    return {
+      label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      value: displayValue,
+      passed,
+    };
+  });
 }
 
 export default function FinancialsPage() {
