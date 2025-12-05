@@ -21,8 +21,11 @@ import logging
 
 app = Flask(__name__)
 
-CORS(app, origins=["*"])
-
+CORS(app, origins=[
+    "http://localhost:3000",  # Local development
+    "https://your-nextjs-app.vercel.app",  # Production (update when you deploy)
+], 
+supports_credentials=True)
 limiter = Limiter(
     get_remote_address,
     app=app,
@@ -188,6 +191,7 @@ app.register_blueprint(portfolio_bp)
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
 
