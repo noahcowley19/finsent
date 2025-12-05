@@ -307,10 +307,10 @@ export function PriceChart({
       legend: { display: false },
       title: { display: !!title, text: title },
       tooltip: {
-        callbacks: {
-          label: (ctx) => `$${ctx.parsed.y.toFixed(2)}`,
-        },
-      },
+  callbacks: {
+    label: (ctx) => `$${ctx.parsed.y?.toFixed(2) ?? 'N/A'}`,
+  },
+},
     },
     scales: {
       y: {
