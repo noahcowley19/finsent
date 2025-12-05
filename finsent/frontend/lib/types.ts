@@ -315,3 +315,10 @@ export interface PortfolioResponse {
   stock_analyses: StockAnalysis[];
   timestamp: string;
 }
+
+// Type aliases for consistency
+export type SentimentAnalysisResponse = SentimentResponse;
+export type ChartResponse = ChartData;
+export type NewsItem = SearchResponse['news'][0];
+export type Signal = any; // Add proper type if you have it
+export type Score = FinancialScore;
