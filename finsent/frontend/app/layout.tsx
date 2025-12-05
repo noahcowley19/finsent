@@ -4,8 +4,8 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'FinSent - Financial Sentiment Analysis',
-  description: 'AI-powered financial sentiment analysis platform for stock market insights',
+  title: 'Caveray | Financial Intelligence',
+  description: 'Top-notch financial intelligence tools for smart investing',
 };
 
 export default function RootLayout({
@@ -15,9 +15,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-background">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5554963041129509"
+          crossOrigin="anonymous"
+        />
+      </head>
+      <body className="min-h-screen bg-background" style={{ paddingTop: '80px' }}>
         <Navbar />
-        <main className="flex-1 pt-16">
+        <main>
           {children}
         </main>
         <Footer />
