@@ -1,10 +1,10 @@
 import type {
-  SentimentResponse,
+  SentimentAnalysisResponse,
   ScreeningResponse,
-  FinancialResponse,
+  FinancialsResponse,
   InsiderResponse,
   SearchResponse,
-  ChartData,
+  ChartResponse,
   PortfolioResponse,
   PortfolioPosition,
 } from './types';
@@ -36,8 +36,8 @@ class ApiClient {
   }
 
   // Sentiment Analysis
-  async analyzeSentiment(ticker: string, numArticles: number = 8): Promise<SentimentResponse> {
-    return this.request<SentimentResponse>('/api/analyze', {
+  async analyzeSentiment(ticker: string, numArticles: number = 8): Promise<SentimentAnalysisResponse> {
+    return this.request<SentimentAnalysisResponse>('/api/analyze', {
       method: 'POST',
       body: JSON.stringify({ ticker, num_articles: numArticles }),
     });
@@ -51,8 +51,8 @@ class ApiClient {
   }
 
   // Financial Analysis
-  async analyzeFinancials(ticker: string): Promise<FinancialResponse> {
-    return this.request<FinancialResponse>('/api/financials', {
+  async analyzeFinancials(ticker: string): Promise<FinancialsResponse> {
+    return this.request<FinancialsResponse>('/api/financials', {
       method: 'POST',
       body: JSON.stringify({ ticker }),
     });
@@ -74,8 +74,8 @@ class ApiClient {
     });
   }
 
-  async getChartData(ticker: string, period: string = '1y'): Promise<ChartData> {
-    return this.request<ChartData>('/api/search/chart', {
+  async getChartData(ticker: string, period: string = '1y'): Promise<ChartResponse> {
+    return this.request<ChartResponse>('/api/search/chart', {
       method: 'POST',
       body: JSON.stringify({ ticker, period }),
     });
@@ -103,4 +103,7 @@ class ApiClient {
   }
 }
 
-export const api = new ApiClient(API_BASE_URL);
+const api = new ApiClient(API_BASE_URL);
+
+// Export individual functions
+export const analyzeSentiment = (ticker: string, numArticles?: number) =>
