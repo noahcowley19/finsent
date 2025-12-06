@@ -1,33 +1,16 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
-const navLinks = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/sentiment', label: 'Sentiment' },
-  { href: '/financials', label: 'Financials' },
-  { href: '/insider', label: 'Insider Trading' },
-  { href: '/search', label: 'Search' },
-  { href: '/portfolio', label: 'Portfolio' },
-];
-
-export default function Navbar() {
-  const pathname = usePathname();
-
+export default function Footer() {
   return (
-    <nav className="navbar">
-      <div className="flex gap-2">
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`nav-link ${pathname === link.href ? 'active' : ''}`}
-          >
-            {link.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
+    <footer className="footer">
+      <p>
+        Information is not to be taken for financial advice. Consider supporting the creator at{' '}
+        <a 
+          href="https://www.buymeacoffee.com/noahcowley" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          BuyMeACoffee!
+        </a>
+      </p>
+    </footer>
   );
 }
