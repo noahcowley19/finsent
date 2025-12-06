@@ -44,46 +44,24 @@ const features = [
 
 export default function Home() {
   return (
-    <div className="max-w-[1400px] mx-auto px-5 py-10 relative">
-      {/* Hero */}
-      <div className="text-center mb-12">
-        <h1 className="text-[3.5rem] font-bold text-primary mb-3" style={{ letterSpacing: '-0.03em' }}>
-          Caveray
-        </h1>
-        <p className="text-lg text-secondary font-normal" style={{ letterSpacing: '-0.01em' }}>
-          Top-notch financial intelligence tools for smart investing.
-        </p>
+    <div className="container">
+      {/* Hero Section */}
+      <div className="hero">
+        <h1>Caveray</h1>
+        <p className="subtitle">Top-notch financial intelligence tools for smart investing.</p>
       </div>
 
-      {/* Features Grid */}
-      <div className="max-w-[900px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Main Layout */}
+      <div className="main-layout">
+        <div className="features-grid">
           {features.map((feature) => (
             <div
               key={feature.href}
-              className={`
-                card card-hover flex flex-col relative overflow-hidden group
-                ${feature.featured ? 'md:col-span-2 card-featured' : ''}
-              `}
+              className={`feature-card group ${feature.featured ? 'featured' : ''}`}
             >
-              <h2
-                className={`text-xl font-bold mb-2 ${feature.featured ? 'text-white' : 'text-primary'}`}
-                style={{ letterSpacing: '-0.02em' }}
-              >
-                {feature.title}
-              </h2>
-              <p
-                className={`text-sm mb-5 leading-relaxed flex-grow ${feature.featured ? 'text-white/80' : 'text-secondary'}`}
-              >
-                {feature.description}
-              </p>
-              <Link
-                href={feature.href}
-                className={`
-                  feature-btn
-                  ${feature.featured ? 'bg-white !text-primary hover:bg-neutral-light' : ''}
-                `}
-              >
+              <h2>{feature.title}</h2>
+              <p>{feature.description}</p>
+              <Link href={feature.href} className="feature-btn">
                 Launch {feature.title}
                 <ArrowIcon />
               </Link>
