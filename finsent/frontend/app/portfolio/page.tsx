@@ -1,345 +1,493 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  Card,
-  CardHeader,
-  LoadingOverlay,
-  ErrorMessage,
-  MetricCard,
-  MetricGrid,
-  DataTable,
-  DoughnutChart,
-  BarChart,
-  LoadingSpinner,
-} from '@/components';
+import { useState, useEffect, useCallback } from 'react';
+import { LoadingOverlay, DoughnutChart } from '@/components';
 import { analyzePortfolio } from '@/lib/api';
 import type { PortfolioResponse, PortfolioPosition, StockAnalysis } from '@/lib/types';
-import { formatCurrency, formatPercent } from '@/lib/utils';
 
 export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortfolioResponse | null>(null);
-  const [positions, setPositions] = useState<PortfolioPosition[]>([
-    { ticker: '', shares: 0, total_cost_basis: 0 }
-  ]);
-  const [riskFreeRate, setRiskFreeRate] = useState(0.02);
-  const [marketReturn, setMarketReturn] = useState(0.1);
+  const [positions, setPositions] = useState<PortfolioPosition[]>([]);
+  const [lastUpdate, setLastUpdate] = useState<string>('--');
+  
+  // Input state
+  const [tickerInput, setTickerInput] = useState('');
+  const [sharesInput, setSharesInput] = useState('');
+  const [costBasisInput, setCostBasisInput] = useState('');
+  
+  // CAPM inputs
+  const [riskFreeRate, setRiskFreeRate] = useState(2.0);
+  const [marketReturn, setMarketReturn] = useState(10.0);
+  
+  // Allocation view
+  const [allocationType, setAllocationType] = useState<'sector' | 'industry' | 'ticker'>('sector');
 
-  const handleAddPosition = () => {
-    setPositions([...positions, { ticker: '', shares: 0, total_cost_basis: 0 }]);
-  };
-
-  const handleRemovePosition = (index: number) => {
-    if (positions.length > 1) {
-      setPositions(positions.filter((_, i) => i !== index));
+  // Load positions from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('portfolio_positions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setPositions(parsed);
     }
-  };
+  }, []);
 
-  const handlePositionChange = (index: number, field: keyof PortfolioPosition, value: string | number) => {
-    const newPositions = [...positions];
-    if (field === 'ticker') {
-      newPositions[index][field] = (value as string).toUpperCase();
-    } else {
-      newPositions[index][field] = Number(value) || 0;
-    }
-    setPositions(newPositions);
-  };
-
-  const handleAnalyze = async () => {
-    const validPositions = positions.filter(p => p.ticker && p.shares > 0);
-    
-    if (validPositions.length === 0) {
-      setError('Please add at least one valid position');
+  // Analyze portfolio when positions change
+  const runAnalysis = useCallback(async (currentPositions: PortfolioPosition[]) => {
+    if (currentPositions.length === 0) {
+      setData(null);
       return;
     }
 
     setLoading(true);
     setError(null);
-    setData(null);
     
     try {
-      const result = await analyzePortfolio(validPositions, riskFreeRate, marketReturn);
+      const result = await analyzePortfolio(
+        currentPositions, 
+        riskFreeRate / 100, 
+        marketReturn / 100
+      );
       setData(result);
+      setLastUpdate(new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze portfolio');
     } finally {
       setLoading(false);
     }
+  }, [riskFreeRate, marketReturn]);
+
+  // Run analysis when positions change
+  useEffect(() => {
+    if (positions.length > 0) {
+      runAnalysis(positions);
+    }
+  }, [positions, runAnalysis]);
+
+  const addPosition = () => {
+    const ticker = tickerInput.trim().toUpperCase();
+    const shares = parseFloat(sharesInput);
+    const costBasis = parseFloat(costBasisInput);
+    
+    if (!ticker || isNaN(shares) || shares <= 0) {
+      setError('Please enter a valid ticker and shares amount');
+      return;
+    }
+
+    const newPosition: PortfolioPosition = {
+      ticker,
+      shares,
+      total_cost_basis: isNaN(costBasis) ? 0 : costBasis,
+    };
+
+    const newPositions = [...positions, newPosition];
+    setPositions(newPositions);
+    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
+    
+    // Clear inputs
+    setTickerInput('');
+    setSharesInput('');
+    setCostBasisInput('');
+    setError(null);
   };
 
-  const getReturnStatus = (value: number): 'positive' | 'negative' | 'neutral' => {
-    if (value > 0) return 'positive';
-    if (value < 0) return 'negative';
-    return 'neutral';
+  const removeShares = (index: number, sharesToRemove: number) => {
+    const position = positions[index];
+    if (!position) return;
+
+    let newPositions: PortfolioPosition[];
+    
+    if (sharesToRemove >= position.shares) {
+      // Remove entire position
+      newPositions = positions.filter((_, i) => i !== index);
+    } else {
+      // Reduce shares
+      const ratio = (position.shares - sharesToRemove) / position.shares;
+      newPositions = positions.map((p, i) => {
+        if (i === index) {
+          return {
+            ...p,
+            shares: p.shares - sharesToRemove,
+            total_cost_basis: p.total_cost_basis * ratio,
+          };
+        }
+        return p;
+      });
+    }
+
+    setPositions(newPositions);
+    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
   };
 
-  const stockColumns = [
-    { key: 'ticker', header: 'Ticker', render: (row: StockAnalysis) => (
-      <span className="font-semibold">{row.ticker}</span>
-    )},
-    { key: 'name', header: 'Name', render: (row: StockAnalysis) => (
-      <span className="text-secondary text-sm">{row.name}</span>
-    )},
-    { key: 'shares', header: 'Shares', align: 'right' as const, render: (row: StockAnalysis) => 
-      row.shares?.toLocaleString() ?? '-'
-    },
-    { key: 'current_price', header: 'Price', align: 'right' as const, render: (row: StockAnalysis) => 
-      formatCurrency(row.current_price)
-    },
-    { key: 'current_value', header: 'Value', align: 'right' as const, render: (row: StockAnalysis) => 
-      row.current_value ? formatCurrency(row.current_value) : '-'
-    },
-    { key: 'gain_loss', header: 'Gain/Loss', align: 'right' as const, render: (row: StockAnalysis) => {
-      if (row.gain_loss === undefined || row.gain_loss_percent === undefined) return '-';
-      const status = getReturnStatus(row.gain_loss);
-      return (
-        <span className={status === 'positive' ? 'text-positive' : status === 'negative' ? 'text-negative' : 'text-neutral'}>
-          {formatCurrency(row.gain_loss)} ({formatPercent(row.gain_loss_percent, true)})
-        </span>
-      );
-    }},
-    { key: 'beta', header: 'Beta', align: 'right' as const, render: (row: StockAnalysis) => 
-      row.beta.toFixed(2)
-    },
-  ];
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addPosition();
+    }
+  };
+
+  const getAllocationData = () => {
+    if (!data) return [];
+    switch (allocationType) {
+      case 'sector': return data.allocation.sector;
+      case 'industry': return data.allocation.industry;
+      case 'ticker': return data.allocation.ticker;
+      default: return [];
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatPercent = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return sign + value.toFixed(2) + '%';
+  };
 
   return (
-    <div className="container">
-      {loading && <LoadingOverlay message="Analyzing portfolio..." />}
+    <div className="container" style={{ maxWidth: '1600px' }}>
+      {loading && <LoadingOverlay message="Loading portfolio data..." />}
       
-      <div className="hero">
-        <h1 style={{ fontSize: '3rem' }}>Portfolio Analysis</h1>
-        <p className="subtitle">Track your positions with risk metrics and return predictions</p>
+      <header style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, textAlign: 'center', marginBottom: '8px' }}>
+          Portfolio Dashboard
+        </h1>
+        <p className="subtitle" style={{ textAlign: 'center' }}>
+          Real-time portfolio tracking with comprehensive analytics
+        </p>
+      </header>
+
+      {error && (
+        <div className="error-message" style={{ marginBottom: '24px' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Add Position Card */}
+      <div className="card" style={{ marginBottom: '32px', padding: '24px' }}>
+        <div style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '20px' }}>
+          Add Stock Position
+        </div>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '2fr 1.5fr 1.5fr auto', 
+          gap: '12px', 
+          alignItems: 'end' 
+        }}>
+          <div>
+            <label className="input-label">Ticker Symbol</label>
+            <input
+              type="text"
+              value={tickerInput}
+              onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
+              onKeyPress={handleKeyPress}
+              placeholder="AAPL"
+              className="input-field"
+              style={{ textTransform: 'uppercase' }}
+            />
+          </div>
+          <div>
+            <label className="input-label">Shares</label>
+            <input
+              type="number"
+              value={sharesInput}
+              onChange={(e) => setSharesInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="10"
+              step="0.01"
+              min="0"
+              className="input-field"
+            />
+          </div>
+          <div>
+            <label className="input-label">Total Cost Basis</label>
+            <input
+              type="number"
+              value={costBasisInput}
+              onChange={(e) => setCostBasisInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="1500.00"
+              step="0.01"
+              min="0"
+              className="input-field"
+            />
+          </div>
+          <button onClick={addPosition} className="btn-primary">
+            Add
+          </button>
+        </div>
       </div>
 
-      <div className="main-layout" style={{ maxWidth: '1200px' }}>
-        <Card className="mb-6">
-          <CardHeader 
-            title="Enter Your Positions" 
-            subtitle="Add your stock positions to analyze your portfolio"
-          />
-          
-          <div className="space-y-3 mb-4">
-            {positions.map((pos, index) => (
-              <div key={index} className="flex gap-3 items-center flex-wrap">
-                <input
-                  type="text"
-                  placeholder="Ticker"
-                  value={pos.ticker}
-                  onChange={(e) => handlePositionChange(index, 'ticker', e.target.value)}
-                  className="input-field uppercase"
-                  style={{ width: '100px' }}
-                />
-                <input
-                  type="number"
-                  placeholder="Shares"
-                  value={pos.shares || ''}
-                  onChange={(e) => handlePositionChange(index, 'shares', e.target.value)}
-                  className="input-field"
-                  style={{ width: '120px' }}
-                  min="0"
-                />
-                <input
-                  type="number"
-                  placeholder="Total Cost Basis"
-                  value={pos.total_cost_basis || ''}
-                  onChange={(e) => handlePositionChange(index, 'total_cost_basis', e.target.value)}
-                  className="input-field"
-                  style={{ width: '150px' }}
-                  min="0"
-                  step="0.01"
-                />
-                <button
-                  onClick={() => handleRemovePosition(index)}
-                  className="btn-danger"
-                  disabled={positions.length === 1}
-                >
-                  Remove
-                </button>
+      {/* Dashboard Content */}
+      {data && (
+        <>
+          {/* Overview Stats */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: '24px', 
+            marginBottom: '32px' 
+          }}>
+            <div className={`card ${data.portfolio_metrics.total_gain_loss >= 0 ? 'positive' : 'negative'}`} style={{ 
+              padding: '24px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Value
               </div>
-            ))}
-          </div>
-
-          <button onClick={handleAddPosition} className="btn-secondary mb-6">
-            + Add Position
-          </button>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="input-label">Risk-Free Rate</label>
-              <input
-                type="number"
-                value={riskFreeRate}
-                onChange={(e) => setRiskFreeRate(Number(e.target.value))}
-                className="input-field"
-                step="0.01"
-                min="0"
-                max="1"
-              />
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {formatCurrency(data.portfolio_metrics.total_value)}
+              </div>
             </div>
-            <div>
-              <label className="input-label">Expected Market Return</label>
-              <input
-                type="number"
-                value={marketReturn}
-                onChange={(e) => setMarketReturn(Number(e.target.value))}
-                className="input-field"
-                step="0.01"
-                min="0"
-                max="1"
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={handleAnalyze}
-            disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <LoadingSpinner size="sm" className="border-white border-t-transparent" />
-                <span>Analyzing...</span>
-              </>
-            ) : (
-              'Analyze Portfolio'
-            )}
-          </button>
-        </Card>
-
-        {error && (
-          <ErrorMessage 
-            message={error} 
-            onRetry={() => setError(null)} 
-            className="mb-6"
-          />
-        )}
-
-        {data && (
-          <div className="space-y-6">
-            <MetricGrid cols={4}>
-              <MetricCard 
-                label="Total Value" 
-                value={formatCurrency(data.portfolio_metrics.total_value)}
-              />
-              <MetricCard 
-                label="Total Cost" 
-                value={formatCurrency(data.portfolio_metrics.total_cost)}
-              />
-              <MetricCard 
-                label="Total Gain/Loss" 
-                value={formatCurrency(data.portfolio_metrics.total_gain_loss)}
-                status={getReturnStatus(data.portfolio_metrics.total_gain_loss)}
-              />
-              <MetricCard 
-                label="Return" 
-                value={formatPercent(data.portfolio_metrics.total_gain_loss_percent, true)}
-                status={getReturnStatus(data.portfolio_metrics.total_gain_loss_percent)}
-              />
-            </MetricGrid>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader title="Sector Allocation" />
-                <DoughnutChart
-                  labels={data.allocation.sector.map(s => s.name || 'Unknown')}
-                  data={data.allocation.sector.map(s => s.percentage)}
-                />
-              </Card>
-
-              <Card>
-                <CardHeader title="Industry Allocation" />
-                <DoughnutChart
-                  labels={data.allocation.industry.slice(0, 8).map(i => i.name || 'Unknown')}
-                  data={data.allocation.industry.slice(0, 8).map(i => i.percentage)}
-                />
-              </Card>
-
-              <Card>
-                <CardHeader title="Position Weights" />
-                <DoughnutChart
-                  labels={data.allocation.ticker.map(t => t.ticker || 'Unknown')}
-                  data={data.allocation.ticker.map(t => t.percentage)}
-                />
-              </Card>
+            
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Gain/Loss
+              </div>
+              <div style={{ 
+                fontSize: '2rem', 
+                fontWeight: 700, 
+                marginBottom: '4px',
+                color: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)'
+              }}>
+                {formatCurrency(data.portfolio_metrics.total_gain_loss)}
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: data.portfolio_metrics.total_gain_loss_percent >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
+                {formatPercent(data.portfolio_metrics.total_gain_loss_percent)}
+              </div>
             </div>
 
-            <Card>
-              <CardHeader title="Risk Metrics" />
-              <MetricGrid cols={4}>
-                <MetricCard 
-                  label="Portfolio Beta" 
-                  value={data.risk_metrics.portfolio_beta.toFixed(2)}
-                  status={data.risk_metrics.portfolio_beta > 1 ? 'warning' : 'neutral'}
-                />
-                <MetricCard 
-                  label="Diversification Score" 
-                  value={formatPercent(data.risk_metrics.diversification_score * 100)}
-                  status={data.risk_metrics.diversification_score > 0.7 ? 'positive' : 
-                    data.risk_metrics.diversification_score < 0.4 ? 'negative' : 'neutral'}
-                />
-                <MetricCard 
-                  label="Concentration Risk" 
-                  value={data.risk_metrics.concentration_risk}
-                  status={data.risk_metrics.concentration_risk.toLowerCase().includes('high') ? 'negative' : 
-                    data.risk_metrics.concentration_risk.toLowerCase().includes('low') ? 'positive' : 'neutral'}
-                />
-                <MetricCard 
-                  label="Top Holding %" 
-                  value={formatPercent(data.risk_metrics.max_position_pct)}
-                />
-              </MetricGrid>
-            </Card>
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Cost
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {formatCurrency(data.portfolio_metrics.total_cost)}
+              </div>
+            </div>
 
-            <Card>
-              <CardHeader title="CAPM Analysis" />
-              <MetricGrid cols={3}>
-                <MetricCard 
-                  label="Expected Return" 
-                  value={formatPercent(data.portfolio_capm.expected_return * 100)}
-                  status={getReturnStatus(data.portfolio_capm.expected_return)}
-                />
-                <MetricCard 
-                  label="Risk Premium" 
-                  value={formatPercent(data.portfolio_capm.risk_premium * 100, true)}
-                  status={getReturnStatus(data.portfolio_capm.risk_premium)}
-                />
-                <MetricCard 
-                  label="Beta" 
-                  value={data.portfolio_capm.beta.toFixed(2)}
-                />
-              </MetricGrid>
-            </Card>
-
-            <Card>
-              <CardHeader 
-                title="Stock Analysis" 
-                subtitle={`${data.stock_analyses.length} positions`}
-              />
-              <DataTable
-                columns={stockColumns}
-                data={data.stock_analyses}
-                keyExtractor={(row) => row.ticker}
-              />
-            </Card>
-
-            <Card>
-              <CardHeader title="Position Performance" />
-              <BarChart
-                labels={data.stock_analyses.map(s => s.ticker)}
-                datasets={[{
-                  label: 'Gain/Loss %',
-                  data: data.stock_analyses.map(s => s.gain_loss_percent ?? 0),
-                  color: '#3b82f6',
-                }]}
-                horizontal
-              />
-            </Card>
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Positions
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {data.portfolio_metrics.positions_count}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Holdings Table */}
+          <div className="card" style={{ marginBottom: '32px', padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Holdings</div>
+              <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>
+                Last updated: {lastUpdate}
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Company</th>
+                    <th style={{ textAlign: 'right' }}>Shares</th>
+                    <th style={{ textAlign: 'right' }}>Cost Basis</th>
+                    <th style={{ textAlign: 'right' }}>Current Price</th>
+                    <th style={{ textAlign: 'right' }}>Current Value</th>
+                    <th style={{ textAlign: 'right' }}>Gain/Loss $</th>
+                    <th style={{ textAlign: 'right' }}>Gain/Loss %</th>
+                    <th style={{ textAlign: 'right' }}>Beta</th>
+                    <th style={{ textAlign: 'right' }}>CAPM Return</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.stock_analyses.map((stock: StockAnalysis, index: number) => {
+                    const gainLoss = stock.gain_loss ?? 0;
+                    const gainLossPercent = stock.gain_loss_percent ?? 0;
+                    return (
+                      <tr key={stock.ticker}>
+                        <td style={{ fontWeight: 700, fontSize: '15px' }}>{stock.ticker}</td>
+                        <td style={{ color: 'var(--secondary)', fontSize: '13px' }}>{stock.name}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{stock.shares?.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.cost_basis ? formatCurrency(stock.cost_basis) : 'N/A'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(stock.current_price)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.current_value ? formatCurrency(stock.current_value) : 'N/A'}
+                        </td>
+                        <td style={{ 
+                          textAlign: 'right', 
+                          fontWeight: 600,
+                          color: gainLoss >= 0 ? 'var(--positive)' : 'var(--negative)'
+                        }}>
+                          {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)}
+                        </td>
+                        <td style={{ 
+                          textAlign: 'right', 
+                          fontWeight: 600,
+                          color: gainLossPercent >= 0 ? 'var(--positive)' : 'var(--negative)'
+                        }}>
+                          {formatPercent(gainLossPercent)}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{stock.beta?.toFixed(2) ?? 'N/A'}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.capm ? `${(stock.capm.expected_return * 100).toFixed(2)}%` : 'N/A'}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input
+                              type="number"
+                              id={`removeShares_${index}`}
+                              placeholder="Shares"
+                              step="0.01"
+                              min="0"
+                              max={stock.shares}
+                              style={{ 
+                                width: '80px', 
+                                padding: '6px 8px', 
+                                fontSize: '13px', 
+                                border: '1.5px solid var(--border)', 
+                                borderRadius: '6px' 
+                              }}
+                            />
+                            <button 
+                              onClick={() => {
+                                const input = document.getElementById(`removeShares_${index}`) as HTMLInputElement;
+                                const sharesToRemove = parseFloat(input?.value || '0');
+                                if (sharesToRemove > 0) {
+                                  removeShares(index, sharesToRemove);
+                                  input.value = '';
+                                }
+                              }}
+                              className="btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '12px' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* CAPM Section */}
+          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '20px' }}>
+              Portfolio CAPM Analysis
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label className="input-label">Risk-Free Rate (%)</label>
+                <input
+                  type="number"
+                  value={riskFreeRate}
+                  onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
+                  step="0.1"
+                  min="0"
+                  max="10"
+                  className="input-field"
+                />
+              </div>
+              <div>
+                <label className="input-label">Market Return (%)</label>
+                <input
+                  type="number"
+                  value={marketReturn}
+                  onChange={(e) => setMarketReturn(parseFloat(e.target.value) || 0)}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                  className="input-field"
+                />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Expected Return
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.expected_return * 100).toFixed(2)}%
+                </div>
+              </div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Portfolio Beta
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {data.portfolio_capm.beta.toFixed(2)}
+                </div>
+              </div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Risk Premium
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.risk_premium * 100).toFixed(2)}%
+                </div>
+              </div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Risk-Free Rate
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.risk_free_rate * 100).toFixed(2)}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Allocation Section */}
+          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Allocation</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {(['sector', 'industry', 'ticker'] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setAllocationType(type)}
+                    className={allocationType === type ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600 }}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ height: '350px' }}>
+              <DoughnutChart
+                labels={getAllocationData().map(item => (item as { name?: string; ticker?: string }).name || (item as { ticker: string }).ticker || 'Unknown')}
+                data={getAllocationData().map(item => item.percentage)}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Empty State */}
+      {!data && !loading && positions.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--secondary)' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.3 }}>📊</div>
+          <div style={{ fontSize: '1.125rem', fontWeight: 500, marginBottom: '8px' }}>No positions yet</div>
+          <div style={{ fontSize: '14px' }}>Add your first stock position above to start tracking your portfolio</div>
+        </div>
+      )}
     </div>
   );
 }
