@@ -1,19 +1,60 @@
-"use client";
+'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { LoadingOverlay, DoughnutChart } from '@/components';
+import { analyzePortfolio } from '@/lib/api';
+import type { PortfolioResponse, PortfolioPosition, StockAnalysis } from '@/lib/types';
 
-// NOTE: This file includes both a React page/component (default export)
-// and a small frontend-friendly "analyzePortfolio" implementation below.
-// Use the analyzePortfolio() implementation as a reference or drop-in replacement
-// for your backend function. The fetchPriceForTickers() function is a stub —
-// replace it with your own real data-fetching logic (I left clear TODOs).
+export default function PortfolioPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<PortfolioResponse | null>(null);
+  const [positions, setPositions] = useState<PortfolioPosition[]>([]);
+  const [lastUpdate, setLastUpdate] = useState<string>('--');
+  
+  // Input state
+  const [tickerInput, setTickerInput] = useState('');
+  const [sharesInput, setSharesInput] = useState('');
+  const [costBasisInput, setCostBasisInput] = useState('');
+  
+  // CAPM inputs
+  const [riskFreeRate, setRiskFreeRate] = useState(2.0);
+  const [marketReturn, setMarketReturn] = useState(10.0);
+  
+  // Allocation view
+  const [allocationType, setAllocationType] = useState<'sector' | 'industry' | 'ticker'>('sector');
 
-/**
- * Types
- */
-function analyzePortfolio(currentPositions, riskFreeRate, marketReturn);
+  // Load positions from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('portfolio_positions');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setPositions(parsed);
+    }
+  }, []);
+
+  // Analyze portfolio when positions change
+  const runAnalysis = useCallback(async (currentPositions: PortfolioPosition[]) => {
+    if (currentPositions.length === 0) {
+      setData(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await analyzePortfolio(
+        currentPositions, 
+        riskFreeRate / 100, 
+        marketReturn / 100
+      );
       setData(result);
-      setLastUpdate(new Date().toLocaleTimeString('en-US'));
+      setLastUpdate(new Date().toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze portfolio');
     } finally {
@@ -21,28 +62,34 @@ function analyzePortfolio(currentPositions, riskFreeRate, marketReturn);
     }
   }, [riskFreeRate, marketReturn]);
 
+  // Run analysis when positions change
   useEffect(() => {
-    if (positions.length > 0) runAnalysis(positions);
+    if (positions.length > 0) {
+      runAnalysis(positions);
+    }
   }, [positions, runAnalysis]);
 
   const addPosition = () => {
     const ticker = tickerInput.trim().toUpperCase();
     const shares = parseFloat(sharesInput);
-    const cost = parseFloat(costBasisInput);
-
+    const costBasis = parseFloat(costBasisInput);
+    
     if (!ticker || isNaN(shares) || shares <= 0) {
-      setError('Please enter a valid ticker and shares');
+      setError('Please enter a valid ticker and shares amount');
       return;
     }
 
-    const newPos: PortfolioPosition = {
+    const newPosition: PortfolioPosition = {
       ticker,
       shares,
-      total_cost_basis: isNaN(cost) ? 0 : cost,
+      total_cost_basis: isNaN(costBasis) ? 0 : costBasis,
     };
 
-    setPositions((p) => [...p, newPos]);
-
+    const newPositions = [...positions, newPosition];
+    setPositions(newPositions);
+    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
+    
+    // Clear inputs
     setTickerInput('');
     setSharesInput('');
     setCostBasisInput('');
@@ -53,290 +100,394 @@ function analyzePortfolio(currentPositions, riskFreeRate, marketReturn);
     const position = positions[index];
     if (!position) return;
 
+    let newPositions: PortfolioPosition[];
+    
     if (sharesToRemove >= position.shares) {
-      setPositions((p) => p.filter((_, i) => i !== index));
+      // Remove entire position
+      newPositions = positions.filter((_, i) => i !== index);
     } else {
-      setPositions((p) => p.map((pos, i) => {
-        if (i !== index) return pos;
-        const remaining = pos.shares - sharesToRemove;
-        const ratio = remaining / pos.shares;
-        return {
-          ...pos,
-          shares: remaining,
-          total_cost_basis: pos.total_cost_basis * ratio,
-        };
-      }));
+      // Reduce shares
+      const ratio = (position.shares - sharesToRemove) / position.shares;
+      newPositions = positions.map((p, i) => {
+        if (i === index) {
+          return {
+            ...p,
+            shares: p.shares - sharesToRemove,
+            total_cost_basis: p.total_cost_basis * ratio,
+          };
+        }
+        return p;
+      });
+    }
+
+    setPositions(newPositions);
+    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      addPosition();
     }
   };
 
-  const allocationData = useMemo(() => {
-    if (!data) return [] as AllocationItem[];
+  const getAllocationData = () => {
+    if (!data) return [];
     switch (allocationType) {
       case 'sector': return data.allocation.sector;
       case 'industry': return data.allocation.industry;
-      default: return data.allocation.ticker;
+      case 'ticker': return data.allocation.ticker;
+      default: return [];
     }
-  }, [allocationType, data]);
+  };
+
+  const formatCurrency = (value: number) => {
+    return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const formatPercent = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return sign + value.toFixed(2) + '%';
+  };
 
   return (
-    <div className="max-w-[1400px] mx-auto p-6">
-      {/* Header */}
-      <header className="mb-6 text-center">
-        <h1 className="text-3xl font-bold">Portfolio Dashboard</h1>
-        <p className="text-sm text-gray-500">Real-time portfolio tracking with CAPM analytics</p>
+    <div className="container" style={{ maxWidth: '1600px' }}>
+      {loading && <LoadingOverlay message="Loading portfolio data..." />}
+      
+      <header style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, textAlign: 'center', marginBottom: '8px' }}>
+          Portfolio Dashboard
+        </h1>
+        <p className="subtitle" style={{ textAlign: 'center' }}>
+          Real-time portfolio tracking with comprehensive analytics
+        </p>
       </header>
 
-      {/* Top row - Add position + CAPM inputs */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Add Position Card */}
-        <div className="bg-white shadow rounded p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Add Position</h2>
-            <div className="text-xs text-gray-400">Positions: {positions.length}</div>
-          </div>
+      {error && (
+        <div className="error-message" style={{ marginBottom: '24px' }}>
+          {error}
+        </div>
+      )}
 
-          <div className="space-y-3">
-            <label className="block text-xs font-medium text-gray-600">Ticker</label>
+      {/* Add Position Card */}
+      <div className="card" style={{ marginBottom: '32px', padding: '24px' }}>
+        <div style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '20px' }}>
+          Add Stock Position
+        </div>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '2fr 1.5fr 1.5fr auto', 
+          gap: '12px', 
+          alignItems: 'end' 
+        }}>
+          <div>
+            <label className="input-label">Ticker Symbol</label>
             <input
-              className="w-full input-field p-2 border rounded"
-              placeholder="AAPL"
+              type="text"
               value={tickerInput}
               onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
+              onKeyPress={handleKeyPress}
+              placeholder="AAPL"
+              className="input-field"
+              style={{ textTransform: 'uppercase' }}
             />
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-600">Shares</label>
-                <input
-                  className="w-full input-field p-2 border rounded"
-                  value={sharesInput}
-                  onChange={(e) => setSharesInput(e.target.value)}
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-600">Total Cost Basis ($)</label>
-                <input
-                  className="w-full input-field p-2 border rounded"
-                  value={costBasisInput}
-                  onChange={(e) => setCostBasisInput(e.target.value)}
-                  inputMode="decimal"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded shadow"
-                onClick={addPosition}
-              >
-                Add
-              </button>
-              <button
-                className="bg-gray-100 px-3 py-2 rounded"
-                onClick={() => { setTickerInput(''); setSharesInput(''); setCostBasisInput(''); setError(null); }}
-              >
-                Clear
-              </button>
-            </div>
-
-            {error && <div className="text-red-600 text-sm">{error}</div>}
           </div>
+          <div>
+            <label className="input-label">Shares</label>
+            <input
+              type="number"
+              value={sharesInput}
+              onChange={(e) => setSharesInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="10"
+              step="0.01"
+              min="0"
+              className="input-field"
+            />
+          </div>
+          <div>
+            <label className="input-label">Total Cost Basis</label>
+            <input
+              type="number"
+              value={costBasisInput}
+              onChange={(e) => setCostBasisInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="1500.00"
+              step="0.01"
+              min="0"
+              className="input-field"
+            />
+          </div>
+          <button onClick={addPosition} className="btn-primary">
+            Add
+          </button>
         </div>
+      </div>
 
-        {/* CAPM Inputs Card */}
-        <div className="bg-white shadow rounded p-4 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">CAPM Inputs</h2>
-            <div className="text-xs text-gray-400">Risk-free & market figures</div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <label className="block text-xs font-medium text-gray-600">Risk-free rate (%)</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="w-full p-2 border rounded"
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={(riskFreeRate * 100).toString()}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    setRiskFreeRate(isNaN(v) ? 0 : v / 100);
-                  }}
-                />
-                <span className="text-sm text-gray-500">%</span>
+      {/* Dashboard Content */}
+      {data && (
+        <>
+          {/* Overview Stats */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: '24px', 
+            marginBottom: '32px' 
+          }}>
+            <div className={`card ${data.portfolio_metrics.total_gain_loss >= 0 ? 'positive' : 'negative'}`} style={{ 
+              padding: '24px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Value
               </div>
-              <div className="text-xs text-gray-400 mt-1">Enter 2 for 2% — decimals allowed (e.g. 2.1)</div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-600">Market return (%)</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="w-full p-2 border rounded"
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={(marketReturn * 100).toString()}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    setMarketReturn(isNaN(v) ? 0 : v / 100);
-                  }}
-                />
-                <span className="text-sm text-gray-500">%</span>
-              </div>
-              <div className="text-xs text-gray-400 mt-1">Enter 10 for 10% — decimals allowed (e.g. 10.5)</div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="bg-gray-50 border rounded p-3">
-                <div className="text-xs text-gray-500">Portfolio Expected Return</div>
-                <div className="text-xl font-semibold">
-                  {data ? (data.portfolio_capm.expected_return * 100).toFixed(2) : '--'}%
-                </div>
-              </div>
-
-              <div className="bg-gray-50 border rounded p-3">
-                <div className="text-xs text-gray-500">Portfolio Beta</div>
-                <div className="text-xl font-semibold">{data ? data.portfolio_capm.beta.toFixed(2) : '--'}</div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {formatCurrency(data.portfolio_metrics.total_value)}
               </div>
             </div>
+            
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Gain/Loss
+              </div>
+              <div style={{ 
+                fontSize: '2rem', 
+                fontWeight: 700, 
+                marginBottom: '4px',
+                color: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)'
+              }}>
+                {formatCurrency(data.portfolio_metrics.total_gain_loss)}
+              </div>
+              <div style={{ fontSize: '14px', fontWeight: 600, color: data.portfolio_metrics.total_gain_loss_percent >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
+                {formatPercent(data.portfolio_metrics.total_gain_loss_percent)}
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Total Cost
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {formatCurrency(data.portfolio_metrics.total_cost)}
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--primary)' }} />
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '8px' }}>
+                Positions
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '4px' }}>
+                {data.portfolio_metrics.positions_count}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Main content: holdings table, CAPM metrics, allocation */}
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Holdings table (wide) */}
-        <section className="lg:col-span-2 bg-white rounded shadow p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold">Holdings</h3>
-            <div className="text-xs text-gray-400">Last update: {lastUpdate}</div>
-          </div>
-
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 border-b">
-                  <th className="py-2">Ticker</th>
-                  <th>Company</th>
-                  <th className="text-right">Shares</th>
-                  <th className="text-right">Cost</th>
-                  <th className="text-right">Price</th>
-                  <th className="text-right">Value</th>
-                  <th className="text-right">P/L $</th>
-                  <th className="text-right">P/L %</th>
-                  <th className="text-right">Beta</th>
-                  <th className="text-right">CAPM</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.stock_analyses.map((s, i) => (
-                  <tr key={s.ticker} className="border-b last:border-b-0">
-                    <td className="py-3 font-medium">{s.ticker}</td>
-                    <td className="text-gray-500">{s.name}</td>
-                    <td className="text-right">{s.shares?.toLocaleString()}</td>
-                    <td className="text-right">{s.cost_basis ? formatCurrency(s.cost_basis) : '—'}</td>
-                    <td className="text-right">{formatCurrency(s.current_price)}</td>
-                    <td className="text-right">{s.current_value ? formatCurrency(s.current_value) : '—'}</td>
-                    <td className={`text-right font-semibold ${ (s.gain_loss || 0) >= 0 ? 'text-green-600' : 'text-red-600' }`}>{s.gain_loss ? formatCurrency(s.gain_loss) : '—'}</td>
-                    <td className={`text-right ${ (s.gain_loss_percent || 0) >= 0 ? 'text-green-600' : 'text-red-600' }`}>{s.gain_loss_percent ? `${s.gain_loss_percent.toFixed(2)}%` : '—'}</td>
-                    <td className="text-right">{s.beta?.toFixed(2) ?? '—'}</td>
-                    <td className="text-right">{s.capm ? `${(s.capm.expected_return * 100).toFixed(2)}%` : '—'}</td>
-                    <td className="text-right">
-                      <div className="flex items-center gap-2 justify-end">
-                        <input id={`remove_${i}`} placeholder="0" className="w-20 p-1 border rounded text-sm" />
-                        <button
-                          className="bg-red-500 text-white px-3 py-1 rounded text-xs"
-                          onClick={() => {
-                            const input = document.getElementById(`remove_${i}`) as HTMLInputElement;
-                            const num = parseFloat(input?.value || '0');
-                            if (num > 0) removeShares(i, num);
-                            if (input) input.value = '';
-                          }}
-                        >Remove</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-
-                {(!data || data.stock_analyses.length === 0) && (
+          {/* Holdings Table */}
+          <div className="card" style={{ marginBottom: '32px', padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Holdings</div>
+              <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>
+                Last updated: {lastUpdate}
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={11} className="py-6 text-center text-gray-400">No holdings yet — add a position to get started</td>
+                    <th>Ticker</th>
+                    <th>Company</th>
+                    <th style={{ textAlign: 'right' }}>Shares</th>
+                    <th style={{ textAlign: 'right' }}>Cost Basis</th>
+                    <th style={{ textAlign: 'right' }}>Current Price</th>
+                    <th style={{ textAlign: 'right' }}>Current Value</th>
+                    <th style={{ textAlign: 'right' }}>Gain/Loss $</th>
+                    <th style={{ textAlign: 'right' }}>Gain/Loss %</th>
+                    <th style={{ textAlign: 'right' }}>Beta</th>
+                    <th style={{ textAlign: 'right' }}>CAPM Return</th>
+                    <th>Actions</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Right column: metrics + allocation */}
-        <aside className="space-y-6">
-          {/* Summary */}
-          <div className="bg-white rounded shadow p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold">Portfolio Summary</h4>
-              <div className="text-xs text-gray-400">CAPM snapshot</div>
+                </thead>
+                <tbody>
+                  {data.stock_analyses.map((stock: StockAnalysis, index: number) => {
+                    const gainLoss = stock.gain_loss ?? 0;
+                    const gainLossPercent = stock.gain_loss_percent ?? 0;
+                    return (
+                      <tr key={stock.ticker}>
+                        <td style={{ fontWeight: 700, fontSize: '15px' }}>{stock.ticker}</td>
+                        <td style={{ color: 'var(--secondary)', fontSize: '13px' }}>{stock.name}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{stock.shares?.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.cost_basis ? formatCurrency(stock.cost_basis) : 'N/A'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(stock.current_price)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.current_value ? formatCurrency(stock.current_value) : 'N/A'}
+                        </td>
+                        <td style={{ 
+                          textAlign: 'right', 
+                          fontWeight: 600,
+                          color: gainLoss >= 0 ? 'var(--positive)' : 'var(--negative)'
+                        }}>
+                          {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)}
+                        </td>
+                        <td style={{ 
+                          textAlign: 'right', 
+                          fontWeight: 600,
+                          color: gainLossPercent >= 0 ? 'var(--positive)' : 'var(--negative)'
+                        }}>
+                          {formatPercent(gainLossPercent)}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{stock.beta?.toFixed(2) ?? 'N/A'}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {stock.capm ? `${(stock.capm.expected_return * 100).toFixed(2)}%` : 'N/A'}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input
+                              type="number"
+                              id={`removeShares_${index}`}
+                              placeholder="Shares"
+                              step="0.01"
+                              min="0"
+                              max={stock.shares}
+                              style={{ 
+                                width: '80px', 
+                                padding: '6px 8px', 
+                                fontSize: '13px', 
+                                border: '1.5px solid var(--border)', 
+                                borderRadius: '6px' 
+                              }}
+                            />
+                            <button 
+                              onClick={() => {
+                                const input = document.getElementById(`removeShares_${index}`) as HTMLInputElement;
+                                const sharesToRemove = parseFloat(input?.value || '0');
+                                if (sharesToRemove > 0) {
+                                  removeShares(index, sharesToRemove);
+                                  input.value = '';
+                                }
+                              }}
+                              className="btn-danger"
+                              style={{ padding: '6px 12px', fontSize: '12px' }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 border rounded">
-                <div className="text-xs text-gray-500">Total Value</div>
-                <div className="font-semibold text-lg">{data ? formatCurrency(data.portfolio_metrics.total_value) : '--'}</div>
+          {/* CAPM Section */}
+          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
+            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '20px' }}>
+              Portfolio CAPM Analysis
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label className="input-label">Risk-Free Rate (%)</label>
+                <input
+                  type="number"
+                  value={riskFreeRate}
+                  onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
+                  step="0.1"
+                  min="0"
+                  max="10"
+                  className="input-field"
+                />
               </div>
-
-              <div className="p-3 border rounded">
-                <div className="text-xs text-gray-500">Total Cost</div>
-                <div className="font-semibold text-lg">{data ? formatCurrency(data.portfolio_metrics.total_cost) : '--'}</div>
+              <div>
+                <label className="input-label">Market Return (%)</label>
+                <input
+                  type="number"
+                  value={marketReturn}
+                  onChange={(e) => setMarketReturn(parseFloat(e.target.value) || 0)}
+                  step="0.1"
+                  min="0"
+                  max="20"
+                  className="input-field"
+                />
               </div>
-
-              <div className={`p-3 border rounded ${data && data.portfolio_metrics.total_gain_loss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
-                <div className="text-xs text-gray-500">Total P/L</div>
-                <div className={`${data && data.portfolio_metrics.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'} font-semibold text-lg`}>{data ? formatCurrency(data.portfolio_metrics.total_gain_loss) : '--'}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Expected Return
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.expected_return * 100).toFixed(2)}%
+                </div>
               </div>
-
-              <div className="p-3 border rounded">
-                <div className="text-xs text-gray-500">P/L %</div>
-                <div className="font-semibold text-lg">{data ? `${data.portfolio_metrics.total_gain_loss_percent.toFixed(2)}%` : '--'}</div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Portfolio Beta
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {data.portfolio_capm.beta.toFixed(2)}
+                </div>
+              </div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Risk Premium
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.risk_premium * 100).toFixed(2)}%
+                </div>
+              </div>
+              <div style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  Risk-Free Rate
+                </div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
+                  {(data.portfolio_capm.risk_free_rate * 100).toFixed(2)}%
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Allocation (doughnut chart spot) */}
-          <div className="bg-white rounded shadow p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold">Allocation</h4>
-              <div className="text-sm">
-                {(['sector','industry','ticker'] as const).map((t) => (
-                  <button key={t} onClick={() => setAllocationType(t)} className={`px-2 py-1 text-xs rounded ${allocationType === t ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} style={{marginLeft:8}}>{t}</button>
+          {/* Allocation Section */}
+          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Allocation</div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {(['sector', 'industry', 'ticker'] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setAllocationType(type)}
+                    className={allocationType === type ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600 }}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
                 ))}
               </div>
             </div>
-
-            <div className="h-48 flex flex-col justify-center items-center text-sm text-gray-500"> 
-              {/* Replace with your DoughnutChart component if you have one. This is a graceful fallback. */}
-              {allocationData.length > 0 ? (
-                <div className="w-full">
-                  {allocationData.slice(0,6).map((a) => (
-                    <div key={a.name || a.ticker} className="flex justify-between py-1">
-                      <div>{a.name || a.ticker}</div>
-                      <div>{a.percentage}%</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div>No allocation data</div>
-              )}
+            <div style={{ height: '350px' }}>
+              <DoughnutChart
+                labels={getAllocationData().map(item => (item as { name?: string; ticker?: string }).name || (item as { ticker: string }).ticker || 'Unknown')}
+                data={getAllocationData().map(item => item.percentage)}
+              />
             </div>
           </div>
-        </aside>
-      </main>
+        </>
+      )}
 
-      <footer className="mt-6 text-center text-xs text-gray-400">Built with care — replace the mock price fetcher with your real data source for production.</footer>
+      {/* Empty State */}
+      {!data && !loading && positions.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--secondary)' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.3 }}>📊</div>
+          <div style={{ fontSize: '1.125rem', fontWeight: 500, marginBottom: '8px' }}>No positions yet</div>
+          <div style={{ fontSize: '14px' }}>Add your first stock position above to start tracking your portfolio</div>
+        </div>
+      )}
     </div>
   );
 }
