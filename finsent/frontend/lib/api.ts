@@ -35,7 +35,6 @@ class ApiClient {
     return response.json();
   }
 
-  // Sentiment Analysis
   async analyzeSentiment(ticker: string, numArticles: number = 8): Promise<SentimentAnalysisResponse> {
     return this.request<SentimentAnalysisResponse>('/api/analyze', {
       method: 'POST',
@@ -50,7 +49,6 @@ class ApiClient {
     });
   }
 
-  // Financial Analysis
   async analyzeFinancials(ticker: string): Promise<FinancialsResponse> {
     return this.request<FinancialsResponse>('/api/financials', {
       method: 'POST',
@@ -58,7 +56,6 @@ class ApiClient {
     });
   }
 
-  // Insider Trading
   async analyzeInsider(ticker: string, months: number = 12): Promise<InsiderResponse> {
     return this.request<InsiderResponse>('/api/insider', {
       method: 'POST',
@@ -66,7 +63,6 @@ class ApiClient {
     });
   }
 
-  // Stock Search
   async searchStock(ticker: string): Promise<SearchResponse> {
     return this.request<SearchResponse>('/api/search', {
       method: 'POST',
@@ -81,7 +77,6 @@ class ApiClient {
     });
   }
 
-  // Portfolio
   async analyzePortfolio(
     positions: PortfolioPosition[],
     riskFreeRate: number = 0.02,
@@ -97,7 +92,6 @@ class ApiClient {
     });
   }
 
-  // Health Check
   async healthCheck(): Promise<{ status: string; message: string }> {
     return this.request('/api/health');
   }
@@ -105,7 +99,6 @@ class ApiClient {
 
 const api = new ApiClient(API_BASE_URL);
 
-// Export individual functions
 export const analyzeSentiment = (ticker: string, numArticles?: number) => 
   api.analyzeSentiment(ticker, numArticles);
 
