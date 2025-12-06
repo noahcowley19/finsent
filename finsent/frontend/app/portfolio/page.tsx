@@ -1,9 +1,182 @@
-'use client';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useState, useEffect, useCallback } from 'react';
-import { LoadingOverlay, DoughnutChart } from '@/components';
-import { analyzePortfolio } from '@/lib/api';
-import type { PortfolioResponse, PortfolioPosition, StockAnalysis } from '@/lib/types';
+// NOTE: This file includes both a React page/component (default export)
+// and a small frontend-friendly "analyzePortfolio" implementation below.
+// Use the analyzePortfolio() implementation as a reference or drop-in replacement
+// for your backend function. The fetchPriceForTickers() function is a stub —
+// replace it with your own real data-fetching logic (I left clear TODOs).
+
+/**
+ * Types
+ */
+export type PortfolioPosition = {
+  ticker: string;
+  shares: number;
+  total_cost_basis: number; // total dollars paid for the position
+};
+
+export type StockAnalysis = {
+  ticker: string;
+  name?: string;
+  shares?: number;
+  cost_basis?: number; // total_cost_basis for that position
+  current_price: number;
+  current_value?: number;
+  gain_loss?: number;
+  gain_loss_percent?: number; // percent (e.g. 12.34)
+  beta?: number | null;
+  capm?: {
+    expected_return: number; // decimal (0.02 = 2%)
+  } | null;
+};
+
+export type AllocationItem = { name?: string; ticker?: string; percentage: number };
+
+export type PortfolioResponse = {
+  portfolio_metrics: {
+    total_value: number;
+    total_cost: number;
+    total_gain_loss: number;
+    total_gain_loss_percent: number;
+    positions_count: number;
+  };
+  portfolio_capm: {
+    expected_return: number; // decimal
+    beta: number;
+    risk_premium: number; // decimal
+    risk_free_rate: number; // decimal
+  };
+  allocation: {
+    sector: AllocationItem[];
+    industry: AllocationItem[];
+    ticker: AllocationItem[];
+  };
+  stock_analyses: StockAnalysis[];
+};
+
+/**
+ * Small helper: format currency and percent cleanly
+ */
+const formatCurrency = (n: number) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const formatPercent = (decimal: number) => `${decimal >= 0 ? '+' : ''}${(decimal).toFixed(2)}%`;
+
+/**
+ * ============= Backend-style helper (frontend safe) ==============
+ * analyzePortfolio accepts:
+ *  - positions: PortfolioPosition[]
+ *  - riskFreeRate: decimal (e.g. 0.02)
+ *  - marketReturn: decimal (e.g. 0.10)
+ *
+ * It returns a Promise<PortfolioResponse>
+ *
+ * IMPORTANT: This is intentionally self-contained and only uses a stub
+ * price fetcher. Replace fetchPriceForTickers() with your own implementation
+ * that calls a real price API and fetches betas if needed.
+ */
+
+async function fetchPriceForTickers(tickers: string[]): Promise<Record<string, { price: number; name?: string; beta?: number }>> {
+  // TODO: Replace this stub with real network calls to your pricing provider.
+  // For now, this returns predictable mock prices so the page behaves well offline.
+  const result: Record<string, { price: number; name?: string; beta?: number }> = {};
+  tickers.forEach((t, i) => {
+    // mock price: based roughly on hash of ticker for variability
+    const base = 20 + (t.charCodeAt(0) % 50) + i * 3;
+    result[t] = {
+      price: Math.round((base + (i % 5) * 2.5) * 100) / 100,
+      name: `${t} Inc.`,
+      beta: Math.round((0.7 + ((t.charCodeAt(0) % 3) * 0.25 + (i % 2) * 0.1)) * 100) / 100,
+    };
+  });
+  // simulate a small delay
+  await new Promise((r) => setTimeout(r, 220));
+  return result;
+}
+
+export async function analyzePortfolio(
+  positions: PortfolioPosition[],
+  riskFreeRate: number, // decimal
+  marketReturn: number // decimal
+): Promise<PortfolioResponse> {
+  // Defensive: ensure decimals are decimals
+  const rf = Math.max(0, riskFreeRate);
+  const mr = Math.max(0, marketReturn);
+
+  const tickers = Array.from(new Set(positions.map((p) => p.ticker)));
+  const priceMap = await fetchPriceForTickers(tickers);
+
+  const stockAnalyses: StockAnalysis[] = positions.map((pos) => {
+    const meta = priceMap[pos.ticker] || { price: 0, name: pos.ticker, beta: 1 };
+    const price = meta.price;
+
+    const current_value = Number((pos.shares * price) || 0);
+    const cost = Number(pos.total_cost_basis || 0);
+    const gain_loss = Number(current_value - cost);
+    const gain_loss_percent = cost === 0 ? 0 : (gain_loss / cost) * 100;
+    const beta = typeof meta.beta === 'number' ? meta.beta : 1;
+    const expected_return = rf + beta * (mr - rf); // CAPM
+
+    return {
+      ticker: pos.ticker,
+      name: meta.name,
+      shares: pos.shares,
+      cost_basis: cost || undefined,
+      current_price: price,
+      current_value: current_value || undefined,
+      gain_loss: Number(gain_loss.toFixed(2)) || undefined,
+      gain_loss_percent: Number(gain_loss_percent.toFixed(2)) || undefined,
+      beta: Number(beta) || undefined,
+      capm: { expected_return },
+    };
+  });
+
+  const total_value = stockAnalyses.reduce((s, x) => s + (x.current_value || 0), 0);
+  const total_cost = positions.reduce((s, p) => s + (p.total_cost_basis || 0), 0);
+  const total_gain_loss = Number((total_value - total_cost).toFixed(2));
+  const total_gain_loss_percent = total_cost === 0 ? 0 : Number(((total_gain_loss / total_cost) * 100).toFixed(2));
+
+  // Portfolio beta: value-weighted average of betas
+  const weightedBeta = stockAnalyses.reduce((acc, s) => acc + ((s.beta || 1) * (s.current_value || 0)), 0) / (total_value || 1);
+
+  // Portfolio expected return: value-weighted average of expected returns
+  const portExpectedReturn = stockAnalyses.reduce((acc, s) => acc + ((s.capm?.expected_return || rf) * (s.current_value || 0)), 0) / (total_value || 1);
+
+  // Allocation by ticker
+  const allocationTicker: AllocationItem[] = stockAnalyses.map((s) => ({ ticker: s.ticker, percentage: total_value === 0 ? 0 : Number((((s.current_value || 0) / total_value) * 100).toFixed(2)) }));
+
+  // For simplicity we'll use ticker allocation for sector & industry as well (replace when you add metadata)
+  const allocation = {
+    ticker: allocationTicker,
+    sector: allocationTicker.map((a) => ({ name: a.ticker, percentage: a.percentage })),
+    industry: allocationTicker.map((a) => ({ name: a.ticker, percentage: a.percentage })),
+  };
+
+  return {
+    portfolio_metrics: {
+      total_value: Number(total_value.toFixed(2)),
+      total_cost: Number(total_cost.toFixed(2)),
+      total_gain_loss,
+      total_gain_loss_percent,
+      positions_count: positions.length,
+    },
+    portfolio_capm: {
+      expected_return: Number(portExpectedReturn || 0),
+      beta: Number(weightedBeta || 0),
+      risk_premium: Number((mr - rf) || 0),
+      risk_free_rate: rf,
+    },
+    allocation,
+    stock_analyses,
+  };
+}
+
+/**
+ * ================= Frontend React Component =================
+ * This is a polished rewrite of your original page that focuses on:
+ *  - correct percent handling (UI shows 2 => stored 0.02)
+ *  - clean, readable Tailwind-based UI
+ *  - color coding and accessible layout
+ *  - explicit places to plug in a real price provider
+ */
 
 export default function PortfolioPage() {
   const [loading, setLoading] = useState(false);
@@ -12,26 +185,34 @@ export default function PortfolioPage() {
   const [positions, setPositions] = useState<PortfolioPosition[]>([]);
   const [lastUpdate, setLastUpdate] = useState<string>('--');
 
-  // Inputs
+  // inputs
   const [tickerInput, setTickerInput] = useState('');
   const [sharesInput, setSharesInput] = useState('');
   const [costBasisInput, setCostBasisInput] = useState('');
 
-  // CAPM inputs — stored internally as decimals
-  const [riskFreeRate, setRiskFreeRate] = useState(0.02);   // 2% default
-  const [marketReturn, setMarketReturn] = useState(0.10);   // 10% default
+  // CAPM: internally stored as decimals (0.02 = 2%)
+  const [riskFreeRate, setRiskFreeRate] = useState<number>(0.02);
+  const [marketReturn, setMarketReturn] = useState<number>(0.10);
 
   const [allocationType, setAllocationType] = useState<'sector' | 'industry' | 'ticker'>('sector');
 
-  // Load positions
+  // load positions from localStorage (once)
   useEffect(() => {
-    const saved = localStorage.getItem('portfolio_positions');
-    if (saved) setPositions(JSON.parse(saved));
+    try {
+      const raw = localStorage.getItem('portfolio_positions');
+      if (raw) setPositions(JSON.parse(raw));
+    } catch (err) {
+      // ignore malformed localStorage
+    }
   }, []);
 
-  // Analyze portfolio
+  // save positions whenever they change
+  useEffect(() => {
+    localStorage.setItem('portfolio_positions', JSON.stringify(positions));
+  }, [positions]);
+
   const runAnalysis = useCallback(async (currentPositions: PortfolioPosition[]) => {
-    if (currentPositions.length === 0) {
+    if (!currentPositions || currentPositions.length === 0) {
       setData(null);
       return;
     }
@@ -40,21 +221,9 @@ export default function PortfolioPage() {
     setError(null);
 
     try {
-      // ❗ CHANGED — pass decimals directly
-      const result = await analyzePortfolio(
-        currentPositions,
-        riskFreeRate,
-        marketReturn
-      );
-
+      const result = await analyzePortfolio(currentPositions, riskFreeRate, marketReturn);
       setData(result);
-      setLastUpdate(
-        new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        })
-      );
+      setLastUpdate(new Date().toLocaleTimeString('en-US'));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze portfolio');
     } finally {
@@ -66,26 +235,23 @@ export default function PortfolioPage() {
     if (positions.length > 0) runAnalysis(positions);
   }, [positions, runAnalysis]);
 
-  // Add stock
   const addPosition = () => {
     const ticker = tickerInput.trim().toUpperCase();
     const shares = parseFloat(sharesInput);
-    const costBasis = parseFloat(costBasisInput);
+    const cost = parseFloat(costBasisInput);
 
     if (!ticker || isNaN(shares) || shares <= 0) {
-      setError('Please enter a valid ticker and shares amount');
+      setError('Please enter a valid ticker and shares');
       return;
     }
 
-    const newPosition: PortfolioPosition = {
+    const newPos: PortfolioPosition = {
       ticker,
       shares,
-      total_cost_basis: isNaN(costBasis) ? 0 : costBasis,
+      total_cost_basis: isNaN(cost) ? 0 : cost,
     };
 
-    const newPositions = [...positions, newPosition];
-    setPositions(newPositions);
-    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
+    setPositions((p) => [...p, newPos]);
 
     setTickerInput('');
     setSharesInput('');
@@ -93,503 +259,294 @@ export default function PortfolioPage() {
     setError(null);
   };
 
-  // Remove shares
   const removeShares = (index: number, sharesToRemove: number) => {
     const position = positions[index];
     if (!position) return;
 
-    let newPositions: PortfolioPosition[];
-
     if (sharesToRemove >= position.shares) {
-      newPositions = positions.filter((_, i) => i !== index);
+      setPositions((p) => p.filter((_, i) => i !== index));
     } else {
-      const ratio = (position.shares - sharesToRemove) / position.shares;
-      newPositions = positions.map((p, i) =>
-        i === index
-          ? {
-              ...p,
-              shares: p.shares - sharesToRemove,
-              total_cost_basis: p.total_cost_basis * ratio,
-            }
-          : p
-      );
+      setPositions((p) => p.map((pos, i) => {
+        if (i !== index) return pos;
+        const remaining = pos.shares - sharesToRemove;
+        const ratio = remaining / pos.shares;
+        return {
+          ...pos,
+          shares: remaining,
+          total_cost_basis: pos.total_cost_basis * ratio,
+        };
+      }));
     }
-
-    setPositions(newPositions);
-    localStorage.setItem('portfolio_positions', JSON.stringify(newPositions));
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') addPosition();
-  };
-
-  const getAllocationData = () => {
-    if (!data) return [];
+  const allocationData = useMemo(() => {
+    if (!data) return [] as AllocationItem[];
     switch (allocationType) {
       case 'sector': return data.allocation.sector;
       case 'industry': return data.allocation.industry;
-      case 'ticker': return data.allocation.ticker;
-      default: return [];
+      default: return data.allocation.ticker;
     }
-  };
-
-  const formatCurrency = (n: number) =>
-    '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const formatPercent = (n: number) =>
-    `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+  }, [allocationType, data]);
 
   return (
-    <div className="container" style={{ maxWidth: '1600px' }}>
-      {loading && <LoadingOverlay message="Loading portfolio data..." />}
-
-      <header style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, textAlign: 'center', marginBottom: '8px' }}>
-          Portfolio Dashboard
-        </h1>
-        <p className="subtitle" style={{ textAlign: 'center' }}>
-          Real-time portfolio tracking with comprehensive analytics
-        </p>
+    <div className="max-w-[1400px] mx-auto p-6">
+      {/* Header */}
+      <header className="mb-6 text-center">
+        <h1 className="text-3xl font-bold">Portfolio Dashboard</h1>
+        <p className="text-sm text-gray-500">Real-time portfolio tracking with CAPM analytics</p>
       </header>
 
-      {error && (
-        <div className="error-message" style={{ marginBottom: '24px' }}>
-          {error}
-        </div>
-      )}
+      {/* Top row - Add position + CAPM inputs */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Add Position Card */}
+        <div className="bg-white shadow rounded p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">Add Position</h2>
+            <div className="text-xs text-gray-400">Positions: {positions.length}</div>
+          </div>
 
-      {/* Add Position */}
-      <div className="card" style={{ marginBottom: '32px', padding: '24px' }}>
-        <div style={{ fontSize: '1.125rem', fontWeight: 700, marginBottom: '20px' }}>
-          Add Stock Position
-        </div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 1.5fr 1.5fr auto',
-          gap: '12px',
-          alignItems: 'end'
-        }}>
-          <div>
-            <label className="input-label">Ticker Symbol</label>
+          <div className="space-y-3">
+            <label className="block text-xs font-medium text-gray-600">Ticker</label>
             <input
-              type="text"
+              className="w-full input-field p-2 border rounded"
+              placeholder="AAPL"
               value={tickerInput}
               onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
-              onKeyPress={handleKeyPress}
-              placeholder="AAPL"
-              className="input-field"
-              style={{ textTransform: 'uppercase' }}
             />
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-medium text-gray-600">Shares</label>
+                <input
+                  className="w-full input-field p-2 border rounded"
+                  value={sharesInput}
+                  onChange={(e) => setSharesInput(e.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600">Total Cost Basis ($)</label>
+                <input
+                  className="w-full input-field p-2 border rounded"
+                  value={costBasisInput}
+                  onChange={(e) => setCostBasisInput(e.target.value)}
+                  inputMode="decimal"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                className="bg-blue-600 text-white px-4 py-2 rounded shadow"
+                onClick={addPosition}
+              >
+                Add
+              </button>
+              <button
+                className="bg-gray-100 px-3 py-2 rounded"
+                onClick={() => { setTickerInput(''); setSharesInput(''); setCostBasisInput(''); setError(null); }}
+              >
+                Clear
+              </button>
+            </div>
+
+            {error && <div className="text-red-600 text-sm">{error}</div>}
           </div>
-          <div>
-            <label className="input-label">Shares</label>
-            <input
-              type="number"
-              value={sharesInput}
-              onChange={(e) => setSharesInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="10"
-              step="0.01"
-              min="0"
-              className="input-field"
-            />
-          </div>
-          <div>
-            <label className="input-label">Total Cost Basis</label>
-            <input
-              type="number"
-              value={costBasisInput}
-              onChange={(e) => setCostBasisInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="1500.00"
-              step="0.01"
-              min="0"
-              className="input-field"
-            />
-          </div>
-          <button onClick={addPosition} className="btn-primary">
-            Add
-          </button>
         </div>
-      </div>
 
-      {/* Dashboard */}
-      {data && (
-        <>
-          {/* Overview Cards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '24px',
-              marginBottom: '32px',
-            }}
-          >
-            {/* Total Value */}
-            <div
-              className={`card ${data.portfolio_metrics.total_gain_loss >= 0 ? 'positive' : 'negative'}`}
-              style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}
-            >
-              <div style={{ position: 'absolute', top: 0, height: '4px', background: 'var(--primary)', left: 0, right: 0 }} />
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--secondary)', marginBottom: '8px' }}>
-                Total Value
+        {/* CAPM Inputs Card */}
+        <div className="bg-white shadow rounded p-4 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold">CAPM Inputs</h2>
+            <div className="text-xs text-gray-400">Risk-free & market figures</div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+              <label className="block text-xs font-medium text-gray-600">Risk-free rate (%)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="w-full p-2 border rounded"
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={(riskFreeRate * 100).toString()}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setRiskFreeRate(isNaN(v) ? 0 : v / 100);
+                  }}
+                />
+                <span className="text-sm text-gray-500">%</span>
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-                {formatCurrency(data.portfolio_metrics.total_value)}
-              </div>
+              <div className="text-xs text-gray-400 mt-1">Enter 2 for 2% — decimals allowed (e.g. 2.1)</div>
             </div>
 
-            {/* Total Gain/Loss */}
-            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  height: '4px',
-                  background: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)',
-                  left: 0,
-                  right: 0,
-                }}
-              />
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--secondary)', marginBottom: '8px' }}>
-                Total Gain/Loss
+            <div>
+              <label className="block text-xs font-medium text-gray-600">Market return (%)</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="w-full p-2 border rounded"
+                  type="number"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={(marketReturn * 100).toString()}
+                  onChange={(e) => {
+                    const v = parseFloat(e.target.value);
+                    setMarketReturn(isNaN(v) ? 0 : v / 100);
+                  }}
+                />
+                <span className="text-sm text-gray-500">%</span>
               </div>
-              <div
-                style={{
-                  fontSize: '2rem',
-                  fontWeight: 700,
-                  color: data.portfolio_metrics.total_gain_loss >= 0 ? 'var(--positive)' : 'var(--negative)',
-                }}
-              >
-                {formatCurrency(data.portfolio_metrics.total_gain_loss)}
-              </div>
-              <div
-                style={{
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: data.portfolio_metrics.total_gain_loss_percent >= 0 ? 'var(--positive)' : 'var(--negative)',
-                }}
-              >
-                {formatPercent(data.portfolio_metrics.total_gain_loss_percent)}
-              </div>
+              <div className="text-xs text-gray-400 mt-1">Enter 10 for 10% — decimals allowed (e.g. 10.5)</div>
             </div>
 
-            {/* Total Cost */}
-            <div className="card" style={{ padding: '24px', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, height: '4px', background: 'var(--primary)', left: 0, right: 0 }} />
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--secondary)', marginBottom: '8px' }}>
-                Total Cost
+            <div className="space-y-2">
+              <div className="bg-gray-50 border rounded p-3">
+                <div className="text-xs text-gray-500">Portfolio Expected Return</div>
+                <div className="text-xl font-semibold">
+                  {data ? (data.portfolio_capm.expected_return * 100).toFixed(2) : '--'}%
+                </div>
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-                {formatCurrency(data.portfolio_metrics.total_cost)}
-              </div>
-            </div>
 
-            {/* Positions */}
-            <div className="card" style={{ padding: '24px', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, height: '4px', background: 'var(--primary)', left: 0, right: 0 }} />
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--secondary)', marginBottom: '8px' }}>
-                Positions
-              </div>
-              <div style={{ fontSize: '2rem', fontWeight: 700 }}>
-                {data.portfolio_metrics.positions_count}
+              <div className="bg-gray-50 border rounded p-3">
+                <div className="text-xs text-gray-500">Portfolio Beta</div>
+                <div className="text-xl font-semibold">{data ? data.portfolio_capm.beta.toFixed(2) : '--'}</div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Holdings Table */}
-          <div className="card" style={{ marginBottom: '32px', padding: 0 }}>
-            <div
-              style={{
-                padding: '20px 24px',
-                borderBottom: '1px solid var(--border)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Holdings</div>
-              <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>
-                Last updated: {lastUpdate}
-              </div>
-            </div>
+      {/* Main content: holdings table, CAPM metrics, allocation */}
+      <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Holdings table (wide) */}
+        <section className="lg:col-span-2 bg-white rounded shadow p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold">Holdings</h3>
+            <div className="text-xs text-gray-400">Last update: {lastUpdate}</div>
+          </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Ticker</th>
-                    <th>Company</th>
-                    <th style={{ textAlign: 'right' }}>Shares</th>
-                    <th style={{ textAlign: 'right' }}>Cost Basis</th>
-                    <th style={{ textAlign: 'right' }}>Current Price</th>
-                    <th style={{ textAlign: 'right' }}>Current Value</th>
-                    <th style={{ textAlign: 'right' }}>Gain/Loss $</th>
-                    <th style={{ textAlign: 'right' }}>Gain/Loss %</th>
-                    <th style={{ textAlign: 'right' }}>Beta</th>
-                    <th style={{ textAlign: 'right' }}>CAPM Return</th>
-                    <th>Actions</th>
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs text-gray-500 border-b">
+                  <th className="py-2">Ticker</th>
+                  <th>Company</th>
+                  <th className="text-right">Shares</th>
+                  <th className="text-right">Cost</th>
+                  <th className="text-right">Price</th>
+                  <th className="text-right">Value</th>
+                  <th className="text-right">P/L $</th>
+                  <th className="text-right">P/L %</th>
+                  <th className="text-right">Beta</th>
+                  <th className="text-right">CAPM</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {data?.stock_analyses.map((s, i) => (
+                  <tr key={s.ticker} className="border-b last:border-b-0">
+                    <td className="py-3 font-medium">{s.ticker}</td>
+                    <td className="text-gray-500">{s.name}</td>
+                    <td className="text-right">{s.shares?.toLocaleString()}</td>
+                    <td className="text-right">{s.cost_basis ? formatCurrency(s.cost_basis) : '—'}</td>
+                    <td className="text-right">{formatCurrency(s.current_price)}</td>
+                    <td className="text-right">{s.current_value ? formatCurrency(s.current_value) : '—'}</td>
+                    <td className={`text-right font-semibold ${ (s.gain_loss || 0) >= 0 ? 'text-green-600' : 'text-red-600' }`}>{s.gain_loss ? formatCurrency(s.gain_loss) : '—'}</td>
+                    <td className={`text-right ${ (s.gain_loss_percent || 0) >= 0 ? 'text-green-600' : 'text-red-600' }`}>{s.gain_loss_percent ? `${s.gain_loss_percent.toFixed(2)}%` : '—'}</td>
+                    <td className="text-right">{s.beta?.toFixed(2) ?? '—'}</td>
+                    <td className="text-right">{s.capm ? `${(s.capm.expected_return * 100).toFixed(2)}%` : '—'}</td>
+                    <td className="text-right">
+                      <div className="flex items-center gap-2 justify-end">
+                        <input id={`remove_${i}`} placeholder="0" className="w-20 p-1 border rounded text-sm" />
+                        <button
+                          className="bg-red-500 text-white px-3 py-1 rounded text-xs"
+                          onClick={() => {
+                            const input = document.getElementById(`remove_${i}`) as HTMLInputElement;
+                            const num = parseFloat(input?.value || '0');
+                            if (num > 0) removeShares(i, num);
+                            if (input) input.value = '';
+                          }}
+                        >Remove</button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
+                ))}
 
-                <tbody>
-                  {data.stock_analyses.map((stock: StockAnalysis, index: number) => {
-                    const gainLoss = stock.gain_loss ?? 0;
-                    const gainLossPercent = stock.gain_loss_percent ?? 0;
-
-                    return (
-                      <tr key={stock.ticker}>
-                        <td style={{ fontWeight: 700, fontSize: '15px' }}>{stock.ticker}</td>
-                        <td style={{ color: 'var(--secondary)', fontSize: '13px' }}>{stock.name}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {stock.shares?.toLocaleString()}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {stock.cost_basis ? formatCurrency(stock.cost_basis) : 'N/A'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {formatCurrency(stock.current_price)}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {stock.current_value ? formatCurrency(stock.current_value) : 'N/A'}
-                        </td>
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontWeight: 600,
-                            color: gainLoss >= 0 ? 'var(--positive)' : 'var(--negative)',
-                          }}
-                        >
-                          {gainLoss >= 0 ? '+' : ''}
-                          {formatCurrency(gainLoss)}
-                        </td>
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontWeight: 600,
-                            color: gainLossPercent >= 0 ? 'var(--positive)' : 'var(--negative)',
-                          }}
-                        >
-                          {formatPercent(gainLossPercent)}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {stock.beta?.toFixed(2) ?? 'N/A'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {stock.capm ? `${(stock.capm.expected_return * 100).toFixed(2)}%` : 'N/A'}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                              type="number"
-                              id={`removeShares_${index}`}
-                              placeholder="Shares"
-                              step="0.01"
-                              min="0"
-                              max={stock.shares}
-                              style={{
-                                width: '80px',
-                                padding: '6px 8px',
-                                fontSize: '13px',
-                                border: '1.5px solid var(--border)',
-                                borderRadius: '6px',
-                              }}
-                            />
-                            <button
-                              onClick={() => {
-                                const input = document.getElementById(
-                                  `removeShares_${index}`
-                                ) as HTMLInputElement;
-                                const sharesToRemove = parseFloat(input?.value || '0');
-                                if (sharesToRemove > 0) {
-                                  removeShares(index, sharesToRemove);
-                                  input.value = '';
-                                }
-                              }}
-                              className="btn-danger"
-                              style={{ padding: '6px 12px', fontSize: '12px' }}
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-
-              </table>
-            </div>
+                {(!data || data.stock_analyses.length === 0) && (
+                  <tr>
+                    <td colSpan={11} className="py-6 text-center text-gray-400">No holdings yet — add a position to get started</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </section>
 
-          {/* CAPM Section */}
-          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-            <div style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '20px' }}>
-              Portfolio CAPM Analysis
+        {/* Right column: metrics + allocation */}
+        <aside className="space-y-6">
+          {/* Summary */}
+          <div className="bg-white rounded shadow p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold">Portfolio Summary</h4>
+              <div className="text-xs text-gray-400">CAPM snapshot</div>
             </div>
 
-            {/* CAPM Inputs */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px',
-                marginBottom: '24px',
-              }}
-            >
-              {/* RISK-FREE RATE */}
-<input
-  type="number"
-  value={riskFreeRate * 100}
-  onChange={(e) => {
-    const v = parseFloat(e.target.value);
-    setRiskFreeRate(isNaN(v) ? 0 : v / 100);
-  }}
-  step="0.01"
-  className="input-field"
-/>
-
-{/* MARKET RETURN */}
-<input
-  type="number"
-  value={marketReturn * 100}
-  onChange={(e) => {
-    const v = parseFloat(e.target.value);
-    setMarketReturn(isNaN(v) ? 0 : v / 100);
-  }}
-  step="0.01"
-  className="input-field"
-/>
-
-
-            {/* CAPM Metrics */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '20px',
-              }}
-            >
-              <div
-                style={{
-                  background: 'var(--background)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px' }}>
-                  Expected Return
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
-                  {(data.portfolio_capm.expected_return * 100).toFixed(2)}%
-                </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 border rounded">
+                <div className="text-xs text-gray-500">Total Value</div>
+                <div className="font-semibold text-lg">{data ? formatCurrency(data.portfolio_metrics.total_value) : '--'}</div>
               </div>
 
-              <div
-                style={{
-                  background: 'var(--background)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px' }}>
-                  Portfolio Beta
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
-                  {data.portfolio_capm.beta.toFixed(2)}
-                </div>
+              <div className="p-3 border rounded">
+                <div className="text-xs text-gray-500">Total Cost</div>
+                <div className="font-semibold text-lg">{data ? formatCurrency(data.portfolio_metrics.total_cost) : '--'}</div>
               </div>
 
-              <div
-                style={{
-                  background: 'var(--background)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px' }}>
-                  Risk Premium
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
-                  {(data.portfolio_capm.risk_premium * 100).toFixed(2)}%
-                </div>
+              <div className={`p-3 border rounded ${data && data.portfolio_metrics.total_gain_loss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+                <div className="text-xs text-gray-500">Total P/L</div>
+                <div className={`${data && data.portfolio_metrics.total_gain_loss >= 0 ? 'text-green-600' : 'text-red-600'} font-semibold text-lg`}>{data ? formatCurrency(data.portfolio_metrics.total_gain_loss) : '--'}</div>
               </div>
 
-              <div
-                style={{
-                  background: 'var(--background)',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: 'var(--secondary)', marginBottom: '8px' }}>
-                  Risk-Free Rate
-                </div>
-                <div style={{ fontSize: '1.75rem', fontWeight: 700 }}>
-                  {(data.portfolio_capm.risk_free_rate * 100).toFixed(2)}%
-                </div>
+              <div className="p-3 border rounded">
+                <div className="text-xs text-gray-500">P/L %</div>
+                <div className="font-semibold text-lg">{data ? `${data.portfolio_metrics.total_gain_loss_percent.toFixed(2)}%` : '--'}</div>
               </div>
             </div>
           </div>
 
-          {/* Allocation */}
-          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '20px',
-              }}
-            >
-              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>
-                Portfolio Allocation
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {(['sector', 'industry', 'ticker'] as const).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setAllocationType(type)}
-                    className={allocationType === type ? 'btn-primary' : 'btn-secondary'}
-                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: 600 }}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
+          {/* Allocation (doughnut chart spot) */}
+          <div className="bg-white rounded shadow p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold">Allocation</h4>
+              <div className="text-sm">
+                {(['sector','industry','ticker'] as const).map((t) => (
+                  <button key={t} onClick={() => setAllocationType(t)} className={`px-2 py-1 text-xs rounded ${allocationType === t ? 'bg-blue-600 text-white' : 'bg-gray-100'}`} style={{marginLeft:8}}>{t}</button>
                 ))}
               </div>
             </div>
 
-            <div style={{ height: '350px' }}>
-              <DoughnutChart
-                labels={getAllocationData().map(
-                  (item) =>
-                    (item as { name?: string; ticker?: string }).name ||
-                    (item as { ticker: string }).ticker ||
-                    'Unknown'
-                )}
-                data={getAllocationData().map((item) => item.percentage)}
-              />
+            <div className="h-48 flex flex-col justify-center items-center text-sm text-gray-500"> 
+              {/* Replace with your DoughnutChart component if you have one. This is a graceful fallback. */}
+              {allocationData.length > 0 ? (
+                <div className="w-full">
+                  {allocationData.slice(0,6).map((a) => (
+                    <div key={a.name || a.ticker} className="flex justify-between py-1">
+                      <div>{a.name || a.ticker}</div>
+                      <div>{a.percentage}%</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div>No allocation data</div>
+              )}
             </div>
           </div>
-        </>
-      )}
+        </aside>
+      </main>
 
-      {/* Empty */}
-      {!data && !loading && positions.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--secondary)' }}>
-          <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.3 }}>📊</div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 500, marginBottom: '8px' }}>
-            No positions yet
-          </div>
-          <div style={{ fontSize: '14px' }}>
-            Add your first stock position above to start tracking your portfolio
-          </div>
-        </div>
-      )}
+      <footer className="mt-6 text-center text-xs text-gray-400">Built with care — replace the mock price fetcher with your real data source for production.</footer>
     </div>
   );
 }
