@@ -72,13 +72,22 @@ export interface ScreeningResponse {
 }
 
 // Financial Analysis types
+export interface Score {
+  score: number | null;
+  max_score?: number;
+  display: string;
+  interpretation: string;
+  status: 'positive' | 'negative' | 'neutral';
+  components?: Record<string, unknown>;
+}
+
 export interface FinancialScore {
   score: number | null;
   max_score?: number;
   display: string;
   interpretation: string;
   status: 'positive' | 'negative' | 'neutral';
-  components?: any;
+  components?: Record<string, unknown>;
 }
 
 export interface FinancialMetric {
@@ -162,8 +171,18 @@ export interface InsiderResponse {
   monthly_data: Array<{ month: string; label: string; buys: number; sells: number }>;
   cluster_alerts: ClusterAlert[];
   sentiment: InsiderSentiment;
-  institutional: any;
-  signals: any[];
+  institutional: {
+    holders: Array<{
+      name: string;
+      shares: number;
+      shares_display: string;
+      value: number;
+      value_display: string;
+      percent: number;
+      percent_display: string;
+    }>;
+  };
+  signals: Signal[];
   has_transaction_data: boolean;
   has_institutional_data: boolean;
   timestamp: string;
@@ -211,11 +230,31 @@ export interface SearchResponse {
   profitability: FinancialMetric[];
   financial_health: FinancialMetric[];
   growth: FinancialMetric[];
-  dividend: any;
-  analyst: any;
-  trading: any;
-  profile: any;
-  news: Array<{ title: string; source: string; link: string; published: string; published_relative: string }>;
+  dividend: {
+    has_dividend: boolean;
+    yield_display: string;
+    rate_display: string;
+    payout_ratio_display: string;
+    payout_status: 'positive' | 'negative' | 'neutral';
+    ex_date: string | null;
+  };
+  analyst: {
+    has_data: boolean;
+    target_mean_display: string;
+    target_high_display: string;
+    target_low_display: string;
+    num_analysts_display: string;
+    recommendation_display: string;
+    recommendation_status: 'positive' | 'negative' | 'neutral';
+  };
+  trading: Record<string, unknown>;
+  profile: {
+    description: string;
+    employees: string;
+    headquarters: string;
+    website: string | null;
+  };
+  news: NewsItem[];
   timestamp: string;
 }
 
@@ -224,7 +263,7 @@ export interface ChartData {
   period: string;
   data: {
     dates: string[];
-    prices: number[];
+    prices: (number | null)[];
     volumes: number[];
     highs: number[];
     lows: number[];
@@ -316,9 +355,8 @@ export interface PortfolioResponse {
   timestamp: string;
 }
 
-// Type aliases for consistency
+// Type aliases
 export type SentimentAnalysisResponse = SentimentResponse;
 export type ChartResponse = ChartData;
-export type NewsItem = SearchResponse['news'][0];
-export type Signal = any; // Add proper type if you have it
-export type Score = FinancialScore;
+export type NewsItem = { title: string; source: string; link: string; published: string; published_relative: string };
+export type Signal = { type: string; title: string; description: string; status: 'positive' | 'negative' | 'neutral' };
