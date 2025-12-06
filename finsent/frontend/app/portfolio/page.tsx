@@ -437,38 +437,30 @@ export default function PortfolioPage() {
                 marginBottom: '24px',
               }}
             >
-              {/* RISK FREE RATE */}
-              <div>
-                <label className="input-label">Risk-Free Rate (%)</label>
-                <input
-                  type="number"
-                  value={riskFreeRate * 100}     {/* show as whole */}
-                  onChange={(e) =>
-                    setRiskFreeRate((parseFloat(e.target.value) || 0) / 100) /* store decimal */
-                  }
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  className="input-field"
-                />
-              </div>
+              {/* RISK-FREE RATE */}
+<input
+  type="number"
+  value={riskFreeRate * 100}
+  onChange={(e) => {
+    const v = parseFloat(e.target.value);
+    setRiskFreeRate(isNaN(v) ? 0 : v / 100);
+  }}
+  step="0.01"
+  className="input-field"
+/>
 
-              {/* MARKET RETURN */}
-              <div>
-                <label className="input-label">Market Return (%)</label>
-                <input
-                  type="number"
-                  value={marketReturn * 100}
-                  onChange={(e) =>
-                    setMarketReturn((parseFloat(e.target.value) || 0) / 100)
-                  }
-                  step="0.1"
-                  min="0"
-                  max="20"
-                  className="input-field"
-                />
-              </div>
-            </div>
+{/* MARKET RETURN */}
+<input
+  type="number"
+  value={marketReturn * 100}
+  onChange={(e) => {
+    const v = parseFloat(e.target.value);
+    setMarketReturn(isNaN(v) ? 0 : v / 100);
+  }}
+  step="0.01"
+  className="input-field"
+/>
+
 
             {/* CAPM Metrics */}
             <div
