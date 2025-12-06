@@ -24,7 +24,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="min-h-screen bg-background" style={{ paddingTop: '80px' }}>
+      <body className="min-h-screen bg-background">
         <Navbar />
         <main>
           {children}
