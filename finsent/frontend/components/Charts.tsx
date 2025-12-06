@@ -194,7 +194,7 @@ export function DoughnutChart({
   className,
   showLegend = true
 }: DoughnutChartProps) {
-  const defaultColors = ['#10b981', '#ef4444', '#6b7280', '#f59e0b', '#3b82f6', '#8b5cf6'];
+  const defaultColors = ['#10b981', '#ef4444', '#6b7280', '#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4', '#ec4899'];
   
   const chartData: ChartData<'doughnut'> = {
     labels,
@@ -307,10 +307,10 @@ export function PriceChart({
       legend: { display: false },
       title: { display: !!title, text: title },
       tooltip: {
-  callbacks: {
-    label: (ctx) => `$${ctx.parsed.y?.toFixed(2) ?? 'N/A'}`,
-  },
-},
+        callbacks: {
+          label: (ctx) => `$${ctx.parsed.y?.toFixed(2) ?? 'N/A'}`,
+        },
+      },
     },
     scales: {
       y: {
