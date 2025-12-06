@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 // NOTE: This file includes both a React page/component (default export)
