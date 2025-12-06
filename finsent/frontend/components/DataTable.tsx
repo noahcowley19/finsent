@@ -40,18 +40,14 @@ export default function DataTable<T>({
   }
 
   return (
-    <div className={cn('overflow-x-auto', className)}>
-      <table className="w-full">
+    <div className={cn('overflow-x-auto -mx-4 px-4', className)}>
+      <table className="data-table">
         <thead>
-          <tr className="border-b border-border">
+          <tr>
             {columns.map((col) => (
               <th
                 key={String(col.key)}
-                className={cn(
-                  'table-header',
-                  alignClasses[col.align || 'left'],
-                  col.className
-                )}
+                className={cn(alignClasses[col.align || 'left'], col.className)}
               >
                 {col.header}
               </th>
@@ -63,19 +59,12 @@ export default function DataTable<T>({
             <tr
               key={keyExtractor(row, index)}
               onClick={() => onRowClick?.(row)}
-              className={cn(
-                'border-b border-border last:border-0',
-                onRowClick && 'cursor-pointer hover:bg-slate-50'
-              )}
+              className={cn(onRowClick && 'cursor-pointer')}
             >
               {columns.map((col) => (
                 <td
                   key={String(col.key)}
-                  className={cn(
-                    'table-cell',
-                    alignClasses[col.align || 'left'],
-                    col.className
-                  )}
+                  className={cn(alignClasses[col.align || 'left'], col.className)}
                 >
                   {col.render 
                     ? col.render(row) 
@@ -98,7 +87,7 @@ export function SimpleTable({
   return (
     <div className="divide-y divide-border">
       {rows.map((row, index) => (
-        <div key={index} className="flex justify-between py-2">
+        <div key={index} className="flex justify-between py-3">
           <span className="text-secondary text-sm">{row.label}</span>
           <span className="font-medium text-primary text-sm">{row.value}</span>
         </div>
