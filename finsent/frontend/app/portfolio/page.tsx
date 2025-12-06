@@ -45,10 +45,11 @@ export default function PortfolioPage() {
     
     try {
       const result = await analyzePortfolio(
-        currentPositions, 
-        riskFreeRate / 100, 
+        currentPositions,
+        riskFreeRate / 100,
         marketReturn / 100
       );
+
       setData(result);
       setLastUpdate(new Date().toLocaleTimeString('en-US', { 
         hour: '2-digit', 
@@ -397,7 +398,7 @@ export default function PortfolioPage() {
                 <input
                   type="number"
                   value={riskFreeRate}
-                  onChange={(e) => setRiskFreeRate(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setRiskFreeRate((parseFloat(e.target.value) || 0) / 100)}
                   step="0.1"
                   min="0"
                   max="10"
@@ -409,7 +410,7 @@ export default function PortfolioPage() {
                 <input
                   type="number"
                   value={marketReturn}
-                  onChange={(e) => setMarketReturn(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setMarketReturn((parseFloat(e.target.value) || 0) / 100)}
                   step="0.1"
                   min="0"
                   max="20"
