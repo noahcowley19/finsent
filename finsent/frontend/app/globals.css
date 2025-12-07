@@ -958,7 +958,36 @@
   .footer a:hover {
     color: var(--accent-light);
   }
+   .footer a:hover {
+    color: var(--accent-light);
+  }
 
+  /* Footer support link styles */
+  .footer-support-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--accent-subtle);
+    border: 1px solid var(--border-accent);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .footer-support-link:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+  }
+
+  /* ============================================
+     SECTION TITLES
+     ============================================ */
   /* ============================================
      SECTION TITLES
      ============================================ */
