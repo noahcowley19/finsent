@@ -18,10 +18,10 @@
   --bg-card-hover: #1a2236;
   --bg-elevated: #151c2c;
   
-  /* Accent - Electric teal/cyan */
-  --accent: #00d4aa;
-  --accent-light: #00f5c4;
-  --accent-dark: #00a88a;
+  /* Accent - Electric teal/cyan 00d4aa 00f5c4 00a88a*/
+  --accent: #f14666;
+  --accent-light: #EE8980;
+  --accent-dark: #FFCDAA;
   --accent-glow: rgba(0, 212, 170, 0.4);
   --accent-subtle: rgba(0, 212, 170, 0.08);
   
