@@ -1,83 +1,95 @@
-'use client';
+import Link from 'next/link';
 
 export default function Footer() {
   return (
     <footer className="footer">
-      <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        gap: '16px' 
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '8px',
-          marginBottom: '8px',
-        }}>
-          <svg 
-            width="24" 
-            height="24" 
-            viewBox="0 0 32 32" 
-            fill="none"
+      <div className="max-w-6xl mx-auto">
+        {/* Logo */}
+        <div className="flex justify-center mb-6">
+          <Link href="/" className="flex items-center gap-3 group">
+            <span className="relative w-8 h-8 flex items-center justify-center">
+              <svg 
+                viewBox="0 0 40 40" 
+                fill="none" 
+                className="w-full h-full"
+                style={{
+                  filter: 'drop-shadow(0 0 6px rgba(0, 212, 170, 0.3))',
+                }}
+              >
+                <defs>
+                  <linearGradient id="footerLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#00d4aa" />
+                    <stop offset="100%" stopColor="#00a3ff" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M20 2L36 11V29L20 38L4 29V11L20 2Z"
+                  fill="url(#footerLogoGradient)"
+                  fillOpacity="0.15"
+                  stroke="url(#footerLogoGradient)"
+                  strokeWidth="1.5"
+                />
+                <path
+                  d="M20 8L28 22H12L20 8Z"
+                  fill="url(#footerLogoGradient)"
+                  fillOpacity="0.5"
+                />
+                <path
+                  d="M20 14L24 22H16L20 14Z"
+                  fill="url(#footerLogoGradient)"
+                />
+                <circle cx="20" cy="26" r="2" fill="url(#footerLogoGradient)" />
+              </svg>
+            </span>
+            <span 
+              className="text-lg font-bold tracking-tight"
+              style={{
+                background: 'linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Caveray
+            </span>
+          </Link>
+        </div>
+
+        {/* Support Link */}
+        <div className="flex justify-center mb-8">
+          <a 
+            href="https://www.buymeacoffee.com/noahcowley" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105"
+            style={{
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+              color: '#fbbf24',
+            }}
           >
-            <rect 
-              x="2" 
-              y="2" 
-              width="28" 
-              height="28" 
-              rx="8" 
-              fill="url(#footerLogoGradient)"
-              opacity="0.5"
-            />
-            <path 
-              d="M10 22V14L16 10L22 14V22L16 26L10 22Z" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinejoin="round"
-              fill="none"
-              style={{ color: 'var(--text-tertiary)' }}
-            />
-            <defs>
-              <linearGradient id="footerLogoGradient" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00d4aa" />
-                <stop offset="1" stopColor="#00a3ff" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <span style={{
-            fontSize: '1rem',
-            fontWeight: 700,
-            color: 'var(--text-tertiary)',
-            letterSpacing: '-0.02em',
-          }}>
-            Caveray
-          </span>
+            <svg 
+              width="18" 
+              height="18" 
+              viewBox="0 0 24 24" 
+              fill="currentColor"
+            >
+              <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.199.66-.267 1-.069.34-.176.707-.135 1.056.087.753.613 1.365 1.37 1.502a39.69 39.69 0 0011.343.376.483.483 0 01.535.53l-.071.697-1.018 9.907c-.041.41-.047.832-.125 1.237-.122.637-.553 1.028-1.182 1.171-.577.131-1.165.2-1.756.205-.656.004-1.31-.025-1.966-.022-.699.004-1.556-.06-2.095-.58-.475-.458-.54-1.174-.605-1.793l-.731-7.013-.322-3.094c-.037-.351-.286-.695-.678-.678-.336.015-.718.3-.678.679l.228 2.185.949 9.112c.147 1.344 1.174 2.068 2.446 2.272.742.12 1.503.144 2.257.156.966.016 1.942.053 2.892-.122 1.408-.258 2.465-1.198 2.616-2.657.34-3.332.683-6.663 1.024-9.995l.215-2.087a.484.484 0 01.39-.426c.402-.078.787-.212 1.074-.518.455-.488.546-1.124.385-1.766zm-1.478.772c-.145.137-.363.201-.578.233-2.416.359-4.866.54-7.308.46-1.748-.06-3.477-.254-5.207-.498-.17-.024-.353-.055-.47-.18-.22-.236-.111-.71-.054-.995.052-.26.152-.609.463-.646.484-.057 1.046.148 1.526.22.577.088 1.156.159 1.737.212 2.48.226 5.002.19 7.472-.14.45-.06.899-.13 1.345-.21.399-.072.84-.206 1.08.206.166.281.188.657.162.974a.544.544 0 01-.169.364z"/>
+            </svg>
+            <span>Support Development</span>
+          </a>
         </div>
 
-        <p style={{ maxWidth: '400px', textAlign: 'center', lineHeight: 1.6 }}>
-          Information provided is for educational purposes only and should not be considered financial advice.
+        {/* Disclaimer */}
+        <p className="text-center text-xs leading-relaxed mb-6 max-w-2xl mx-auto" style={{ color: 'var(--text-muted)' }}>
+          <strong style={{ color: 'var(--text-tertiary)' }}>Disclaimer:</strong> Caveray provides financial data and analysis tools for informational purposes only. 
+          This is not financial advice. Always conduct your own research and consult with a qualified financial advisor before making investment decisions.
         </p>
-        
-        <a 
-          href="https://www.buymeacoffee.com/noahcowley" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="footer-support-link"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.199.66-.267 1-.069.34-.176.707-.135 1.056.087.753.613 1.365 1.37 1.502a39.69 39.69 0 0011.343.376.483.483 0 01.535.53l-.071.697-1.018 9.907c-.041.41-.047.832-.125 1.237-.122.637-.553 1.028-1.182 1.171-.577.131-1.165.2-1.756.205-.656.004-1.31-.025-1.966-.022-.699.004-1.556-.06-2.095-.58-.475-.458-.54-1.174-.605-1.793l-.731-7.013-.322-3.094c-.037-.351-.286-.695-.678-.678-.336.015-.718.3-.678.679l.228 2.185.949 9.112c.147 1.344 1.174 2.068 2.446 2.272.742.12 1.503.144 2.257.156.966.016 1.942.053 2.892-.122 1.408-.258 2.465-1.198 2.616-2.657.34-3.332.683-6.663 1.024-9.995l.215-2.087a.484.484 0 01.39-.426c.402-.078.787-.212 1.074-.518.455-.488.546-1.124.385-1.766zm-1.478.772c-.145.137-.363.201-.578.233-2.416.359-4.866.54-7.308.46-1.748-.06-3.477-.254-5.207-.498-.17-.024-.353-.055-.47-.18-.22-.236-.111-.71-.054-.995.052-.26.152-.609.463-.646.484-.057 1.046.148 1.526.22.577.088 1.156.159 1.737.212 2.48.226 5.002.19 7.472-.14.45-.06.899-.13 1.345-.21.399-.072.84-.206 1.08.206.166.281.188.657.162.974a.544.544 0 01-.169.364z"/>
-          </svg>
-          Support Creator
-        </a>
 
-        <div style={{ 
-          marginTop: '24px', 
-          fontSize: '12px', 
-          color: 'var(--text-muted)',
-        }}>
+        {/* Copyright */}
+        <p className="text-center text-sm" style={{ color: 'var(--text-tertiary)' }}>
           © {new Date().getFullYear()} Caveray. All rights reserved.
-        </div>
+        </p>
       </div>
     </footer>
   );
