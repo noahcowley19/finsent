@@ -1,4 +1,4 @@
-cat > finsent/frontend/components/Footer.tsx << 'EOF'
+tee finsent/frontend/components/Footer.tsx > /dev/null << 'EOF'
 'use client';
 
 export default function Footer() {
