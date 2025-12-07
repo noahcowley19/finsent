@@ -1,4 +1,3 @@
-tee finsent/frontend/components/Footer.tsx > /dev/null << 'EOF'
 'use client';
 
 export default function Footer() {
@@ -83,4 +82,3 @@ export default function Footer() {
     </footer>
   );
 }
-EOF
