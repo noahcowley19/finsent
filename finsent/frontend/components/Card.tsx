@@ -1,30 +1,21 @@
-import { cn } from '@/lib/utils';
+'use client';
+
 import { ReactNode } from 'react';
 
 interface CardProps {
   children: ReactNode;
   className?: string;
-  hover?: boolean;
-  featured?: boolean;
-  compact?: boolean;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+  hoverable?: boolean;
 }
 
-export default function Card({ 
-  children, 
-  className,
-  hover = false,
-  featured = false,
-  compact = false
-}: CardProps) {
+export default function Card({ children, className = '', style, onClick, hoverable }: CardProps) {
   return (
     <div 
-      className={cn(
-        'card',
-        hover && 'card-hover',
-        featured && 'card-featured',
-        compact && 'card-compact',
-        className
-      )}
+      className={`card ${hoverable ? 'card-hover' : ''} ${className}`}
+      style={style}
+      onClick={onClick}
     >
       {children}
     </div>
@@ -35,26 +26,55 @@ interface CardHeaderProps {
   title: string;
   subtitle?: string;
   action?: ReactNode;
-  className?: string;
+  icon?: ReactNode;
 }
 
-export function CardHeader({ title, subtitle, action, className }: CardHeaderProps) {
+export function CardHeader({ title, subtitle, action, icon }: CardHeaderProps) {
   return (
-    <div className={cn('mb-6', className)}>
-      <div className="flex items-start justify-between gap-4">
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: '20px',
+      paddingBottom: '16px',
+      borderBottom: '1px solid var(--border)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {icon && (
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: 'var(--accent-subtle)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--accent)',
+          }}>
+            {icon}
+          </div>
+        )}
         <div>
-          <h3 
-            className="text-xl font-bold text-primary"
-            style={{ letterSpacing: '-0.02em' }}
-          >
+          <h3 style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            margin: 0,
+          }}>
             {title}
           </h3>
           {subtitle && (
-            <p className="text-sm text-secondary mt-1">{subtitle}</p>
+            <p style={{
+              fontSize: '13px',
+              color: 'var(--text-tertiary)',
+              margin: '4px 0 0 0',
+            }}>
+              {subtitle}
+            </p>
           )}
         </div>
-        {action && <div>{action}</div>}
       </div>
+      {action && <div>{action}</div>}
     </div>
   );
 }
@@ -65,11 +85,20 @@ interface CardSectionProps {
   className?: string;
 }
 
-export function CardSection({ title, children, className }: CardSectionProps) {
+export function CardSection({ title, children, className = '' }: CardSectionProps) {
   return (
-    <div className={cn('mb-6 last:mb-0', className)}>
+    <div className={className} style={{ marginBottom: '24px' }}>
       {title && (
-        <h4 className="section-title">{title}</h4>
+        <div style={{
+          fontSize: '12px',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: 'var(--text-tertiary)',
+          marginBottom: '12px',
+        }}>
+          {title}
+        </div>
       )}
       {children}
     </div>
