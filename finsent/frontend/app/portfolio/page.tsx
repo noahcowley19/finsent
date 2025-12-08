@@ -473,7 +473,14 @@ export default function PortfolioPage() {
             <div style={{ height: '350px' }}>
               <DoughnutChart
                 labels={getAllocationData().map(item => (item as { name?: string; ticker?: string }).name || (item as { ticker: string }).ticker || 'Unknown')}
-                data={getAllocationData().map(item => item.percentage)}
+                data={getAllocationData().map(item => ({
+                  label:
+                   (item as { name?: string; ticker?: string }).name ||
+                   (item as { ticker: string }).ticker ||
+                   'Unknown',
+                  value: item.percentage,
+                }))}
+
               />
             </div>
           </div>
