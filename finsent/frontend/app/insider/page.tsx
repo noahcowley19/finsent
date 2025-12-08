@@ -5,6 +5,12 @@ import { LoadingOverlay, Badge } from '@/components';
 import { analyzeInsider } from '@/lib/api';
 import type { InsiderResponse, InsiderTransaction, ClusterAlert } from '@/lib/types';
 
+/**
+ * Local BadgeVariant type mirrors the allowed variants in your Badge component.
+ * This ensures mapping returns only valid values.
+ */
+type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+
 export default function InsiderPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +34,30 @@ export default function InsiderPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Map incoming status/type strings to the BadgeVariant union.
+   * Extend this map if you add more statuses.
+   */
+  const statusToVariant = (status: string | undefined): BadgeVariant => {
+    const map: Record<string, BadgeVariant> = {
+      positive: 'success',
+      negative: 'danger',
+      neutral: 'default',
+      warning: 'warning',
+      // transaction-specific or legacy values
+      buy: 'success',
+      sell: 'danger',
+      cluster_buy: 'success',
+      cluster_sell: 'danger',
+      up: 'success',
+      down: 'danger',
+      // fallback
+      default: 'default',
+    };
+    if (!status) return 'default';
+    return map[status] ?? 'default';
   };
 
   return (
@@ -142,7 +172,7 @@ export default function InsiderPage() {
                   <div key={i} style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: alert.status === 'positive' ? 'var(--positive)' : 'var(--negative)' }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <Badge variant={alert.status}>{alert.type === 'cluster_buy' ? 'Cluster Buy' : 'Cluster Sell'}</Badge>
+                      <Badge variant={statusToVariant(alert.status)}>{alert.type === 'cluster_buy' ? 'Cluster Buy' : 'Cluster Sell'}</Badge>
                       <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>{alert.week_display}</div>
                     </div>
                     <div style={{ fontSize: '15px', fontWeight: 600, marginBottom: '8px' }}>{alert.message}</div>
@@ -219,7 +249,7 @@ export default function InsiderPage() {
                         <td>{tx.date}</td>
                         <td style={{ fontWeight: 600 }}>{tx.insider}</td>
                         <td style={{ color: 'var(--secondary)', fontSize: '13px' }}>{tx.title}</td>
-                        <td><Badge variant={tx.type_status}>{tx.type}</Badge></td>
+                        <td><Badge variant={statusToVariant(tx.type_status)}>{tx.type}</Badge></td>
                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{tx.shares_display}</td>
                         <td style={{ textAlign: 'right', fontWeight: 600 }}>{tx.value_display}</td>
                       </tr>
