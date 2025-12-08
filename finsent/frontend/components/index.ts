@@ -20,4 +20,6 @@ export {
   PieChart,
   PriceChart,
   SentimentChart,
+  DonutChart,
+  Sparkline,
 } from './Charts';
