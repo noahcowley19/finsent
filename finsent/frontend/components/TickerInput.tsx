@@ -1,115 +1,226 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
-import { cn } from '@/lib/utils';
-import LoadingSpinner from './LoadingSpinner';
+import { useState, useRef, KeyboardEvent } from 'react';
 
 interface TickerInputProps {
-  onSubmit: (ticker: string) => void;
-  loading?: boolean;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
   placeholder?: string;
-  buttonText?: string;
+  disabled?: boolean;
+  loading?: boolean;
   className?: string;
 }
 
 export default function TickerInput({
+  value,
+  onChange,
   onSubmit,
-  loading = false,
   placeholder = 'Enter ticker symbol (e.g., AAPL)',
-  buttonText = 'Analyze',
-  className
+  disabled = false,
+  loading = false,
+  className = '',
 }: TickerInputProps) {
-  const [ticker, setTicker] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = ticker.trim().toUpperCase();
-    if (trimmed) {
-      onSubmit(trimmed);
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !disabled && value.trim()) {
+      onSubmit();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={cn('flex gap-3', className)}>
-      <input
-        type="text"
-        value={ticker}
-        onChange={(e) => setTicker(e.target.value.toUpperCase())}
-        placeholder={placeholder}
-        className="input-field flex-1 uppercase"
-        disabled={loading}
-      />
+    <div className={className} style={{ display: 'flex', gap: '12px' }}>
+      <div style={{ position: 'relative', flex: 1 }}>
+        <div
+          style={{
+            position: 'absolute',
+            left: '16px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+        </div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          onKeyPress={handleKeyPress}
+          placeholder={placeholder}
+          disabled={disabled || loading}
+          className="input-field"
+          style={{ paddingLeft: '48px' }}
+        />
+      </div>
       <button
-        type="submit"
-        disabled={loading || !ticker.trim()}
-        className="btn-primary min-w-[120px] flex items-center justify-center gap-2"
+        onClick={onSubmit}
+        disabled={disabled || loading || !value.trim()}
+        className="btn-primary"
+        style={{ minWidth: '120px' }}
       >
         {loading ? (
-          <>
-            <LoadingSpinner size="sm" className="border-white border-t-transparent" />
-            <span>Loading...</span>
-          </>
+          <span
+            style={{
+              display: 'inline-block',
+              width: '16px',
+              height: '16px',
+              border: '2px solid transparent',
+              borderTopColor: 'currentColor',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
         ) : (
-          buttonText
+          'Analyze'
         )}
       </button>
-    </form>
+    </div>
   );
 }
 
 interface MultiTickerInputProps {
-  onSubmit: (tickers: string[]) => void;
-  loading?: boolean;
+  tickers: string[];
+  onChange: (tickers: string[]) => void;
+  onSubmit: () => void;
+  maxTickers?: number;
   placeholder?: string;
-  buttonText?: string;
+  disabled?: boolean;
+  loading?: boolean;
   className?: string;
 }
 
 export function MultiTickerInput({
+  tickers,
+  onChange,
   onSubmit,
+  maxTickers = 10,
+  placeholder = 'Add ticker',
+  disabled = false,
   loading = false,
-  placeholder = 'Enter tickers separated by commas (e.g., AAPL, MSFT, GOOGL)',
-  buttonText = 'Screen',
-  className
+  className = '',
 }: MultiTickerInputProps) {
   const [input, setInput] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const tickers = input
-      .split(',')
-      .map(t => t.trim().toUpperCase())
-      .filter(t => t.length > 0);
-    
-    if (tickers.length > 0) {
-      onSubmit(tickers);
+  const addTicker = () => {
+    const ticker = input.trim().toUpperCase();
+    if (ticker && !tickers.includes(ticker) && tickers.length < maxTickers) {
+      onChange([...tickers, ticker]);
+      setInput('');
+      inputRef.current?.focus();
+    }
+  };
+
+  const removeTicker = (tickerToRemove: string) => {
+    onChange(tickers.filter((t) => t !== tickerToRemove));
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTicker();
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={cn('flex gap-3', className)}>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value.toUpperCase())}
-        placeholder={placeholder}
-        className="input-field flex-1 uppercase"
-        disabled={loading}
-      />
-      <button
-        type="submit"
-        disabled={loading || !input.trim()}
-        className="btn-primary min-w-[120px] flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <LoadingSpinner size="sm" className="border-white border-t-transparent" />
-            <span>Loading...</span>
-          </>
-        ) : (
-          buttonText
-        )}
-      </button>
-    </form>
+    <div className={className}>
+      {/* Ticker chips */}
+      {tickers.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+          {tickers.map((ticker) => (
+            <div
+              key={ticker}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 10px 6px 14px',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '20px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--accent)',
+              }}
+            >
+              {ticker}
+              <button
+                onClick={() => removeTicker(ticker)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  padding: 0,
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Input row */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value.toUpperCase())}
+            onKeyPress={handleKeyPress}
+            placeholder={tickers.length >= maxTickers ? 'Max tickers reached' : placeholder}
+            disabled={disabled || loading || tickers.length >= maxTickers}
+            className="input-field"
+          />
+        </div>
+        <button
+          onClick={addTicker}
+          disabled={!input.trim() || tickers.length >= maxTickers}
+          className="btn-secondary"
+          style={{ minWidth: '80px' }}
+        >
+          Add
+        </button>
+        <button
+          onClick={onSubmit}
+          disabled={disabled || loading || tickers.length === 0}
+          className="btn-primary"
+          style={{ minWidth: '120px' }}
+        >
+          {loading ? (
+            <span
+              style={{
+                display: 'inline-block',
+                width: '16px',
+                height: '16px',
+                border: '2px solid transparent',
+                borderTopColor: 'currentColor',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }}
+            />
+          ) : (
+            'Analyze'
+          )}
+        </button>
+      </div>
+
+      {/* Counter */}
+      <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+        {tickers.length} / {maxTickers} tickers
+      </div>
+    </div>
   );
 }
