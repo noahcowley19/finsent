@@ -1,81 +1,168 @@
-import { cn } from '@/lib/utils';
+'use client';
+
 import { ReactNode } from 'react';
 
-type MetricStatus = 'positive' | 'negative' | 'neutral' | 'warning';
-
 interface MetricCardProps {
-  label: string;
-  value: string | number;
-  subtitle?: string;
-  status?: MetricStatus;
+  name: string;
+  value: string;
+  status?: 'positive' | 'negative' | 'neutral';
+  description?: string;
+  icon?: ReactNode;
+  compact?: boolean;
   className?: string;
 }
 
-export default function MetricCard({ 
-  label, 
-  value, 
-  subtitle,
-  status,
-  className 
-}: MetricCardProps) {
+export default function MetricCard({ name, value, status = 'neutral', description, icon, compact = false, className = '' }: MetricCardProps) {
+  const statusColors = {
+    positive: 'var(--positive)',
+    negative: 'var(--negative)',
+    neutral: 'var(--text-primary)',
+  };
+
   return (
-    <div className={cn('metric-item', status, className)}>
-      <div className="metric-name">{label}</div>
-      <div className="metric-value">{value}</div>
-      {subtitle && (
-        <div className="text-xs text-secondary mt-1">{subtitle}</div>
-      )}
+    <div
+      className={className}
+      style={{
+        background: 'var(--bg-secondary)',
+        borderRadius: compact ? '12px' : '16px',
+        padding: compact ? '14px' : '20px',
+        position: 'relative',
+        overflow: 'hidden',
+        border: '1px solid var(--border)',
+        transition: 'all 0.3s var(--ease-out-expo)',
+      }}
+    >
+      {/* Status indicator bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: statusColors[status],
+        }}
+      />
+      
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ flex: 1 }}>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              color: 'var(--text-tertiary)',
+              marginBottom: '8px',
+            }}
+          >
+            {name}
+          </div>
+          <div
+            style={{
+              fontSize: compact ? '1.125rem' : '1.375rem',
+              fontWeight: 700,
+              fontFamily: "'JetBrains Mono', monospace",
+              color: statusColors[status],
+            }}
+          >
+            {value}
+          </div>
+          {description && (
+            <div
+              style={{
+                fontSize: '11px',
+                color: 'var(--text-muted)',
+                marginTop: '6px',
+              }}
+            >
+              {description}
+            </div>
+          )}
+        </div>
+        {icon && (
+          <div
+            style={{
+              color: 'var(--text-muted)',
+              opacity: 0.5,
+            }}
+          >
+            {icon}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 interface MetricRowProps {
   label: string;
-  value: string | number | ReactNode;
-  status?: MetricStatus;
-  className?: string;
+  value: string;
+  status?: 'positive' | 'negative' | 'neutral';
+  suffix?: string;
 }
 
-export function MetricRow({ label, value, status, className }: MetricRowProps) {
-  const statusColors: Record<MetricStatus, string> = {
-    positive: 'text-positive',
-    negative: 'text-negative',
-    neutral: 'text-neutral-dark',
-    warning: 'text-warning-dark',
+export function MetricRow({ label, value, status, suffix }: MetricRowProps) {
+  const statusColors = {
+    positive: 'var(--positive)',
+    negative: 'var(--negative)',
+    neutral: 'var(--text-primary)',
   };
 
   return (
-    <div className={cn(
-      'flex justify-between items-center py-3 px-4 bg-background rounded-lg',
-      className
-    )}>
-      <span className="text-sm text-secondary font-medium">{label}</span>
-      <span className={cn(
-        'text-sm font-semibold',
-        status ? statusColors[status] : 'text-primary'
-      )}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 0',
+        borderBottom: '1px solid var(--border)',
+      }}
+    >
+      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{label}</span>
+      <span
+        style={{
+          fontSize: '14px',
+          fontWeight: 600,
+          fontFamily: "'JetBrains Mono', monospace",
+          color: status ? statusColors[status] : 'var(--text-primary)',
+        }}
+      >
         {value}
+        {suffix && <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: '4px' }}>{suffix}</span>}
       </span>
     </div>
   );
 }
 
 interface MetricGridProps {
-  children: ReactNode;
-  cols?: 2 | 3 | 4;
-  className?: string;
+  metrics: Array<{
+    name: string;
+    value: string;
+    status?: 'positive' | 'negative' | 'neutral';
+  }>;
+  columns?: 2 | 3 | 4;
+  compact?: boolean;
 }
 
-export function MetricGrid({ children, cols = 4, className }: MetricGridProps) {
-  const colClasses = {
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-    4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
-  };
-
+export function MetricGrid({ metrics, columns = 4, compact = false }: MetricGridProps) {
   return (
-    <div className={cn('grid gap-4', colClasses[cols], className)}>
-      {children}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gap: compact ? '12px' : '16px',
+      }}
+    >
+      {metrics.map((metric, i) => (
+        <MetricCard
+          key={i}
+          name={metric.name}
+          value={metric.value}
+          status={metric.status}
+          compact={compact}
+        />
+      ))}
     </div>
   );
 }
