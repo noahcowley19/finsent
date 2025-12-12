@@ -217,7 +217,7 @@ export default function PortfolioPage() {
               className="input-field"
             />
           </div>
-          <button onClick={addPosition} className="btn-primary">
+          <button onClick={addPosition} className="btn-primary" disabled={loading}>
             Add
           </button>
         </div>
@@ -453,7 +453,7 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Allocation Section */}
+          {/* Allocation Section - FIXED */}
           <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>Portfolio Allocation</div>
@@ -472,7 +472,6 @@ export default function PortfolioPage() {
             </div>
             <div style={{ height: '350px' }}>
               <DoughnutChart
-                labels={getAllocationData().map(item => (item as { name?: string; ticker?: string }).name || (item as { ticker: string }).ticker || 'Unknown')}
                 data={getAllocationData().map(item => ({
                   label:
                    (item as { name?: string; ticker?: string }).name ||
@@ -480,7 +479,6 @@ export default function PortfolioPage() {
                    'Unknown',
                   value: item.percentage,
                 }))}
-
               />
             </div>
           </div>
