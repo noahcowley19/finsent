@@ -23,6 +23,14 @@ export default function SentimentPage() {
   // Explainer toggles
   const [showScreenerExplainer, setShowScreenerExplainer] = useState(false);
 
+  // Map sentiment to badge variant
+  const sentimentToVariant = (sentiment: string): 'success' | 'danger' | 'default' => {
+    const lower = sentiment.toLowerCase();
+    if (lower === 'positive') return 'success';
+    if (lower === 'negative') return 'danger';
+    return 'default';
+  };
+
   // Load social screener on mount
   useEffect(() => {
     loadScreeningData();
@@ -356,7 +364,7 @@ export default function SentimentPage() {
       {/* News Results */}
       {newsData && (
         <div id="results">
-          {/* Chart and summary - FIXED */}
+          {/* Chart and summary */}
           <div style={{ display: 'flex', gap: '40px', marginBottom: '40px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{ width: '280px', height: '280px' }}>
               <BarChart
@@ -463,9 +471,7 @@ export default function SentimentPage() {
                   </a>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                  <Badge 
-                    variant={article.sentiment.toLowerCase() as 'positive' | 'negative' | 'neutral'}
-                  >
+                  <Badge variant={sentimentToVariant(article.sentiment)}>
                     {article.sentiment}
                   </Badge>
                   <span style={{ fontSize: '14px', color: 'var(--secondary)', fontWeight: 500 }}>
