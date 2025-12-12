@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LoadingOverlay, Badge } from '@/components';
+import { LoadingOverlay, Badge, BarChart } from '@/components';
 import { analyzeSentiment, getSocialScreening } from '@/lib/api';
 import type { SentimentAnalysisResponse, ScreeningResponse, SentimentArticle, ScreeningStock } from '@/lib/types';
 
@@ -489,6 +489,3 @@ export default function SentimentPage() {
     </div>
   );
 }
-
-// Import BarChart at the top - add this missing import
-import { BarChart } from '@/components';
