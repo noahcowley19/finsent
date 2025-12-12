@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LoadingOverlay, Badge, SentimentChart } from '@/components';
+import { LoadingOverlay, Badge } from '@/components';
 import { analyzeSentiment, getSocialScreening } from '@/lib/api';
 import type { SentimentAnalysisResponse, ScreeningResponse, SentimentArticle, ScreeningStock } from '@/lib/types';
 
@@ -356,13 +356,17 @@ export default function SentimentPage() {
       {/* News Results */}
       {newsData && (
         <div id="results">
-          {/* Chart and summary */}
+          {/* Chart and summary - FIXED */}
           <div style={{ display: 'flex', gap: '40px', marginBottom: '40px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{ width: '280px', height: '280px' }}>
-              <SentimentChart
-                positive={newsData.summary.Positive.count}
-                negative={newsData.summary.Negative.count}
-                neutral={newsData.summary.Neutral.count}
+              <BarChart
+                labels={['Positive', 'Negative', 'Neutral']}
+                data={[
+                  newsData.summary.Positive.count,
+                  newsData.summary.Negative.count,
+                  newsData.summary.Neutral.count
+                ]}
+                colors={['#00e5a0', '#ff6b6b', '#64748b']}
               />
             </div>
             <div style={{ display: 'flex', gap: '20px', flex: 1, flexWrap: 'wrap' }}>
@@ -479,3 +483,6 @@ export default function SentimentPage() {
     </div>
   );
 }
+
+// Import BarChart at the top - add this missing import
+import { BarChart } from '@/components';
