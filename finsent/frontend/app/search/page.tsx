@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { LoadingOverlay } from '@/components';
-import UltraAdvancedChart from '@/components/UltraAdvancedChart';
+import Advancedchart from '@/components/Advancedchart';
 import { searchStock, getChartData } from '@/lib/api';
 import type { SearchResponse, ChartResponse } from '@/lib/types';
 
@@ -532,7 +532,7 @@ export default function UltraEnhancedSearchPage() {
                   )}
 
                   {chartDataPoints.length > 0 && (
-                    <UltraAdvancedChart
+                    <Advancedchart
                       data={chartDataPoints}
                       type={chartType}
                       indicators={indicators}
