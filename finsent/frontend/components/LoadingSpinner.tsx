@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface LoadingSpinnerProps {
@@ -52,7 +51,7 @@ export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) 
           justifyContent: 'center',
           boxShadow: '0 8px 32px rgba(0, 212, 170, 0.4)',
         }}>
-          <Image 
+          <img 
             src="/logo.png" 
             alt="Caveray" 
             width={56} 
@@ -60,6 +59,7 @@ export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) 
             style={{ 
               objectFit: 'contain',
               filter: 'brightness(1.2)',
+              display: 'block',
             }}
           />
         </div>
