@@ -44,30 +44,21 @@ export default function Navbar() {
             alignItems: 'center', 
             gap: '10px',
           }}>
-            {/* Logo Image */}
+            {/* Logo SVG */}
             <div style={{
               width: '32px',
               height: '32px',
               borderRadius: '8px',
-              overflow: 'hidden',
               background: 'linear-gradient(135deg, #00d4aa 0%, #00a3ff 100%)',
-              padding: '2px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <img 
-                src="/logo.png" 
-                alt="Caveray" 
-                width={28} 
-                height={28}
-                style={{ 
-                  objectFit: 'contain',
-                  filter: 'brightness(1.1)',
-                  display: 'block',
-                }}
-              />
+              <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
+                <path d="M10 22V14L16 10L22 14V22L16 26L10 22Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
+                <circle cx="16" cy="16" r="3" fill="white" />
+              </svg>
             </div>
             
             {/* Logo Text */}
