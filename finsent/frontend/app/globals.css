@@ -94,7 +94,7 @@
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
-    padding-top: 72px;
+    padding-top: 88px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -113,6 +113,171 @@
 
   code, pre {
     font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* ============================================
+   GLASS-MORPHIC FLOATING NAVBAR
+   ============================================ */
+
+.navbar-glass {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 1400px;
+  height: 64px;
+  z-index: 1000;
+  
+  /* Glass-morphic effect */
+  background: rgba(10, 14, 23, 0.75);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  
+  /* Border and glow */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  
+  /* Shadows */
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  
+  /* Smooth transitions */
+  transition: all 0.4s var(--ease-out-expo);
+}
+
+.navbar-glass:hover {
+  background: rgba(10, 14, 23, 0.85);
+  border-color: rgba(0, 212, 170, 0.2);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.5),
+    0 0 2px rgba(255, 255, 255, 0.15),
+    0 0 60px rgba(0, 212, 170, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Subtle gradient overlay */
+.navbar-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 170, 0.3), transparent);
+  border-radius: 20px 20px 0 0;
+}
+
+.navbar-glass-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.nav-logo-glass {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+.nav-logo-glass:hover {
+  transform: scale(1.05);
+}
+
+.nav-links-glass {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.nav-link-glass {
+  position: relative;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: all 0.3s var(--ease-out-expo);
+  overflow: hidden;
+  letter-spacing: -0.01em;
+}
+
+/* Glass shimmer effect on hover */
+.nav-link-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(0, 163, 255, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 10px;
+}
+
+.nav-link-glass:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.nav-link-glass:hover::before {
+  opacity: 1;
+}
+
+.nav-link-glass.active {
+  color: var(--accent);
+  background: rgba(0, 212, 170, 0.1);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.15);
+}
+
+.nav-link-glass.active::after {
+  content: '';
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  body {
+    padding-top: 80px;
+  }
+
+  .navbar-glass {
+    top: 12px;
+    width: calc(100% - 24px);
+    height: 56px;
+  }
+
+  .navbar-glass-container {
+    padding: 0 16px;
+  }
+
+  .nav-links-glass {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .nav-link-glass {
+    padding: 8px 12px;
+    font-size: 12px;
   }
 }
 
@@ -203,88 +368,6 @@
 
   .container-wide {
     max-width: 1600px;
-  }
-
-  /* ============================================
-     NAVIGATION
-     ============================================ */
-
-  .navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 72px;
-    background: rgba(6, 8, 13, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    z-index: 1000;
-  }
-
-  .nav-logo {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    background: var(--gradient-accent);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 4px;
-  }
-
-  .nav-link {
-    position: relative;
-    padding: 10px 18px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-decoration: none;
-    border-radius: 8px;
-    transition: all 0.3s var(--ease-out-expo);
-    overflow: hidden;
-  }
-
-  .nav-link::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: var(--accent-subtle);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-
-  .nav-link:hover {
-    color: var(--text-primary);
-  }
-
-  .nav-link:hover::before {
-    opacity: 1;
-  }
-
-  .nav-link.active {
-    color: var(--accent);
-  }
-
-  .nav-link.active::after {
-    content: '';
-    position: absolute;
-    bottom: 6px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    background: var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 8px var(--accent-glow);
   }
 
   /* ============================================
@@ -447,7 +530,7 @@
   .feature-icon {
     width: 48px;
     height: 48px;
-    border-radius: 14px;
+    borderRadius: 14px;
     background: var(--accent-subtle);
     border: 1px solid var(--border-accent);
     display: flex;
@@ -958,9 +1041,6 @@
   .footer a:hover {
     color: var(--accent-light);
   }
-   .footer a:hover {
-    color: var(--accent-light);
-  }
 
   /* Footer support link styles */
   .footer-support-link {
@@ -985,9 +1065,6 @@
     box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
   }
 
-  /* ============================================
-     SECTION TITLES
-     ============================================ */
   /* ============================================
      SECTION TITLES
      ============================================ */
@@ -1113,12 +1190,7 @@
 
 @media (max-width: 768px) {
   body {
-    padding-top: 64px;
-  }
-
-  .navbar {
-    height: 64px;
-    padding: 0 20px;
+    padding-top: 80px;
   }
 
   .features-grid {
@@ -1153,7 +1225,7 @@
     font-size: 2rem;
   }
 
-  .nav-link {
+  .nav-link-glass {
     padding: 8px 12px;
     font-size: 12px;
   }
