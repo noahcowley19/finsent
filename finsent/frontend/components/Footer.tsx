@@ -12,39 +12,20 @@ export default function Footer() {
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '8px',
+          gap: '10px',
           marginBottom: '8px',
         }}>
-          <svg 
-            width="24" 
-            height="24" 
-            viewBox="0 0 32 32" 
-            fill="none"
-          >
-            <rect 
-              x="2" 
-              y="2" 
-              width="28" 
-              height="28" 
-              rx="8" 
-              fill="url(#footerLogoGradient)"
-              opacity="0.5"
-            />
-            <path 
-              d="M10 22V14L16 10L22 14V22L16 26L10 22Z" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              strokeLinejoin="round"
-              fill="none"
-              style={{ color: 'var(--text-tertiary)' }}
-            />
-            <defs>
-              <linearGradient id="footerLogoGradient" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#00d4aa" />
-                <stop offset="1" stopColor="#00a3ff" />
-              </linearGradient>
-            </defs>
-          </svg>
+          {/* Logo Image */}
+          <img 
+            src="/logo.png" 
+            alt="Caveray" 
+            style={{
+              width: '28px',
+              height: '28px',
+              objectFit: 'contain',
+              opacity: 0.6,
+            }}
+          />
           <span style={{
             fontSize: '1rem',
             fontWeight: 700,
