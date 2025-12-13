@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -30,10 +31,9 @@ export default function Navbar() {
     <nav 
       className="navbar-glass"
       style={{
-        transform: scrolled ? 'translateY(0)' : 'translateY(0)',
         boxShadow: scrolled 
-          ? '0 8px 32px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1)' 
-          : '0 4px 24px rgba(0, 0, 0, 0.2)',
+          ? '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1), 0 0 40px rgba(0, 212, 170, 0.1)' 
+          : '0 4px 24px rgba(0, 0, 0, 0.3), 0 0 1px rgba(255, 255, 255, 0.1)',
       }}
     >
       <div className="navbar-glass-container">
@@ -44,22 +44,16 @@ export default function Navbar() {
             alignItems: 'center', 
             gap: '10px',
           }}>
-            {/* Logo SVG */}
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #00d4aa 0%, #00a3ff 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <svg width="20" height="20" viewBox="0 0 32 32" fill="none">
-                <path d="M10 22V14L16 10L22 14V22L16 26L10 22Z" stroke="white" strokeWidth="2.5" strokeLinejoin="round" />
-                <circle cx="16" cy="16" r="3" fill="white" />
-              </svg>
-            </div>
+            {/* Logo Image */}
+            <img 
+              src="/logo.png" 
+              alt="Caveray" 
+              style={{
+                width: '32px',
+                height: '32px',
+                objectFit: 'contain',
+              }}
+            />
             
             {/* Logo Text */}
             <span style={{
