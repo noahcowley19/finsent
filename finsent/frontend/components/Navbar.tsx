@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
@@ -56,8 +55,9 @@ export default function Navbar() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              <Image 
+              <img 
                 src="/logo.png" 
                 alt="Caveray" 
                 width={28} 
@@ -65,6 +65,7 @@ export default function Navbar() {
                 style={{ 
                   objectFit: 'contain',
                   filter: 'brightness(1.1)',
+                  display: 'block',
                 }}
               />
             </div>
@@ -78,6 +79,7 @@ export default function Navbar() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
+              whiteSpace: 'nowrap',
             }}>
               Caveray
             </span>
