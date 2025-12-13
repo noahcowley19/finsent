@@ -3,71 +3,187 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { LoadingOverlay } from '@/components';
-import Advancedchart from '@/components/Advancedchart';
+import AdvancedChart from '@/components/AdvancedChart';
 import { searchStock, getChartData } from '@/lib/api';
-import type { SearchResponse, ChartResponse } from '@/lib/types';
+import type { SearchResponse, ChartResponse, FinancialMetric, NewsItem } from '@/lib/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://finsent-backend.onrender.com';
 
-type TimePeriod = '1d' | '5d' | '1m' | '3m' | '6m' | 'ytd' | '1y' | '2y' | '5y' | 'max';
-type ChartType = 'line' | 'candlestick' | 'area' | 'ohlc' | 'heikin-ashi';
-type Indicator = 'sma20' | 'sma50' | 'sma200' | 'ema12' | 'ema26' | 'bb' | 'rsi' | 'macd' | 'vwap';
+type TimePeriod = '1d' | '5d' | '1m' | '3m' | '6m' | 'ytd' | '1y' | '2y' | '5y';
+type ChartType = 'line' | 'candlestick';
 
-interface CompareStock {
-  ticker: string;
-  name: string;
-  price: string;
-  change_percent: number;
-  color: string;
+interface Signal {
+  type: string;
+  status: 'positive' | 'negative' | 'neutral' | 'warning';
+  title: string;
+  description: string;
 }
 
 // Icons
-const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
-const TrendUpIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>;
-const TrendDownIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>;
-const SettingsIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>;
-const CompareIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>;
-const LayersIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
-const PlusIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
-const XIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-const ChevronDownIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>;
-const StarIcon = ({ filled }: { filled?: boolean }) => filled ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-const BellIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
-const DownloadIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
-const RefreshIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
-const ExpandIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>;
+const SearchIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+);
 
-export default function UltraEnhancedSearchPage() {
+const TrendUpIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>
+);
+
+const TrendDownIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6" /><polyline points="17 18 23 18 23 12" /></svg>
+);
+
+const ExternalLinkIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+);
+
+const SettingsIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 1v6m0 6v6m0 0a9 9 0 0 0 9-9 9 9 0 0 0-9-9 9 9 0 0 0-9 9 9 9 0 0 0 9 9z" /><path d="M19.4 15c.7-1.2 1-2.5 1.1-3.9M4.6 9c-.7 1.2-1 2.5-1.1 3.9M9 4.6c1.2-.7 2.5-1 3.9-1.1M15 19.4c-1.2.7-2.5 1-3.9 1.1" /></svg>
+);
+
+const CloseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+);
+
+const CandlestickIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="6" y1="4" x2="6" y2="20" /><rect x="4" y="8" width="4" height="8" /><line x1="12" y1="2" x2="12" y2="22" /><rect x="10" y="10" width="4" height="4" /><line x1="18" y1="6" x2="18" y2="18" /><rect x="16" y="9" width="4" height="6" /></svg>
+);
+
+const LineChartIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+);
+
+const formatPercent = (value: number | null | undefined, showSign = true): string => {
+  if (value === null || value === undefined) return 'N/A';
+  const sign = showSign && value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+};
+
+// Metric Card Component
+function MetricCard({ metric, compact = false }: { metric: FinancialMetric; compact?: boolean }) {
+  return (
+    <div style={{
+      background: 'var(--bg-secondary)',
+      borderRadius: compact ? '12px' : '16px',
+      padding: compact ? '14px' : '20px',
+      position: 'relative',
+      overflow: 'hidden',
+      border: '1px solid var(--border)',
+      transition: 'all 0.3s var(--ease-out-expo)',
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: '3px',
+        background: metric.status === 'positive' ? 'var(--positive)' : 
+                    metric.status === 'negative' ? 'var(--negative)' : 'var(--neutral)',
+      }} />
+      <div style={{
+        fontSize: '11px',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        color: 'var(--text-tertiary)',
+        marginBottom: '8px',
+      }}>
+        {metric.name}
+      </div>
+      <div style={{
+        fontSize: compact ? '1.125rem' : '1.375rem',
+        fontWeight: 700,
+        fontFamily: "'JetBrains Mono', monospace",
+        color: metric.status === 'positive' ? 'var(--positive)' : 
+               metric.status === 'negative' ? 'var(--negative)' : 'var(--text-primary)'
+      }}>
+        {metric.display}
+      </div>
+    </div>
+  );
+}
+
+// Signal Badge
+function SignalBadge({ signal }: { signal: Signal }) {
+  const statusColors: Record<string, { bg: string; color: string; border: string }> = {
+    positive: { bg: 'var(--positive-light)', color: 'var(--positive)', border: 'rgba(0, 229, 160, 0.3)' },
+    negative: { bg: 'var(--negative-light)', color: 'var(--negative)', border: 'rgba(255, 107, 107, 0.3)' },
+    warning: { bg: 'var(--warning-light)', color: 'var(--warning)', border: 'rgba(251, 191, 36, 0.3)' },
+    neutral: { bg: 'var(--neutral-light)', color: 'var(--text-secondary)', border: 'var(--border)' }
+  };
+  const colors = statusColors[signal.status] || statusColors.neutral;
+  
+  return (
+    <div style={{
+      background: colors.bg,
+      border: `1px solid ${colors.border}`,
+      borderRadius: '12px',
+      padding: '12px 16px',
+      flex: '1 1 280px',
+      animation: 'fadeIn 0.5s ease-out',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        <div style={{
+          width: '8px', height: '8px', borderRadius: '50%',
+          background: colors.color, boxShadow: `0 0 8px ${colors.color}`
+        }} />
+        <span style={{ fontSize: '13px', fontWeight: 600, color: colors.color }}>{signal.title}</span>
+      </div>
+      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+        {signal.description}
+      </p>
+    </div>
+  );
+}
+
+// Main Component
+export default function EnhancedSearchPage() {
+  // Search state
   const [loading, setLoading] = useState(false);
+  const [chartLoading, setChartLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<SearchResponse | null>(null);
   const [chartData, setChartData] = useState<ChartResponse | null>(null);
   const [tickerInput, setTickerInput] = useState('');
   const [period, setPeriod] = useState<TimePeriod>('1y');
   
-  const [chartType, setChartType] = useState<ChartType>('candlestick');
-  const [indicators, setIndicators] = useState<Indicator[]>([]);
+  // Chart customization
+  const [chartType, setChartType] = useState<ChartType>('line');
   const [showVolume, setShowVolume] = useState(true);
-  const [chartHeight, setChartHeight] = useState(500);
-  const [chartTheme, setChartTheme] = useState<'dark' | 'light'>('dark');
-  
+  const [showMA, setShowMA] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showIndicators, setShowIndicators] = useState(false);
-  const [showComparison, setShowComparison] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'news' | 'technicals'>('overview');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [fullscreenChart, setFullscreenChart] = useState(false);
+  const [chartHeight, setChartHeight] = useState(400);
   
+  // Watchlist
   const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [compareStocks, setCompareStocks] = useState<CompareStock[]>([]);
-  const [compareInput, setCompareInput] = useState('');
-  const [marketMovers, setMarketMovers] = useState<any>(null);
-  const [sectorData, setSectorData] = useState<any[]>([]);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(60);
+  
+  // UI state
+  const [activeTab, setActiveTab] = useState<'overview' | 'metrics' | 'news'>('overview');
+  const [showAllStats, setShowAllStats] = useState(false);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const refreshTimerRef = useRef<NodeJS.Timeout>();
+
+  // Calculate moving averages
+  const calculateMA = (data: number[], period: number): number[] => {
+    const ma: number[] = [];
+    for (let i = 0; i < data.length; i++) {
+      if (i < period - 1) {
+        ma.push(NaN);
+      } else {
+        const sum = data.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+        ma.push(sum / period);
+      }
+    }
+    return ma;
+  };
+
+  // Load watchlist from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('stock_watchlist');
+    if (saved) setWatchlist(JSON.parse(saved));
+  }, []);
+
+  // Save watchlist
+  useEffect(() => {
+    localStorage.setItem('stock_watchlist', JSON.stringify(watchlist));
+  }, [watchlist]);
 
   const handleSearch = async (ticker?: string) => {
     const searchTicker = ticker || tickerInput.trim().toUpperCase();
@@ -84,6 +200,7 @@ export default function UltraEnhancedSearchPage() {
       ]);
       setData(searchResult);
       setChartData(chart);
+      setActiveTab('overview');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search stock');
       setData(null);
@@ -95,113 +212,34 @@ export default function UltraEnhancedSearchPage() {
   const handlePeriodChange = async (newPeriod: TimePeriod) => {
     setPeriod(newPeriod);
     if (data) {
+      setChartLoading(true);
       try {
         const chart = await getChartData(data.ticker, newPeriod);
         setChartData(chart);
       } catch (err) {
         console.error('Failed to update chart:', err);
+      } finally {
+        setChartLoading(false);
       }
     }
   };
 
-  useEffect(() => {
-    const fetchMarketData = async () => {
-      try {
-        const [movers, sectors] = await Promise.all([
-          fetch(`${API_BASE}/api/search/movers`).then(r => r.json()),
-          fetch(`${API_BASE}/api/search/sector-heatmap`).then(r => r.json())
-        ]);
-        setMarketMovers(movers);
-        setSectorData(sectors.sectors || []);
-      } catch (err) {
-        console.error('Failed to fetch market data');
-      }
-    };
-    fetchMarketData();
-  }, []);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('watchlist_v2');
-    if (saved) setWatchlist(JSON.parse(saved));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('watchlist_v2', JSON.stringify(watchlist));
-  }, [watchlist]);
-
-  useEffect(() => {
-    if (autoRefresh && data) {
-      refreshTimerRef.current = setInterval(() => {
-        handleSearch(data.ticker);
-      }, refreshInterval * 1000);
-    }
-    return () => {
-      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
-    };
-  }, [autoRefresh, refreshInterval, data]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
-        e.preventDefault();
-        inputRef.current?.focus();
-      } else if (e.key === 'Escape') {
-        setShowSettings(false);
-        setShowIndicators(false);
-        setShowComparison(false);
-        setFullscreenChart(false);
-      } else if (e.ctrlKey && e.key === 'f') {
-        e.preventDefault();
-        setFullscreenChart(!fullscreenChart);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullscreenChart]);
-
-  const toggleIndicator = (indicator: Indicator) => {
-    setIndicators(prev => 
-      prev.includes(indicator) 
-        ? prev.filter(i => i !== indicator)
-        : [...prev, indicator]
-    );
-  };
-
-  const toggleWatchlist = (ticker: string) => {
-    setWatchlist(prev => 
-      prev.includes(ticker)
-        ? prev.filter(t => t !== ticker)
-        : [...prev, ticker]
-    );
-  };
-
-  const addCompareStock = async () => {
-    if (!compareInput.trim() || compareStocks.length >= 4) return;
-    const ticker = compareInput.trim().toUpperCase();
-    if (compareStocks.some(s => s.ticker === ticker)) return;
-    
-    try {
-      const result = await searchStock(ticker);
-      setCompareStocks([...compareStocks, {
-        ticker,
-        name: result.overview.name,
-        price: result.overview.price_display,
-        change_percent: result.overview.change_percent || 0,
-        color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-      }]);
-      setCompareInput('');
-    } catch (err) {
-      console.error('Failed to add stock');
+  const addToWatchlist = () => {
+    if (data && !watchlist.includes(data.ticker)) {
+      setWatchlist([...watchlist, data.ticker]);
     }
   };
 
-  const removeCompareStock = (ticker: string) => {
-    setCompareStocks(prev => prev.filter(s => s.ticker !== ticker));
+  const removeFromWatchlist = (ticker: string) => {
+    setWatchlist(watchlist.filter(t => t !== ticker));
   };
 
+  // Prepare chart data for AdvancedChart component
   const prepareChartData = () => {
-    if (!chartData?.data) return [];
+    if (!chartData || !chartData.data) return [];
+    
     const { dates, prices, volumes, highs, lows, opens } = chartData.data;
+    
     return dates.map((date, i) => ({
       date,
       open: opens[i] || prices[i] || 0,
@@ -213,443 +251,517 @@ export default function UltraEnhancedSearchPage() {
   };
 
   const chartDataPoints = prepareChartData();
+  const ma20 = showMA && chartDataPoints.length > 0 ? calculateMA(chartDataPoints.map(d => d.close), 20) : [];
+  const ma50 = showMA && chartDataPoints.length > 0 ? calculateMA(chartDataPoints.map(d => d.close), 50) : [];
+  const ma200 = showMA && chartDataPoints.length > 0 ? calculateMA(chartDataPoints.map(d => d.close), 200) : [];
+
+  // Keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <>
+      {/* Background */}
       <div className="mesh-gradient-bg" />
       <div className="grid-overlay" />
       
       {loading && <LoadingOverlay message="Fetching stock data..." />}
       
-      <div className="container" style={{ 
-        maxWidth: fullscreenChart ? '100%' : '1800px', 
-        position: 'relative', 
-        zIndex: 1,
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-      }}>
-        
-        {!fullscreenChart && (
-          <header style={{ marginBottom: '28px', animation: 'fadeInUp 0.6s ease-out' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-              <div>
-                <h1 style={{ 
-                  fontSize: '2.75rem', 
-                  fontWeight: 900, 
-                  letterSpacing: '-0.04em', 
-                  marginBottom: '6px',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #00d4aa 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  Advanced Stock Analysis
-                </h1>
-                <p style={{ fontSize: '15px', color: 'var(--text-secondary)' }}>
-                  Professional-grade charting with technical indicators & real-time data
-                </p>
-              </div>
-              
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button
-                  onClick={() => setAutoRefresh(!autoRefresh)}
-                  className={autoRefresh ? 'btn-primary' : 'btn-secondary'}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', padding: '10px 18px' }}
-                >
-                  <RefreshIcon />
-                  {autoRefresh ? 'Auto-Refresh ON' : 'Auto-Refresh OFF'}
-                </button>
-              </div>
+      <div className="container" style={{ maxWidth: '1600px', position: 'relative', zIndex: 1 }}>
+        {/* Header */}
+        <header style={{ marginBottom: '32px', animation: 'fadeInUp 0.6s ease-out' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+            <div>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '8px' }}>
+                Stock <span style={{ background: 'var(--gradient-accent)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Search</span>
+              </h1>
+              <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '500px' }}>
+                Advanced stock analysis with interactive charts and real-time data
+              </p>
             </div>
-          </header>
-        )}
-
-        {!fullscreenChart && (
-          <div className="card" style={{ 
-            padding: '24px', 
-            marginBottom: '24px', 
-            animation: 'fadeInUp 0.6s ease-out 0.1s both',
-            border: '1px solid var(--border)',
-            background: 'var(--bg-card)',
-          }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ position: 'relative', flex: '1 1 400px' }}>
-                <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
-                  <SearchIcon />
-                </div>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={tickerInput}
-                  onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  placeholder="Enter ticker symbol (AAPL, TSLA, NVDA...)"
-                  className="input-field"
-                  style={{ paddingLeft: '48px', fontSize: '15px', fontWeight: 500 }}
-                />
-                <kbd style={{ 
-                  position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', 
-                  fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', 
-                  padding: '3px 8px', borderRadius: '6px', border: '1px solid var(--border)', fontFamily: 'monospace',
-                }}>/</kbd>
-              </div>
-              
-              <button onClick={() => handleSearch()} className="btn-primary" disabled={loading} style={{ minWidth: '120px', height: '48px' }}>
-                {loading ? 'Searching...' : 'Search'}
-              </button>
-              
-              <button
-                onClick={() => setShowComparison(!showComparison)}
-                className={showComparison ? 'btn-primary' : 'btn-secondary'}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', height: '48px', padding: '0 20px' }}
-              >
-                <CompareIcon /> Compare
-              </button>
-            </div>
-            
-            {watchlist.length > 0 && (
-              <div style={{ marginTop: '18px', paddingTop: '18px', borderTop: '1px solid var(--border)', animation: 'fadeIn 0.4s' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                  <StarIcon filled />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    Watchlist ({watchlist.length})
-                  </span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {watchlist.map(ticker => (
-                    <button
-                      key={ticker}
-                      onClick={() => handleSearch(ticker)}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 14px',
-                        background: 'linear-gradient(135deg, var(--accent-subtle) 0%, rgba(0, 212, 170, 0.05) 100%)',
-                        borderRadius: '10px', fontSize: '13px', fontWeight: 600, color: 'var(--accent)',
-                        border: '1px solid var(--border-accent)', cursor: 'pointer',
-                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 212, 170, 0.2)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}
-                    >
-                      <span>{ticker}</span>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); toggleWatchlist(ticker); }}
-                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'currentColor', display: 'flex', padding: 0, opacity: 0.6, transition: 'opacity 0.2s' }}
-                        onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                        onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
-                      >
-                        <XIcon />
-                      </button>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {error && <div className="error-message" style={{ marginTop: '16px', animation: 'shake 0.5s' }}>{error}</div>}
           </div>
-        )}
+        </header>
 
-        {showComparison && !fullscreenChart && (
-          <div className="card" style={{ padding: '20px', marginBottom: '24px', animation: 'slideDown 0.3s ease-out', background: 'var(--bg-elevated)' }}>
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 700 }}>Stock Comparison</h3>
-              <button onClick={() => setShowComparison(false)} className="btn-ghost" style={{ padding: '6px' }}><XIcon /></button>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+        {/* Search Bar */}
+        <div className="card" style={{ padding: '24px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.1s both' }}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                <SearchIcon />
+              </div>
               <input
+                ref={inputRef}
                 type="text"
-                value={compareInput}
-                onChange={(e) => setCompareInput(e.target.value.toUpperCase())}
-                onKeyPress={(e) => e.key === 'Enter' && addCompareStock()}
-                placeholder="Add ticker to compare..."
+                value={tickerInput}
+                onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="Search by ticker symbol (e.g., AAPL, MSFT, GOOGL)"
                 className="input-field"
-                style={{ flex: 1 }}
+                style={{ paddingLeft: '48px', fontSize: '15px' }}
               />
-              <button onClick={addCompareStock} className="btn-primary" disabled={compareStocks.length >= 4}>
-                <PlusIcon /> Add
-              </button>
+              <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-tertiary)', padding: '2px 8px', borderRadius: '4px' }}>
+                Press /
+              </div>
             </div>
-            
-            {compareStocks.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                {compareStocks.map(stock => (
-                  <div key={stock.ticker} style={{ padding: '14px', background: 'var(--bg-card)', borderRadius: '12px', border: `2px solid ${stock.color}`, position: 'relative' }}>
-                    <button onClick={() => removeCompareStock(stock.ticker)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.5 }}>
-                      <XIcon />
-                    </button>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: stock.color, marginBottom: '4px' }}>{stock.ticker}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>{stock.name.slice(0, 30)}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 700, fontFamily: 'JetBrains Mono' }}>{stock.price}</div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: stock.change_percent >= 0 ? 'var(--positive)' : 'var(--negative)' }}>
-                      {stock.change_percent >= 0 ? '+' : ''}{stock.change_percent.toFixed(2)}%
+            <button onClick={() => handleSearch()} className="btn-primary" disabled={loading} style={{ minWidth: '120px' }}>
+              Search
+            </button>
+          </div>
+          
+          {/* Watchlist */}
+          {watchlist.length > 0 && (
+            <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', animation: 'fadeIn 0.4s ease-out' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Watchlist:</span>
+              {watchlist.map(t => (
+                <div 
+                  key={t}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    background: 'var(--accent-subtle)',
+                    borderRadius: '20px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: 'var(--accent)',
+                    border: '1px solid var(--border-accent)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--accent)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--accent-subtle)'}
+                >
+                  <span onClick={() => handleSearch(t)}>{t}</span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); removeFromWatchlist(t); }}
+                    style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      color: 'currentColor', display: 'flex', padding: 0,
+                    }}
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {error && <div className="error-message" style={{ marginTop: '16px' }}>{error}</div>}
+        </div>
+
+        {/* Main Content */}
+        <div>
+          {data ? (
+            <>
+              {/* Stock Header */}
+              <div className="card" style={{ padding: '28px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.2s both' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '20px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{data.overview.name}</h2>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)', background: 'var(--accent-subtle)', padding: '4px 12px', borderRadius: '8px' }}>{data.overview.ticker}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{data.overview.exchange}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '13px', color: 'var(--text-tertiary)' }}>
+                      <span style={{ background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '6px' }}>{data.overview.sector}</span>
+                      <span style={{ background: 'var(--bg-secondary)', padding: '4px 10px', borderRadius: '6px' }}>{data.overview.industry}</span>
                     </div>
                   </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.02em' }}>{data.overview.price_display}</div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                      <span style={{ 
+                        padding: '6px 14px', borderRadius: '8px', fontSize: '14px', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        background: data.overview.change_status === 'positive' ? 'var(--positive-light)' : 'var(--negative-light)',
+                        color: data.overview.change_status === 'positive' ? 'var(--positive)' : 'var(--negative)'
+                      }}>
+                        {data.overview.change_status === 'positive' ? <TrendUpIcon /> : <TrendDownIcon />}
+                        {data.overview.change_display} ({data.overview.change_percent_display})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Quick Actions */}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+                  <button onClick={addToWatchlist} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px' }} disabled={watchlist.includes(data.ticker)}>
+                    {watchlist.includes(data.ticker) ? '✓ In Watchlist' : '+ Add to Watchlist'}
+                  </button>
+                  <Link href={`/sentiment?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px', textDecoration: 'none' }}>
+                    Analyze Sentiment
+                  </Link>
+                  <Link href={`/financials?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px', textDecoration: 'none' }}>
+                    Deep Financials
+                  </Link>
+                  <Link href={`/insider?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '8px 16px', textDecoration: 'none' }}>
+                    Insider Activity
+                  </Link>
+                </div>
+              </div>
+
+              {/* Signals */}
+              {data.signals && (data.signals as Signal[]).length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+                  {(data.signals as Signal[]).map((signal, i) => <SignalBadge key={i} signal={signal} />)}
+                </div>
+              )}
+
+              {/* Tab Navigation */}
+              <div style={{ display: 'flex', gap: '4px', marginBottom: '20px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', width: 'fit-content', animation: 'fadeInUp 0.6s ease-out 0.3s both' }}>
+                {(['overview', 'metrics', 'news'] as const).map(tab => (
+                  <button key={tab} onClick={() => setActiveTab(tab)} style={{
+                    padding: '10px 20px', fontSize: '13px', fontWeight: 600, border: 'none', borderRadius: '8px', cursor: 'pointer',
+                    background: activeTab === tab ? 'var(--bg-elevated)' : 'transparent',
+                    color: activeTab === tab ? 'var(--accent)' : 'var(--text-tertiary)',
+                    transition: 'all 0.2s ease'
+                  }}>
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: fullscreenChart ? '1fr' : (sidebarCollapsed ? '1fr 60px' : '1fr 340px'), gap: '24px', transition: 'grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-          <div>
-            {data ? (
-              <>
-                {!fullscreenChart && (
-                  <div className="card" style={{ padding: '28px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.2s both', background: 'var(--bg-card)', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: data.overview.change_status === 'positive' ? 'linear-gradient(90deg, var(--positive), #00ff9d)' : 'linear-gradient(90deg, var(--negative), #ff4757)', animation: 'shimmer 2s infinite' }} />
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
-                          <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.03em', margin: 0 }}>{data.overview.name}</h2>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-subtle)', padding: '6px 14px', borderRadius: '10px', border: '1px solid var(--border-accent)' }}>{data.overview.ticker}</span>
-                          <button onClick={() => toggleWatchlist(data.ticker)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: watchlist.includes(data.ticker) ? '#fbbf24' : 'var(--text-muted)', transition: 'all 0.2s', display: 'flex', padding: '6px' }}>
-                            <StarIcon filled={watchlist.includes(data.ticker)} />
+              {/* Overview Tab */}
+              {activeTab === 'overview' && (
+                <>
+                  {/* Advanced Chart */}
+                  <div className="card" style={{ padding: '24px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
+                    {/* Chart Controls */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Interactive Price Chart
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {/* Chart Type Toggle */}
+                        <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+                          <button
+                            onClick={() => setChartType('line')}
+                            style={{
+                              padding: '6px 12px',
+                              background: chartType === 'line' ? 'var(--accent-subtle)' : 'transparent',
+                              border: chartType === 'line' ? '1px solid var(--border-accent)' : 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              color: chartType === 'line' ? 'var(--accent)' : 'var(--text-muted)',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            <LineChartIcon />
+                            Line
+                          </button>
+                          <button
+                            onClick={() => setChartType('candlestick')}
+                            style={{
+                              padding: '6px 12px',
+                              background: chartType === 'candlestick' ? 'var(--accent-subtle)' : 'transparent',
+                              border: chartType === 'candlestick' ? '1px solid var(--border-accent)' : 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              color: chartType === 'candlestick' ? 'var(--accent)' : 'var(--text-muted)',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            <CandlestickIcon />
+                            Candles
                           </button>
                         </div>
                         
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '13px' }}>
-                          <span style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '8px', color: 'var(--text-secondary)', fontWeight: 500 }}>{data.overview.exchange}</span>
-                          <span style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '8px', color: 'var(--text-secondary)', fontWeight: 500 }}>{data.overview.sector}</span>
-                          <span style={{ background: 'var(--bg-secondary)', padding: '6px 12px', borderRadius: '8px', color: 'var(--text-secondary)', fontWeight: 500 }}>{data.overview.industry}</span>
+                        {/* Settings Button */}
+                        <button
+                          onClick={() => setShowSettings(!showSettings)}
+                          style={{
+                            padding: '6px 12px',
+                            background: showSettings ? 'var(--accent-subtle)' : 'var(--bg-secondary)',
+                            border: `1px solid ${showSettings ? 'var(--border-accent)' : 'var(--border)'}`,
+                            borderRadius: '10px',
+                            cursor: 'pointer',
+                            color: showSettings ? 'var(--accent)' : 'var(--text-muted)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <SettingsIcon />
+                          Settings
+                        </button>
+                        
+                        {/* Period Tabs */}
+                        <div className="period-tabs">
+                          {(['1d', '5d', '1m', '3m', '6m', 'ytd', '1y', '5y'] as TimePeriod[]).map(p => (
+                            <button key={p} onClick={() => handlePeriodChange(p)} className={`period-tab ${period === p ? 'active' : ''}`}>{p.toUpperCase()}</button>
+                          ))}
                         </div>
                       </div>
-                      
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '3rem', fontWeight: 900, fontFamily: 'JetBrains Mono, monospace', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '8px' }}>{data.overview.price_display}</div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', fontSize: '15px', fontWeight: 700, background: data.overview.change_status === 'positive' ? 'var(--positive-light)' : 'var(--negative-light)', color: data.overview.change_status === 'positive' ? 'var(--positive)' : 'var(--negative)' }}>
-                          {data.overview.change_status === 'positive' ? <TrendUpIcon /> : <TrendDownIcon />}
-                          {data.overview.change_display} ({data.overview.change_percent_display})
-                        </div>
-                      </div>
                     </div>
-                    
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
-                      <Link href={`/sentiment?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '10px 18px', textDecoration: 'none' }}>📊 Sentiment Analysis</Link>
-                      <Link href={`/financials?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '10px 18px', textDecoration: 'none' }}>💰 Financial Reports</Link>
-                      <Link href={`/insider?ticker=${data.ticker}`} className="btn-secondary" style={{ fontSize: '13px', padding: '10px 18px', textDecoration: 'none' }}>👥 Insider Trading</Link>
-                      <button className="btn-secondary" style={{ fontSize: '13px', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}><BellIcon /> Set Alert</button>
-                    </div>
-                  </div>
-                )}
 
-                <div className="card" style={{ padding: fullscreenChart ? '32px' : '24px', marginBottom: '24px', animation: fullscreenChart ? 'none' : 'fadeInUp 0.6s ease-out 0.3s both', background: 'var(--bg-card)', border: '1px solid var(--border)', position: fullscreenChart ? 'fixed' : 'relative', top: fullscreenChart ? 0 : 'auto', left: fullscreenChart ? 0 : 'auto', right: fullscreenChart ? 0 : 'auto', bottom: fullscreenChart ? 0 : 'auto', zIndex: fullscreenChart ? 9999 : 'auto', height: fullscreenChart ? '100vh' : 'auto', width: fullscreenChart ? '100vw' : 'auto' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <LayersIcon /> Advanced Chart
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                        {(['candlestick', 'line', 'area', 'ohlc', 'heikin-ashi'] as ChartType[]).map(type => (
-                          <button key={type} onClick={() => setChartType(type)} style={{ padding: '7px 14px', background: chartType === type ? 'var(--accent-subtle)' : 'transparent', border: chartType === type ? '1px solid var(--border-accent)' : 'none', borderRadius: '8px', cursor: 'pointer', color: chartType === type ? 'var(--accent)' : 'var(--text-muted)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s', textTransform: 'capitalize' }}>
-                            {type === 'heikin-ashi' ? 'H-Ashi' : type}
-                          </button>
-                        ))}
-                      </div>
-                      
-                      <button onClick={() => setShowIndicators(!showIndicators)} className={showIndicators ? 'btn-primary' : 'btn-secondary'} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '8px 14px' }}>
-                        <LayersIcon /> Indicators ({indicators.length})
-                      </button>
-                      
-                      <button onClick={() => setShowSettings(!showSettings)} className={showSettings ? 'btn-primary' : 'btn-secondary'} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '8px 14px' }}>
-                        <SettingsIcon /> Settings
-                      </button>
-                      
-                      <button onClick={() => setFullscreenChart(!fullscreenChart)} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '8px 14px' }}>
-                        <ExpandIcon />
-                      </button>
-                      
-                      <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', padding: '8px 14px' }}>
-                        <DownloadIcon />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', background: 'var(--bg-secondary)', padding: '4px', borderRadius: '12px', width: 'fit-content' }}>
-                    {(['1d', '5d', '1m', '3m', '6m', 'ytd', '1y', '2y', '5y', 'max'] as TimePeriod[]).map(p => (
-                      <button key={p} onClick={() => handlePeriodChange(p)} style={{ padding: '8px 16px', background: period === p ? 'var(--accent-subtle)' : 'transparent', border: period === p ? '1px solid var(--border-accent)' : 'none', borderRadius: '8px', cursor: 'pointer', color: period === p ? 'var(--accent)' : 'var(--text-muted)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', transition: 'all 0.2s' }}>
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-
-                  {showIndicators && (
-                    <div style={{ marginBottom: '20px', padding: '20px', background: 'var(--bg-elevated)', borderRadius: '16px', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '14px' }}>Technical Indicators</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '10px' }}>
-                        {[
-                          { id: 'sma20' as Indicator, label: 'SMA 20', color: '#fbbf24' },
-                          { id: 'sma50' as Indicator, label: 'SMA 50', color: '#3b82f6' },
-                          { id: 'sma200' as Indicator, label: 'SMA 200', color: '#a855f7' },
-                          { id: 'ema12' as Indicator, label: 'EMA 12', color: '#22d3ee' },
-                          { id: 'ema26' as Indicator, label: 'EMA 26', color: '#f472b6' },
-                          { id: 'bb' as Indicator, label: 'Bollinger Bands', color: '#8b5cf6' },
-                          { id: 'vwap' as Indicator, label: 'VWAP', color: '#10b981' },
-                          { id: 'rsi' as Indicator, label: 'RSI', color: '#f59e0b' },
-                          { id: 'macd' as Indicator, label: 'MACD', color: '#3b82f6' },
-                        ].map(ind => (
-                          <button key={ind.id} onClick={() => toggleIndicator(ind.id)} style={{ padding: '10px 14px', background: indicators.includes(ind.id) ? `${ind.color}22` : 'var(--bg-secondary)', border: `2px solid ${indicators.includes(ind.id) ? ind.color : 'var(--border)'}`, borderRadius: '10px', cursor: 'pointer', color: indicators.includes(ind.id) ? ind.color : 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: ind.color, opacity: indicators.includes(ind.id) ? 1 : 0.3 }} />
-                            {ind.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {showSettings && (
-                    <div style={{ marginBottom: '20px', padding: '20px', background: 'var(--bg-elevated)', borderRadius: '16px', border: '1px solid var(--border)', animation: 'slideDown 0.3s ease-out' }}>
-                      <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px' }}>Chart Settings</h4>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
-                        <div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={showVolume} onChange={(e) => setShowVolume(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
-                            <span style={{ fontSize: '13px', fontWeight: 500 }}>Show Volume Bars</span>
+                    {/* Chart Settings Panel */}
+                    {showSettings && (
+                      <div style={{ 
+                        marginBottom: '16px', 
+                        padding: '16px', 
+                        background: 'var(--bg-secondary)', 
+                        borderRadius: '12px',
+                        border: '1px solid var(--border)',
+                        animation: 'fadeIn 0.3s ease-out'
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={showVolume}
+                              onChange={(e) => setShowVolume(e.target.checked)}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '13px', fontWeight: 500 }}>Show Volume</span>
                           </label>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block', fontWeight: 600 }}>Chart Height</label>
-                          <input type="range" min="400" max="800" value={chartHeight} onChange={(e) => setChartHeight(parseInt(e.target.value))} style={{ width: '100%' }} />
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>{chartHeight}px</div>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', display: 'block', fontWeight: 600 }}>Auto-Refresh Interval</label>
-                          <select value={refreshInterval} onChange={(e) => setRefreshInterval(parseInt(e.target.value))} style={{ width: '100%', padding: '8px 12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '13px' }}>
-                            <option value={30}>30 seconds</option>
-                            <option value={60}>1 minute</option>
-                            <option value={300}>5 minutes</option>
-                            <option value={600}>10 minutes</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {chartDataPoints.length > 0 && (
-                    <Advancedchart
-                      data={chartDataPoints}
-                      type={chartType}
-                      indicators={indicators}
-                      height={fullscreenChart ? window.innerHeight - 200 : chartHeight}
-                      theme={chartTheme}
-                      showVolume={showVolume}
-                      enableDrawing={true}
-                    />
-                  )}
-                  
-                  <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <span>💡 Scroll to zoom • Drag to pan • Hover for details</span>
-                    <span style={{ fontFamily: 'JetBrains Mono' }}>Data points: {chartDataPoints.length}</span>
-                  </div>
-                </div>
-
-                {!fullscreenChart && (
-                  <div className="card" style={{ padding: '20px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '14px' }}>52-Week Range</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono', color: 'var(--negative)' }}>{data.overview.fifty_two_low_display}</span>
-                      <div style={{ flex: 1, height: '10px', background: 'var(--bg-secondary)', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${data.overview.range_position || 50}%`, background: 'linear-gradient(90deg, var(--negative) 0%, var(--warning) 50%, var(--positive) 100%)', borderRadius: '6px', transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' }} />
-                        <div style={{ position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)', left: `${data.overview.range_position || 50}%`, width: '16px', height: '16px', background: 'var(--text-primary)', borderRadius: '50%', border: '3px solid var(--bg-primary)', boxShadow: '0 0 12px rgba(0, 212, 170, 0.5)' }} />
-                      </div>
-                      <span style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'JetBrains Mono', color: 'var(--positive)' }}>{data.overview.fifty_two_high_display}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                      Current: {data.overview.range_position?.toFixed(1)}% of 52-week range
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              !fullscreenChart && (
-                <div className="card" style={{ padding: '80px 40px', textAlign: 'center', animation: 'fadeInUp 0.6s ease-out 0.2s both' }}>
-                  <div style={{ fontSize: '5rem', marginBottom: '20px', opacity: 0.2 }}>📈</div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '12px' }}>Start Your Analysis</h3>
-                  <p style={{ fontSize: '15px', color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
-                    Enter a ticker symbol above to unlock professional-grade charting with advanced technical indicators and real-time market data.
-                  </p>
-                </div>
-              )
-            )}
-          </div>
-
-          {!fullscreenChart && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
-              {!sidebarCollapsed && marketMovers && (
-                <>
-                  <div className="card" style={{ padding: '20px', animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>📊 Market Movers</h3>
-                    {marketMovers.gainers?.slice(0, 5).map((stock: any, i: number) => (
-                      <button key={i} onClick={() => handleSearch(stock.ticker)} style={{ width: '100%', padding: '10px', marginBottom: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; e.currentTarget.style.transform = 'translateX(4px)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-secondary)'; e.currentTarget.style.transform = 'translateX(0)'; }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={showMA}
+                              onChange={(e) => setShowMA(e.target.checked)}
+                              style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '13px', fontWeight: 500 }}>Show Moving Averages</span>
+                          </label>
                           <div>
-                            <div style={{ fontSize: '13px', fontWeight: 700 }}>{stock.ticker}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{stock.price_display}</div>
+                            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                              Chart Height
+                            </label>
+                            <input
+                              type="range"
+                              min="300"
+                              max="600"
+                              value={chartHeight}
+                              onChange={(e) => setChartHeight(parseInt(e.target.value))}
+                              style={{ width: '100%' }}
+                            />
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{chartHeight}px</div>
                           </div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: stock.change_status === 'positive' ? 'var(--positive)' : 'var(--negative)' }}>{stock.change_display}</div>
                         </div>
-                      </button>
-                    ))}
+                        
+                        {showMA && (
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'flex', gap: '16px', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ width: '20px', height: '2px', background: '#fbbf24' }} />
+                              <span>MA20</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ width: '20px', height: '2px', background: '#3b82f6' }} />
+                              <span>MA50</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div style={{ width: '20px', height: '2px', background: '#a855f7' }} />
+                              <span>MA200</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Chart */}
+                    <div style={{ position: 'relative' }}>
+                      {chartLoading && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,8,13,0.8)', zIndex: 10, borderRadius: '12px' }}>
+                          <div className="spinner" />
+                        </div>
+                      )}
+                      {chartDataPoints.length > 0 && (
+                        <AdvancedChart
+                          data={chartDataPoints}
+                          type={chartType}
+                          showVolume={showVolume}
+                          showMA={showMA}
+                          ma20={ma20}
+                          ma50={ma50}
+                          ma200={ma200}
+                          height={chartHeight}
+                        />
+                      )}
+                    </div>
+                    
+                    {chartData?.data.period_change_percent !== undefined && (
+                      <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>
+                          Period return: <span style={{ fontWeight: 600, color: (chartData.data.period_change_percent || 0) >= 0 ? 'var(--positive)' : 'var(--negative)' }}>{formatPercent(chartData.data.period_change_percent)}</span>
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          Scroll to zoom • Drag to pan • Hover for details
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  
-                  {sectorData.length > 0 && (
-                    <div className="card" style={{ padding: '20px', animation: 'fadeInUp 0.6s ease-out 0.5s both' }}>
-                      <h3 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>🎯 Sector Performance</h3>
-                      {sectorData.slice(0, 8).map((sector: any, i: number) => (
-                        <div key={i} style={{ marginBottom: '12px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: 500 }}>{sector.sector}</span>
-                            <span style={{ fontSize: '12px', fontWeight: 700, color: sector.status === 'positive' ? 'var(--positive)' : 'var(--negative)' }}>
-                              {sector.change_percent >= 0 ? '+' : ''}{sector.change_percent.toFixed(2)}%
-                            </span>
-                          </div>
-                          <div style={{ height: '4px', background: 'var(--bg-secondary)', borderRadius: '2px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${Math.min(100, Math.abs(sector.change_percent) * 20)}%`, background: sector.status === 'positive' ? 'var(--positive)' : 'var(--negative)', borderRadius: '2px', transition: 'width 0.8s ease-out' }} />
-                          </div>
+
+                  {/* 52-Week Range */}
+                  <div className="card" style={{ padding: '20px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.5s both' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '12px' }}>52-Week Range</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{data.overview.fifty_two_low_display}</span>
+                      <div style={{ flex: 1, height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${data.overview.range_position || 50}%`, background: 'linear-gradient(90deg, var(--negative), var(--warning), var(--positive))', borderRadius: '4px', transition: 'width 0.8s ease-out' }} />
+                        <div style={{ position: 'absolute', top: '50%', transform: 'translate(-50%, -50%)', left: `${data.overview.range_position || 50}%`, width: '14px', height: '14px', background: 'var(--text-primary)', borderRadius: '50%', border: '2px solid var(--bg-primary)', boxShadow: 'var(--shadow-md)' }} />
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{data.overview.fifty_two_high_display}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span>Low</span>
+                      <span>Current: {data.overview.range_position?.toFixed(0)}% of range</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+
+                  {/* Key Stats */}
+                  <div className="card" style={{ padding: '24px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.6s both' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Key Statistics</div>
+                      <button onClick={() => setShowAllStats(!showAllStats)} style={{ fontSize: '12px', color: 'var(--accent)', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
+                        {showAllStats ? 'Show Less' : 'Show All'}
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1px', background: 'var(--border)' }}>
+                      {(showAllStats ? data.key_stats : data.key_stats.slice(0, 12)).map((stat, i) => (
+                        <div key={i} style={{ padding: '14px', background: 'var(--bg-card)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>{stat.label}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 600, fontFamily: "'JetBrains Mono', monospace" }}>{stat.value}</div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+
+                  {/* Analyst Ratings */}
+                  {data.analyst.has_data && (
+                    <div className="card" style={{ padding: '24px', marginBottom: '24px', animation: 'fadeInUp 0.6s ease-out 0.7s both' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>Analyst Ratings</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div>
+                          <div style={{ marginBottom: '16px' }}>
+                            <span style={{ 
+                              display: 'inline-block', padding: '8px 20px', borderRadius: '10px', fontSize: '16px', fontWeight: 700,
+                              background: data.analyst.recommendation_status === 'positive' ? 'var(--positive-light)' : data.analyst.recommendation_status === 'negative' ? 'var(--negative-light)' : 'var(--neutral-light)',
+                              color: data.analyst.recommendation_status === 'positive' ? 'var(--positive)' : data.analyst.recommendation_status === 'negative' ? 'var(--negative)' : 'var(--text-secondary)'
+                            }}>
+                              {data.analyst.recommendation_display}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{data.analyst.num_analysts_display} analysts</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Price Target</div>
+                          <div style={{ fontSize: '1.75rem', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{data.analyst.target_mean_display}</div>
+                          <div style={{ fontSize: '13px', marginTop: '4px', color: data.analyst.upside_status === 'positive' ? 'var(--positive)' : 'var(--negative)' }}>
+                            {data.analyst.upside_display} upside
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                            Range: {data.analyst.target_low_display} - {data.analyst.target_high_display}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
               )}
-              
-              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ padding: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: '12px', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s' }}>
-                <ChevronDownIcon />
-              </button>
+
+              {/* Metrics Tab */}
+              {activeTab === 'metrics' && (
+                <>
+                  <div className="card" style={{ padding: '24px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '16px' }}>Valuation</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {data.valuation.map((m, i) => <MetricCard key={i} metric={m} compact />)}
+                    </div>
+                  </div>
+                  <div className="card" style={{ padding: '24px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.5s both' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '16px' }}>Profitability</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {data.profitability.map((m, i) => <MetricCard key={i} metric={m} compact />)}
+                    </div>
+                  </div>
+                  <div className="card" style={{ padding: '24px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.6s both' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '16px' }}>Financial Health</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {data.financial_health.map((m, i) => <MetricCard key={i} metric={m} compact />)}
+                    </div>
+                  </div>
+                  <div className="card" style={{ padding: '24px', marginBottom: '20px', animation: 'fadeInUp 0.6s ease-out 0.7s both' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '16px' }}>Growth</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      {data.growth.map((m, i) => <MetricCard key={i} metric={m} compact />)}
+                    </div>
+                  </div>
+                  {data.dividend.has_dividend && (
+                    <div className="card" style={{ padding: '24px', animation: 'fadeInUp 0.6s ease-out 0.8s both' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: '16px' }}>Dividend</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '16px' }}>
+                        <div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Yield</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.dividend.yield_display}</div></div>
+                        <div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Annual Rate</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.dividend.rate_display}</div></div>
+                        <div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Payout Ratio</div><div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{data.dividend.payout_ratio_display}</div></div>
+                        <div><div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Ex-Date</div><div style={{ fontSize: '1rem', fontWeight: 600 }}>{data.dividend.ex_date}</div></div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* News Tab */}
+              {activeTab === 'news' && (
+                <div className="card" style={{ padding: '24px', animation: 'fadeInUp 0.6s ease-out 0.4s both' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '20px' }}>Recent News</div>
+                  {data.news && data.news.length > 0 ? (
+                    data.news.map((news: NewsItem, i: number) => (
+                      <a key={i} href={news.link} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '16px 0', borderBottom: i < data.news.length - 1 ? '1px solid var(--border)' : 'none', textDecoration: 'none', transition: 'all 0.2s ease' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5, marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                          {news.title}
+                          <ExternalLinkIcon />
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                          <span style={{ fontWeight: 500 }}>{news.source}</span>
+                          <span>{news.published_relative}</span>
+                        </div>
+                      </a>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No recent news found</div>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* Discovery Mode */
+            <div className="card" style={{ padding: '32px', textAlign: 'center', animation: 'fadeInUp 0.6s ease-out 0.2s both' }}>
+              <div style={{ fontSize: '4rem', marginBottom: '16px', opacity: 0.3 }}>📈</div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>Search for a Stock</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
+                Enter a ticker symbol above to view comprehensive analysis with interactive charts and real-time data
+              </p>
             </div>
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-10px); }
-          75% { transform: translateX(10px); }
-        }
-      `}</style>
     </>
   );
 }
