@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface LoadingSpinnerProps {
@@ -39,35 +40,29 @@ export function LoadingOverlay({ message = 'Loading...' }: LoadingOverlayProps) 
           animation: 'pulse 2s ease-in-out infinite',
         }}
       >
-        <svg 
-          width="56" 
-          height="56" 
-          viewBox="0 0 32 32" 
-          fill="none"
-        >
-          <rect 
-            x="2" 
-            y="2" 
-            width="28" 
-            height="28" 
-            rx="8" 
-            fill="url(#loadingLogoGradient)"
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, #00d4aa 0%, #00a3ff 100%)',
+          padding: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 8px 32px rgba(0, 212, 170, 0.4)',
+        }}>
+          <Image 
+            src="/logo.png" 
+            alt="Caveray" 
+            width={56} 
+            height={56}
+            style={{ 
+              objectFit: 'contain',
+              filter: 'brightness(1.2)',
+            }}
           />
-          <path 
-            d="M10 22V14L16 10L22 14V22L16 26L10 22Z" 
-            stroke="white" 
-            strokeWidth="2" 
-            strokeLinejoin="round"
-            fill="none"
-          />
-          <circle cx="16" cy="16" r="3" fill="white" />
-          <defs>
-            <linearGradient id="loadingLogoGradient" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#00d4aa" />
-              <stop offset="1" stopColor="#00a3ff" />
-            </linearGradient>
-          </defs>
-        </svg>
+        </div>
       </div>
       
       {/* Spinner */}
