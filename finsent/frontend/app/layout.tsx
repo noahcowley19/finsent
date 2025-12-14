@@ -4,13 +4,13 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Caveray | Financial Intelligence Platform',
-  description: 'Professional-grade financial analysis tools combining real-time sentiment tracking, academic scoring models, and insider activity monitoring.',
+  title: 'Caveray Investing',
+  description: 'Awesome professional-grade financial analysis tools.',
   keywords: ['stock analysis', 'sentiment analysis', 'financial intelligence', 'insider trading', 'portfolio tracker'],
-  authors: [{ name: 'Caveray' }],
+  authors: [{ name: 'Noah Cowley' }],
   openGraph: {
-    title: 'Caveray | Financial Intelligence Platform',
-    description: 'Professional-grade financial analysis tools for smart investing.',
+    title: 'Caveray Investing',
+    description: 'Awesome professional-grade financial analysis tools.',
     type: 'website',
   },
 };
