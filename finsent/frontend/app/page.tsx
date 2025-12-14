@@ -57,32 +57,32 @@ const ArrowIcon = () => (
 const features = [
   {
     title: 'Stock Search',
-    description: 'Comprehensive stock analysis with interactive charts, real-time metrics, analyst ratings, and breaking news—all in one place.',
+    description: 'A Comprehensive stock analysis tool with charts, ratings, real-time metrics and financials, and breaking news.',
     href: '/search',
     icon: SearchIcon,
     featured: true,
   },
   {
     title: 'Sentiment Analyzer',
-    description: 'Real-time market sentiment powered by transformer models, aggregating signals from X, StockTwits, and financial news.',
+    description: 'Real-time market sentiment, quantified and aggregated with models trained on financial text.',
     href: '/sentiment',
     icon: SentimentIcon,
   },
   {
     title: 'Financial Analyzer',
-    description: 'Academic scoring models including Piotroski F-Score, Altman Z-Score, and Beneish M-Score for deep fundamental analysis.',
+    description: 'Academic scoring models and color-coded, real-time financial data.',
     href: '/financials',
     icon: FinancialsIcon,
   },
   {
     title: 'Insider Trading',
-    description: 'Track insider buying and selling patterns with cluster detection alerts and institutional ownership changes.',
+    description: 'An insider buying and selling tracker to detect patterns in ownership.',
     href: '/insider',
     icon: InsiderIcon,
   },
   {
     title: 'Portfolio Tracker',
-    description: 'Monitor your investments with CAPM analysis, sector allocation, and projected returns based on your positions.',
+    description: 'Investment monitoring with analysis and forecasting.',
     href: '/portfolio',
     icon: PortfolioIcon,
   },
