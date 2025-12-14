@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LoadingOverlay, Badge, BarChart } from '@/components';
 import { analyzeSentiment, getSocialScreening } from '@/lib/api';
 import type { SentimentAnalysisResponse, ScreeningResponse, SentimentArticle, ScreeningStock } from '@/lib/types';
