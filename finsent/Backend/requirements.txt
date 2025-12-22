@@ -9,8 +9,4 @@ gunicorn
 pandas
 numpy
 flask-limiter
-
-
-
-
-
+scipy
