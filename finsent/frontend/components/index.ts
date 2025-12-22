@@ -11,6 +11,7 @@ export { default as MetricCard, MetricRow, MetricGrid } from './MetricCard';
 export { default as ScoreCard, ScoreBar } from './ScoreCard';
 export { default as DataTable, SimpleTable } from './DataTable';
 export { default as TickerInput, MultiTickerInput } from './TickerInput';
+export { default as AdvancedChart } from './AdvancedChart';
 
 // Charts
 export {
