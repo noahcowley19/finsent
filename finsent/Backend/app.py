@@ -7,6 +7,7 @@ from financials import financials_bp
 from insider import insider_bp
 from search import search_bp
 from portfolio import portfolio_bp
+from quant_lab import quant_lab_bp
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -186,11 +187,13 @@ app.register_blueprint(financials_bp)
 app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(portfolio_bp)
+app.register_blueprint(quant_lab_bp)
 
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
+
 
 
 
