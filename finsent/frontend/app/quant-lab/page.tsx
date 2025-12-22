@@ -926,7 +926,7 @@ export default function QuantLabPage() {
             }}>
               <AlphaGauge score={data.alpha_score.score} status={data.alpha_score.status} />
               <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                <Badge variant={data.alpha_score.status === 'positive' ? 'success' : data.alpha_score.status === 'negative' ? 'error' : 'warning'}>
+                <Badge variant={data.alpha_score.status === 'positive' ? 'success' : data.alpha_score.status === 'negative' ? 'danger' : 'warning'}>
                   {data.alpha_score.status === 'positive' ? 'Bullish' : data.alpha_score.status === 'negative' ? 'Bearish' : 'Neutral'}
                 </Badge>
               </div>
