@@ -487,9 +487,14 @@ export type ZIndexKey = keyof typeof zIndex;
  */
 export function getColor(path: string): string {
   const [palette, shade] = path.split('.');
-  const paletteObj = colors[palette as keyof typeof colors];
+  
+  // Cast to any to allow dynamic property access that bypasses strict shade-overlap checks
+  const paletteObj = (colors as any)[palette];
+
+  if (!paletteObj) return path;
   if (typeof paletteObj === 'string') return paletteObj;
-  return paletteObj?.[shade as keyof typeof paletteObj] || path;
+  
+  return paletteObj[shade] || path;
 }
 
 /**
@@ -536,5 +541,5 @@ export function getResponsiveValue<T>(
     }
   }
   
-  return values.base;
+  return (values as any).base;
 }
