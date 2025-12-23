@@ -9,8 +9,12 @@ import { createPortal } from 'react-dom';
 
 export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
-export interface TooltipProps extends HTMLAttributes<HTMLDivElement> {
-  /** Tooltip content */
+/**
+ * We Omit 'content' because HTMLAttributes defines it as a string (for <meta> tags).
+ * This allows us to redefine it as a ReactNode for our UI component.
+ */
+export interface TooltipProps extends Omit<HTMLAttributes<HTMLDivElement>, 'content'> {
+  /** Tooltip content - accepts text or JSX */
   content: ReactNode;
   /** Position relative to trigger */
   position?: TooltipPosition;
@@ -41,7 +45,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
-  // Calculate position
+  // Calculate position relative to the trigger element
   const updatePosition = () => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
@@ -71,7 +75,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         break;
     }
 
-    // Clamp to viewport
+    // Clamp to viewport to prevent going off-screen
     const padding = 8;
     left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
     top = Math.max(padding, Math.min(top, window.innerHeight - tooltipRect.height - padding));
@@ -79,7 +83,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setCoords({ top, left });
   };
 
-  // Show tooltip
   const show = () => {
     if (disabled) return;
     timeoutRef.current = setTimeout(() => {
@@ -87,7 +90,6 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }, delay);
   };
 
-  // Hide tooltip
   const hide = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -95,7 +97,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setIsVisible(false);
   };
 
-  // Update position when visible
+  // Lifecycle for position updates and event listeners
   useEffect(() => {
     if (isVisible) {
       updatePosition();
@@ -109,7 +111,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
     };
   }, [isVisible]);
 
-  // Cleanup on unmount
+  // Global cleanup
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
@@ -131,13 +133,13 @@ export const Tooltip: React.FC<TooltipProps> = ({
         ref={tooltipRef}
         role="tooltip"
         className={`
-          fixed z-tooltip
+          fixed z-[9999]
           px-3 py-2
           bg-navy-900
-          text-white text-body-sm
+          text-white text-sm
           rounded-md
           shadow-lg
-          animate-fade-in
+          animate-in fade-in duration-200
           pointer-events-none
           max-w-xs
           ${className}
@@ -197,9 +199,9 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({
         type="button"
         className={`
           ${sizeStyles[size]}
-          text-neutral-400
+          text-slate-400
           hover:text-navy-500
-          transition-colors duration-fast
+          transition-colors duration-200
           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 rounded-full
         `}
         aria-label="More information"
