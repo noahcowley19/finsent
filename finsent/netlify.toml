@@ -1,8 +1,13 @@
 [build]
+  # This tells Netlify where the code lives
   base = "finsent/frontend"
+  
+  # This tells Netlify where the build output is
+  # Note: Next.js Runtime v5 handles this best when set simply to .next
+  publish = ".next"
+  
+  # The build command to run inside that base directory
   command = "npm run build"
-  publish = "finsent/frontend/out"
 
-[build.environment]
-  NODE_VERSION = "18"
-  NEXT_PUBLIC_API_URL = "https://finsent-backend.onrender.com"
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
