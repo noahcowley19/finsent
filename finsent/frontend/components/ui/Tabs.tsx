@@ -17,10 +17,11 @@ export interface TabItem {
   badge?: string | number;
 }
 
-export interface TabsProps extends HTMLAttributes<HTMLDivElement> {
+// We Omit 'onChange' from HTMLAttributes to prevent the type conflict
+export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** Currently active tab */
   value: string;
-  /** Called when tab changes */
+  /** Called when tab changes - now safely overrides the native onChange */
   onChange: (value: string) => void;
   /** Tab variant style */
   variant?: TabsVariant;
@@ -135,7 +136,7 @@ export const Tabs: React.FC<TabsProps> = ({
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child) && child.type === Tab) {
               return React.cloneElement(child as React.ReactElement<TabProps>, {
-                className: fullWidth ? 'flex-1' : '',
+                className: `${fullWidth ? 'flex-1' : ''} ${(child.props as any).className || ''}`.trim(),
               });
             }
             return null;
