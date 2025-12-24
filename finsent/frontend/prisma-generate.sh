@@ -4,8 +4,10 @@
 
 # Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
-  echo "⚠️  DATABASE_URL not set. Using placeholder for build."
-  export DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+  echo "⚠️  DATABASE_URL not set. Using placeholder for build-time Prisma generation only."
+  echo "⚠️  THIS IS NOT A REAL DATABASE - Only used to generate Prisma Client during build."
+  # Use an obviously fake placeholder that won't be mistaken for production
+  export DATABASE_URL="postgresql://build-user:build-pass@build-placeholder-host:5432/build-placeholder-db"
 fi
 
 # Generate Prisma Client

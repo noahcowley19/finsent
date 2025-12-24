@@ -21,9 +21,14 @@
 # Redirects and headers
 [[redirects]]
   from = "/api/*"
+  # Backend URL should be configured via NEXT_PUBLIC_API_URL environment variable in the app
+  # This is a fallback proxy redirect. The frontend will use NEXT_PUBLIC_API_URL directly.
   to = "https://finsent-backend.onrender.com/api/:splat"
   status = 200
   force = false
+  
+  # Note: In production, update your backend URL in the Netlify environment variables:
+  # NEXT_PUBLIC_API_URL=https://your-actual-backend.onrender.com
 
 # Security headers
 [[headers]]
