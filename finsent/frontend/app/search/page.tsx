@@ -86,7 +86,7 @@ export default function SearchPage() {
             name: fullData.overview.name,
             exchange: fullData.overview.exchange,
             price: fullData.overview.price || undefined,
-            change: fullData.overview.change_dollar || undefined,
+            change: fullData.overview.change || undefined,
             changePercent: fullData.overview.change_percent || undefined,
             marketCap: fullData.overview.market_cap || undefined,
             volume: fullData.overview.volume || undefined,
