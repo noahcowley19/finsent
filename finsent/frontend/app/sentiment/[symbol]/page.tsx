@@ -137,7 +137,7 @@ export default function SentimentPage() {
     name: stockData.overview.name,
     exchange: stockData.overview.exchange,
     price: stockData.overview.price,
-    change: stockData.overview.change_dollar,
+    change: stockData.overview.change,
     changePercent: stockData.overview.change_percent,
   } : {
     symbol,
