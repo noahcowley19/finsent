@@ -195,8 +195,6 @@ export default function SentimentPage() {
                           {article.title}
                         </a>
                         <div className="flex items-center gap-3 mt-2">
-                          <span className="text-caption text-neutral-500">{article.source}</span>
-                          <span className="text-caption text-neutral-400">•</span>
                           <span className="text-caption text-neutral-500">
                             {new Date(article.published).toLocaleDateString()}
                           </span>
