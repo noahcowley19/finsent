@@ -56,7 +56,7 @@ function PortfolioContent() {
       const metrics = analysis.portfolio_metrics;
       setSummary({
         totalValue: metrics.total_value,
-        totalCost: metrics.total_cost_basis,
+        totalCost: metrics.total_cost,
         dayChange: metrics.total_gain_loss, // Using total gain as day change (API doesn't provide daily change)
         dayChangePercent: metrics.total_gain_loss_percent,
         totalGain: metrics.total_gain_loss,
@@ -65,14 +65,14 @@ function PortfolioContent() {
       });
 
       // Update holdings
-      const holdingsData: Holding[] = analysis.positions.map((pos, index) => {
+      const holdingsData: Holding[] = metrics.positions.map((pos, index) => {
         const localPos = positions.find(p => p.ticker === pos.ticker);
         return {
           id: localPos?.id || `${pos.ticker}-${index}`,
           symbol: pos.ticker,
-          name: pos.ticker, // API doesn't provide name
+          name: pos.name || pos.ticker,
           shares: pos.shares,
-          avgCost: pos.avg_cost,
+          avgCost: pos.cost_basis,
           currentPrice: pos.current_price,
           value: pos.current_value,
           gain: pos.gain_loss,
@@ -85,7 +85,7 @@ function PortfolioContent() {
 
       // Update allocation
       const colors = ['#131D4F', '#954C2E', '#22C55E', '#6366F1', '#F59E0B', '#94A3B8', '#EC4899', '#06B6D4'];
-      const allocation: AllocationItem[] = analysis.positions.map((pos, index) => ({
+      const allocation: AllocationItem[] = metrics.positions.map((pos, index) => ({
         label: pos.ticker,
         value: pos.current_value,
         color: colors[index % colors.length],
@@ -95,14 +95,14 @@ function PortfolioContent() {
       // Generate performance data (simplified - using current value as endpoint)
       const perfData: PerformanceDataPoint[] = [];
       const now = new Date();
-      let value = metrics.total_cost_basis;
+      let value = metrics.total_cost;
       
       for (let i = 90; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
         // Simple linear interpolation from cost basis to current value
         const progress = (90 - i) / 90;
-        value = metrics.total_cost_basis + (metrics.total_gain_loss * progress);
+        value = metrics.total_cost + (metrics.total_gain_loss * progress);
         perfData.push({ date, value });
       }
       setPerformanceData(perfData);

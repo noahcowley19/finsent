@@ -72,10 +72,10 @@ function DashboardContent() {
   // Convert enriched watchlist items to dashboard format
   const watchlistStocks: WatchlistStock[] = enrichedItems.slice(0, 5).map(item => ({
     symbol: item.ticker,
-    name: item.name || item.ticker,
-    price: item.current_price || 0,
-    change: item.change_dollar || 0,
-    changePercent: item.change_percent || 0,
+    name: item.company || item.ticker,
+    price: item.price || 0,
+    change: item.change || 0,
+    changePercent: item.pct_change || 0,
   }));
 
   // Calculate stats (mock for now - ideally from user API)

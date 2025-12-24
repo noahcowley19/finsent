@@ -28,10 +28,10 @@ function WatchlistContent() {
     const convertedItems: WatchlistItem[] = enrichedItems.map((item) => ({
       id: item.id,
       symbol: item.ticker,
-      name: item.name || item.ticker,
-      price: item.current_price || 0,
-      change: item.change_dollar || 0,
-      changePercent: item.change_percent || 0,
+      name: item.company || item.ticker,
+      price: item.price || 0,
+      change: item.change || 0,
+      changePercent: item.pct_change || 0,
       sentiment: item.composite || 0,
       addedAt: new Date(item.dateAdded),
     }));

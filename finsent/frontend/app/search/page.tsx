@@ -61,9 +61,9 @@ export default function SearchPage() {
   // Convert market movers to Stock format for trending
   const trendingStocks: Stock[] = (moversData?.gainers || []).slice(0, 4).map(stock => ({
     symbol: stock.ticker,
-    name: stock.name,
+    name: stock.ticker, // API doesn't provide company name
     exchange: 'NASDAQ',
-    price: stock.current_price,
+    price: stock.price,
     changePercent: stock.change_percent,
   }));
 
@@ -85,11 +85,11 @@ export default function SearchPage() {
             symbol: fullData.overview.ticker,
             name: fullData.overview.name,
             exchange: fullData.overview.exchange,
-            price: fullData.overview.price,
-            change: fullData.overview.change_dollar,
-            changePercent: fullData.overview.change_percent,
-            marketCap: fullData.overview.market_cap,
-            volume: fullData.overview.volume,
+            price: fullData.overview.price || undefined,
+            change: fullData.overview.change_dollar || undefined,
+            changePercent: fullData.overview.change_percent || undefined,
+            marketCap: fullData.overview.market_cap || undefined,
+            volume: fullData.overview.volume || undefined,
           };
           setResults([stockData]);
           
