@@ -22,15 +22,29 @@ import logging
 
 app = Flask(__name__)
 
-CORS(app, origins=[
-    "http://localhost:3000",  # Local development
-    "https://caveray.com",  # Production (update when you deploy)
-], 
-supports_credentials=True)
+# Configure CORS origins from environment variable or use defaults
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
+if allowed_origins_env:
+    # Parse comma-separated origins from environment
+    ALLOWED_ORIGINS = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+else:
+    # Default origins
+    ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # Local development
+        "https://caveray.com",     # Production domain
+        "https://*.netlify.app",   # Netlify deployments
+    ]
+
+logger.info(f"CORS enabled for origins: {ALLOWED_ORIGINS}")
+
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+
+# Configure rate limiter
+rate_limit = os.getenv("RATE_LIMIT", "15 per minute")
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["15 per minute"] 
+    default_limits=[rate_limit] 
 )
 
 

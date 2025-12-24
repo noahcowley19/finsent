@@ -9,5 +9,32 @@
   # The build command to run inside that base directory
   command = "npm run build"
 
+# Environment variables for the build
+# These should also be configured in the Netlify UI for production
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Redirects and headers
+[[redirects]]
+  from = "/api/*"
+  # Backend URL should be configured via NEXT_PUBLIC_API_URL environment variable in the app
+  # This is a fallback proxy redirect. The frontend will use NEXT_PUBLIC_API_URL directly.
+  to = "https://finsent-backend.onrender.com/api/:splat"
+  status = 200
+  force = false
+  
+  # Note: In production, update your backend URL in the Netlify environment variables:
+  # NEXT_PUBLIC_API_URL=https://your-actual-backend.onrender.com
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -107,7 +107,7 @@ export default function FinancialsPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '12px' }}>
               <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Ticker: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.ticker}</span></div>
               <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Sector: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.sector}</span></div>
-              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Price: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.price_display}</span></div>
+              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Price: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.price ? `${data.company.currency}${data.company.price.toFixed(2)}` : 'N/A'}</span></div>
               <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Market Cap: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.market_cap_display}</span></div>
             </div>
             <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>Data as of: {new Date(data.timestamp).toLocaleString()}</div>

@@ -26,17 +26,10 @@
    2. FONT IMPORTS
    ========================================================================== */
 
-/* Fraunces - Display font (Variable) */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap');
+/* NOTE: Google Fonts loaded at runtime (not build time) to avoid network issues
+   during build. System font fallbacks are configured below. */
 
-/* Plus Jakarta Sans - Heading font */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
-
-/* Inter - Body font (Variable) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-
-/* JetBrains Mono - Monospace font */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+/* Fonts will be loaded from Google Fonts CDN when available, otherwise fallback to system fonts */
 
 /* ==========================================================================
    3. DESIGN TOKENS (CSS Custom Properties)

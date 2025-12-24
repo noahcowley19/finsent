@@ -1,12 +1,12 @@
 import type {
   SentimentAnalysisResponse,
-  ScreeningResponse,
+  SocialScreeningResponse,
   FinancialsResponse,
   InsiderResponse,
   SearchResponse,
   ChartResponse,
-  PortfolioResponse,
-  PortfolioPosition,
+  PortfolioAnalyzeResponse,
+  PortfolioPositionInput,
   MarketMoversResponse,
   CompareResponse,
   SectorPerformance,
@@ -47,8 +47,8 @@ class ApiClient {
     });
   }
 
-  async getSocialScreening(tickers?: string[]): Promise<ScreeningResponse> {
-    return this.request<ScreeningResponse>('/api/social-screening', {
+  async getSocialScreening(tickers?: string[]): Promise<SocialScreeningResponse> {
+    return this.request<SocialScreeningResponse>('/api/social-screening', {
       method: 'POST',
       body: JSON.stringify({ tickers }),
     });
@@ -130,11 +130,11 @@ class ApiClient {
 
   // Portfolio endpoints
   async analyzePortfolio(
-    positions: PortfolioPosition[],
+    positions: PortfolioPositionInput[],
     riskFreeRate: number = 0.02,
     marketReturn: number = 0.10
-  ): Promise<PortfolioResponse> {
-    return this.request<PortfolioResponse>('/api/portfolio/analyze', {
+  ): Promise<PortfolioAnalyzeResponse> {
+    return this.request<PortfolioAnalyzeResponse>('/api/portfolio/analyze', {
       method: 'POST',
       body: JSON.stringify({
         positions,
@@ -199,7 +199,7 @@ export const getSectorHeatmap = () =>
   api.getSectorHeatmap();
 
 export const analyzePortfolio = (
-  positions: PortfolioPosition[],
+  positions: PortfolioPositionInput[],
   riskFreeRate?: number,
   marketReturn?: number
 ) => api.analyzePortfolio(positions, riskFreeRate, marketReturn);
