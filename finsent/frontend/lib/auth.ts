@@ -2,8 +2,9 @@
 // NEXTAUTH.JS CONFIGURATION
 // =============================================================================
 // Authentication configuration with credentials and optional OAuth providers
+// Handles build-time environment gracefully when DATABASE_URL is not available
 //
-// Environment variables required:
+// Environment variables required (runtime):
 //   - NEXTAUTH_URL: Your site URL
 //   - NEXTAUTH_SECRET: Random secret for JWT encryption
 //   - DATABASE_URL: PostgreSQL connection string
@@ -49,11 +50,23 @@ declare module 'next-auth/jwt' {
 }
 
 // =============================================================================
+// HELPER: Check if database is available (not a build placeholder)
+// =============================================================================
+
+const isDatabaseAvailable = 
+  process.env.DATABASE_URL && 
+  !process.env.DATABASE_URL.includes('build-placeholder-host');
+
+// =============================================================================
 // AUTH OPTIONS
 // =============================================================================
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
+  // Only use Prisma adapter if database is actually available
+  // During build with placeholder, adapter will be undefined (JWT-only mode)
+  adapter: isDatabaseAvailable 
+    ? (PrismaAdapter(prisma) as NextAuthOptions['adapter'])
+    : undefined,
   
   session: {
     strategy: 'jwt',
@@ -77,6 +90,12 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        // During build time, don't attempt database operations
+        if (!isDatabaseAvailable) {
+          console.warn('Database not available - skipping auth during build');
+          return null;
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password are required');
         }
@@ -128,17 +147,22 @@ export const authOptions: NextAuthOptions = {
         token.tier = session.tier;
       }
 
-      // Refresh user data from database periodically
-      if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id },
-          select: { tier: true, name: true, image: true },
-        });
+      // Refresh user data from database periodically (only if DB is available)
+      if (token.id && isDatabaseAvailable) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { tier: true, name: true, image: true },
+          });
 
-        if (dbUser) {
-          token.tier = dbUser.tier.toLowerCase() as 'free' | 'pro';
-          token.name = dbUser.name;
-          token.picture = dbUser.image;
+          if (dbUser) {
+            token.tier = dbUser.tier.toLowerCase() as 'free' | 'pro';
+            token.name = dbUser.name;
+            token.picture = dbUser.image;
+          }
+        } catch (error) {
+          // If database is unavailable at runtime, log but don't fail
+          console.error('Failed to refresh user data from database:', error);
         }
       }
 

@@ -14,6 +14,14 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+  
+  # Skip Prisma generation during build if needed (can be overridden in Netlify UI)
+  # Set this to "false" in Netlify UI if you have a production DATABASE_URL configured
+  # SKIP_PRISMA_GENERATE = "false"
+  
+  # Prisma will use a placeholder DATABASE_URL during build if not provided
+  # Set a real DATABASE_URL in Netlify UI for runtime database operations
+  # The build will succeed without it, but auth/database features won't work at runtime
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
