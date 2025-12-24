@@ -67,8 +67,8 @@ export default function SentimentPage() {
         
         const entry = articlesByDate.get(dateKey)!;
         // Convert sentiment label to score
-        const sentScore = article.sentiment === 'positive' ? 50 : 
-                         article.sentiment === 'negative' ? -50 : 0;
+        const sentScore = article.sentiment === 'Positive' ? 50 : 
+                 article.sentiment === 'Negative' ? -50 : 0;
         entry.scores.push(sentScore);
         entry.count++;
       });
