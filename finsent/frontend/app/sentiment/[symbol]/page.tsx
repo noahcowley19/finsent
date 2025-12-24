@@ -58,7 +58,7 @@ export default function SentimentPage() {
       const articlesByDate = new Map<string, { scores: number[], count: number }>();
       
       sentimentData.articles.forEach(article => {
-        const date = new Date(article.published_date);
+        const date = new Date(article.published);
         const dateKey = date.toISOString().split('T')[0];
         
         if (!articlesByDate.has(dateKey)) {
@@ -198,7 +198,7 @@ export default function SentimentPage() {
                           <span className="text-caption text-neutral-500">{article.source}</span>
                           <span className="text-caption text-neutral-400">•</span>
                           <span className="text-caption text-neutral-500">
-                            {new Date(article.published_date).toLocaleDateString()}
+                            {new Date(article.published).toLocaleDateString()}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-caption font-medium ${
                             article.sentiment === 'positive' ? 'bg-success-100 text-success-700' :
