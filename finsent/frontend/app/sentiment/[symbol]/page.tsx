@@ -201,8 +201,8 @@ export default function SentimentPage() {
                             {new Date(article.published).toLocaleDateString()}
                           </span>
                           <span className={`px-2 py-0.5 rounded-full text-caption font-medium ${
-                            article.sentiment === 'positive' ? 'bg-success-100 text-success-700' :
-                            article.sentiment === 'negative' ? 'bg-error-100 text-error-700' :
+                            article.sentiment === 'Positive' ? 'bg-success-100 text-success-700' :
+                            article.sentiment === 'Negative' ? 'bg-error-100 text-error-700' :
                             'bg-neutral-100 text-neutral-700'
                           }`}>
                             {article.sentiment}
