@@ -187,7 +187,7 @@ export default function SentimentPage() {
                     {sentimentData.articles.slice(0, 5).map((article, index) => (
                       <div key={index} className="border-b border-border-light pb-4 last:border-0 last:pb-0">
                         <a
-                          href={article.url}
+                          href={article.link}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-body-md font-medium text-navy-900 hover:text-terra-600 transition-colors"
