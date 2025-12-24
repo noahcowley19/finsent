@@ -9,46 +9,15 @@
 //
 // =============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Section, Container } from '@/components/layout';
 import { SearchBar, SearchResults, Stock } from '@/components/search';
+import { useMarketMovers, useQuickSearch, useLazyStockSearch } from '@/lib/hooks';
 
-// Mock data - replace with real API calls
-const trendingStocks: Stock[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', price: 178.72, changePercent: 1.33 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 248.50, changePercent: -2.05 },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 875.28, changePercent: 1.44 },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', price: 378.91, changePercent: 1.10 },
-];
-
-const recentSearches = ['AAPL', 'TSLA', 'GOOGL', 'AMZN'];
-
-// Mock search function - replace with real API
-async function searchStocks(query: string): Promise<Stock[]> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  
-  // Mock results
-  const allStocks: Stock[] = [
-    { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', price: 178.72, change: 2.34, changePercent: 1.33, marketCap: 2800000000000, volume: 52000000 },
-    { symbol: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 248.50, change: -5.20, changePercent: -2.05, marketCap: 790000000000, volume: 98000000 },
-    { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 875.28, change: 12.45, changePercent: 1.44, marketCap: 2150000000000, volume: 45000000 },
-    { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', price: 378.91, change: 4.12, changePercent: 1.10, marketCap: 2810000000000, volume: 22000000 },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', price: 141.80, change: -0.92, changePercent: -0.64, marketCap: 1780000000000, volume: 25000000 },
-    { symbol: 'AMZN', name: 'Amazon.com, Inc.', exchange: 'NASDAQ', price: 178.25, change: 1.89, changePercent: 1.07, marketCap: 1850000000000, volume: 42000000 },
-    { symbol: 'META', name: 'Meta Platforms, Inc.', exchange: 'NASDAQ', price: 505.75, change: 8.32, changePercent: 1.67, marketCap: 1290000000000, volume: 18000000 },
-    { symbol: 'AMD', name: 'Advanced Micro Devices', exchange: 'NASDAQ', price: 164.50, change: -2.15, changePercent: -1.29, marketCap: 266000000000, volume: 55000000 },
-  ];
-
-  const queryLower = query.toLowerCase();
-  return allStocks.filter(
-    (stock) =>
-      stock.symbol.toLowerCase().includes(queryLower) ||
-      stock.name.toLowerCase().includes(queryLower)
-  );
-}
+// Recent searches storage
+const RECENT_SEARCHES_KEY = 'caveray_recent_searches';
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -58,7 +27,45 @@ export default function SearchPage() {
   const [results, setResults] = useState<Stock[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'NVDA']);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  
+  // Use market movers for trending stocks
+  const { data: moversData, loading: moversLoading } = useMarketMovers();
+  const { execute: quickSearchExecute } = useQuickSearch();
+  const { execute: stockSearchExecute } = useLazyStockSearch();
+
+  // Load recent searches from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+      if (stored) {
+        setRecentSearches(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Failed to load recent searches:', e);
+    }
+  }, []);
+
+  // Save recent search
+  const addRecentSearch = (ticker: string) => {
+    const updated = [ticker, ...recentSearches.filter(s => s !== ticker)].slice(0, 10);
+    setRecentSearches(updated);
+    try {
+      localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save recent search:', e);
+    }
+  };
+
+  // Convert market movers to Stock format for trending
+  const trendingStocks: Stock[] = (moversData?.gainers || []).slice(0, 4).map(stock => ({
+    symbol: stock.ticker,
+    name: stock.ticker, // API doesn't provide company name
+    exchange: 'NASDAQ',
+    price: stock.price,
+    changePercent: stock.change_percent,
+  }));
 
   const handleSearch = async (searchQuery: string) => {
     setQuery(searchQuery);
@@ -66,10 +73,36 @@ export default function SearchPage() {
     setHasSearched(true);
 
     try {
-      const data = await searchStocks(searchQuery);
-      setResults(data);
+      // Try quick search first
+      const quickResult = await quickSearchExecute(searchQuery.toUpperCase());
+      
+      if (quickResult?.found) {
+        // If found, get full stock data
+        const fullData = await stockSearchExecute(searchQuery.toUpperCase());
+        
+        if (fullData) {
+          const stockData: Stock = {
+            symbol: fullData.overview.ticker,
+            name: fullData.overview.name,
+            exchange: fullData.overview.exchange,
+            price: fullData.overview.price || undefined,
+            change: fullData.overview.change_dollar || undefined,
+            changePercent: fullData.overview.change_percent || undefined,
+            marketCap: fullData.overview.market_cap || undefined,
+            volume: fullData.overview.volume || undefined,
+          };
+          setResults([stockData]);
+          
+          // Add to recent searches
+          addRecentSearch(searchQuery.toUpperCase());
+        }
+      } else {
+        // Not found
+        setResults([]);
+      }
     } catch (error) {
       console.error('Search error:', error);
+      setResults([]);
     } finally {
       setIsLoading(false);
     }

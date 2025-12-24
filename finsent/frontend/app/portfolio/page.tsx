@@ -9,7 +9,7 @@
 //
 // =============================================================================
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Section, Grid, AuthGuard } from '@/components/layout';
 import {
   PortfolioSummary,
@@ -23,115 +23,91 @@ import type {
   PerformanceDataPoint,
   AllocationItem,
 } from '@/components/portfolio';
-
-// Mock data - replace with real API calls
-const mockSummary: PortfolioSummaryData = {
-  totalValue: 48632.50,
-  totalCost: 42500.00,
-  dayChange: 523.45,
-  dayChangePercent: 1.09,
-  totalGain: 6132.50,
-  totalGainPercent: 14.43,
-  cashBalance: 5240.00,
-};
-
-const mockHoldings: Holding[] = [
-  {
-    id: '1',
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    shares: 50,
-    avgCost: 165.00,
-    currentPrice: 178.72,
-    value: 8936.00,
-    gain: 686.00,
-    gainPercent: 8.32,
-    dayChange: 2.34,
-    dayChangePercent: 1.33,
-  },
-  {
-    id: '2',
-    symbol: 'MSFT',
-    name: 'Microsoft Corporation',
-    shares: 30,
-    avgCost: 350.00,
-    currentPrice: 378.91,
-    value: 11367.30,
-    gain: 867.30,
-    gainPercent: 8.26,
-    dayChange: 4.12,
-    dayChangePercent: 1.10,
-  },
-  {
-    id: '3',
-    symbol: 'GOOGL',
-    name: 'Alphabet Inc.',
-    shares: 40,
-    avgCost: 135.00,
-    currentPrice: 141.80,
-    value: 5672.00,
-    gain: 272.00,
-    gainPercent: 5.04,
-    dayChange: -0.92,
-    dayChangePercent: -0.64,
-  },
-  {
-    id: '4',
-    symbol: 'NVDA',
-    name: 'NVIDIA Corporation',
-    shares: 15,
-    avgCost: 750.00,
-    currentPrice: 875.28,
-    value: 13129.20,
-    gain: 1879.20,
-    gainPercent: 16.71,
-    dayChange: 12.45,
-    dayChangePercent: 1.44,
-  },
-  {
-    id: '5',
-    symbol: 'TSLA',
-    name: 'Tesla, Inc.',
-    shares: 20,
-    avgCost: 280.00,
-    currentPrice: 248.50,
-    value: 4970.00,
-    gain: -630.00,
-    gainPercent: -11.25,
-    dayChange: -5.20,
-    dayChangePercent: -2.05,
-  },
-];
-
-// Generate mock performance data
-const generatePerformanceData = (): PerformanceDataPoint[] => {
-  const data: PerformanceDataPoint[] = [];
-  const now = new Date();
-  let value = 40000;
-
-  for (let i = 90; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    value = value * (1 + (Math.random() - 0.48) * 0.02);
-    data.push({ date, value });
-  }
-
-  // End at current value
-  data[data.length - 1].value = mockSummary.totalValue;
-  return data;
-};
-
-const mockAllocation: AllocationItem[] = [
-  { label: 'NVDA', value: 13129.20, color: '#131D4F' },
-  { label: 'MSFT', value: 11367.30, color: '#954C2E' },
-  { label: 'AAPL', value: 8936.00, color: '#22C55E' },
-  { label: 'GOOGL', value: 5672.00, color: '#6366F1' },
-  { label: 'TSLA', value: 4970.00, color: '#F59E0B' },
-  { label: 'Cash', value: 5240.00, color: '#94A3B8' },
-];
+import { usePortfolio } from '@/lib/hooks';
 
 function PortfolioContent() {
-  const performanceData = generatePerformanceData();
+  const { positions, analysis, loading, error, addPosition, removePosition, updatePosition, analyze } = usePortfolio();
+  
+  const [summary, setSummary] = useState<PortfolioSummaryData>({
+    totalValue: 0,
+    totalCost: 0,
+    dayChange: 0,
+    dayChangePercent: 0,
+    totalGain: 0,
+    totalGainPercent: 0,
+    cashBalance: 0,
+  });
+  
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [allocationData, setAllocationData] = useState<AllocationItem[]>([]);
+  const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
+
+  // Analyze portfolio when positions change
+  useEffect(() => {
+    if (positions.length > 0) {
+      analyze();
+    }
+  }, [positions.length]);
+
+  // Update display data when analysis completes
+  useEffect(() => {
+    if (analysis) {
+      // Update summary
+      const metrics = analysis.portfolio_metrics;
+      setSummary({
+        totalValue: metrics.total_value,
+        totalCost: metrics.total_cost,
+        dayChange: metrics.total_gain_loss, // Using total gain as day change (API doesn't provide daily change)
+        dayChangePercent: metrics.total_gain_loss_percent,
+        totalGain: metrics.total_gain_loss,
+        totalGainPercent: metrics.total_gain_loss_percent,
+        cashBalance: 0, // Not provided by API
+      });
+
+      // Update holdings
+      const holdingsData: Holding[] = metrics.positions.map((pos, index) => {
+        const localPos = positions.find(p => p.ticker === pos.ticker);
+        return {
+          id: localPos?.id || `${pos.ticker}-${index}`,
+          symbol: pos.ticker,
+          name: pos.name || pos.ticker,
+          shares: pos.shares,
+          avgCost: pos.cost_basis,
+          currentPrice: pos.current_price,
+          value: pos.current_value,
+          gain: pos.gain_loss,
+          gainPercent: pos.gain_loss_percent,
+          dayChange: 0, // Not provided by API
+          dayChangePercent: 0, // Not provided by API
+        };
+      });
+      setHoldings(holdingsData);
+
+      // Update allocation
+      const colors = ['#131D4F', '#954C2E', '#22C55E', '#6366F1', '#F59E0B', '#94A3B8', '#EC4899', '#06B6D4'];
+      const allocation: AllocationItem[] = metrics.positions.map((pos, index) => ({
+        label: pos.ticker,
+        value: pos.current_value,
+        color: colors[index % colors.length],
+      }));
+      setAllocationData(allocation);
+
+      // Generate performance data (simplified - using current value as endpoint)
+      const perfData: PerformanceDataPoint[] = [];
+      const now = new Date();
+      let value = metrics.total_cost;
+      
+      for (let i = 90; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        // Simple linear interpolation from cost basis to current value
+        const progress = (90 - i) / 90;
+        value = metrics.total_cost + (metrics.total_gain_loss * progress);
+        perfData.push({ date, value });
+      }
+      setPerformanceData(perfData);
+    }
+  }, [analysis, positions]);
 
   const handleEditHolding = (holding: Holding) => {
     console.log('Edit holding:', holding);
@@ -139,8 +115,7 @@ function PortfolioContent() {
   };
 
   const handleDeleteHolding = (holdingId: string) => {
-    console.log('Delete holding:', holdingId);
-    // TODO: Confirm and delete
+    removePosition(holdingId);
   };
 
   return (
@@ -169,7 +144,7 @@ function PortfolioContent() {
 
       {/* Summary */}
       <Section spacing="md" background="default">
-        <PortfolioSummary data={mockSummary} />
+        <PortfolioSummary data={summary} />
       </Section>
 
       {/* Charts */}
@@ -179,7 +154,7 @@ function PortfolioContent() {
             <PerformanceChart data={performanceData} />
           </div>
           <div>
-            <AllocationChart data={mockAllocation} />
+            <AllocationChart data={allocationData} />
           </div>
         </Grid>
       </Section>
@@ -187,7 +162,7 @@ function PortfolioContent() {
       {/* Holdings */}
       <Section spacing="lg" background="default">
         <HoldingsTable
-          holdings={mockHoldings}
+          holdings={holdings}
           onEdit={handleEditHolding}
           onDelete={handleDeleteHolding}
         />

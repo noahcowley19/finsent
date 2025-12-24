@@ -9,7 +9,7 @@
 //
 // =============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Section, Grid } from '@/components/layout';
 import {
@@ -20,73 +20,144 @@ import {
   SourceBreakdown,
 } from '@/components/analysis';
 import type { TimelineDataPoint, SourceData } from '@/components/analysis';
-
-// Mock data - replace with real API calls
-const mockStockData = {
-  symbol: 'AAPL',
-  name: 'Apple Inc.',
-  exchange: 'NASDAQ',
-  price: 178.72,
-  change: 2.34,
-  changePercent: 1.33,
-};
-
-// Generate mock timeline data
-const generateTimelineData = (): TimelineDataPoint[] => {
-  const data: TimelineDataPoint[] = [];
-  const now = new Date();
-  
-  for (let i = 30; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    data.push({
-      date,
-      score: Math.round((Math.random() - 0.3) * 100),
-      volume: Math.round(Math.random() * 10000),
-    });
-  }
-  
-  return data;
-};
-
-const mockSources: SourceData[] = [
-  { source: 'stocktwits', score: 48, mentions: 2450, change: 12 },
-  { source: 'twitter', score: 35, mentions: 8920, change: -5 },
-  { source: 'reddit', score: 52, mentions: 1280, change: 18 },
-  { source: 'news', score: 28, mentions: 342, change: 3 },
-];
+import { useSentiment, useStockSearch } from '@/lib/hooks';
 
 export default function SentimentPage() {
   const params = useParams();
   const symbol = (params.symbol as string)?.toUpperCase() || 'AAPL';
   
   const [inWatchlist, setInWatchlist] = useState(false);
-
-  // In real app, fetch data based on symbol
-  const stockData = { ...mockStockData, symbol };
-  const timelineData = generateTimelineData();
   
-  // Calculate overall sentiment
-  const overallScore = Math.round(
-    mockSources.reduce((sum, s) => sum + s.score * s.mentions, 0) /
-    mockSources.reduce((sum, s) => sum + s.mentions, 0)
-  );
-  const totalDataPoints = mockSources.reduce((sum, s) => sum + s.mentions, 0);
+  // Fetch real sentiment and stock data
+  const { data: sentimentData, loading: sentimentLoading, error: sentimentError } = useSentiment(symbol, 10);
+  const { data: stockData, loading: stockLoading } = useStockSearch(symbol);
+
+  // Process sentiment data for display
+  const [timelineData, setTimelineData] = useState<TimelineDataPoint[]>([]);
+  const [sourcesData, setSourcesData] = useState<SourceData[]>([]);
+  const [overallScore, setOverallScore] = useState(0);
+  const [totalDataPoints, setTotalDataPoints] = useState(0);
+
+  useEffect(() => {
+    if (sentimentData) {
+      // Calculate overall score from summary
+      const summary = sentimentData.summary;
+      const positivePercent = summary.Positive?.percentage || 0;
+      const negativePercent = summary.Negative?.percentage || 0;
+      const neutralPercent = summary.Neutral?.percentage || 0;
+      
+      // Score from -100 to 100
+      const score = positivePercent - negativePercent;
+      setOverallScore(Math.round(score));
+      
+      // Total data points
+      setTotalDataPoints(sentimentData.articles.length);
+
+      // Generate timeline data from articles
+      const timeline: TimelineDataPoint[] = [];
+      const articlesByDate = new Map<string, { scores: number[], count: number }>();
+      
+      sentimentData.articles.forEach(article => {
+        const date = new Date(article.published_date);
+        const dateKey = date.toISOString().split('T')[0];
+        
+        if (!articlesByDate.has(dateKey)) {
+          articlesByDate.set(dateKey, { scores: [], count: 0 });
+        }
+        
+        const entry = articlesByDate.get(dateKey)!;
+        // Convert sentiment label to score
+        const sentScore = article.sentiment === 'positive' ? 50 : 
+                         article.sentiment === 'negative' ? -50 : 0;
+        entry.scores.push(sentScore);
+        entry.count++;
+      });
+
+      // Convert to timeline format
+      articlesByDate.forEach((value, dateKey) => {
+        const avgScore = value.scores.reduce((sum, s) => sum + s, 0) / value.scores.length;
+        timeline.push({
+          date: new Date(dateKey),
+          score: Math.round(avgScore),
+          volume: value.count * 100, // Scale volume for display
+        });
+      });
+      
+      // Sort by date
+      timeline.sort((a, b) => a.date.getTime() - b.date.getTime());
+      setTimelineData(timeline);
+
+      // Mock source breakdown (API doesn't provide source-level breakdown)
+      // In a real implementation, this would aggregate by news source
+      setSourcesData([
+        { source: 'news', score: Math.round(score), mentions: sentimentData.articles.length, change: 0 },
+      ]);
+    }
+  }, [sentimentData]);
 
   const handleWatchlist = () => {
     setInWatchlist(!inWatchlist);
+  };
+
+  // Show loading state
+  if (sentimentLoading || stockLoading) {
+    return (
+      <Section spacing="lg" background="default">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-terra-500 mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading sentiment analysis...</p>
+          </div>
+        </div>
+      </Section>
+    );
+  }
+
+  // Show error state
+  if (sentimentError) {
+    return (
+      <Section spacing="lg" background="default">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="bg-error-50 border border-error-200 rounded-xl p-6">
+            <h2 className="text-heading-md font-semibold text-error-900 mb-2">
+              Failed to Load Sentiment Data
+            </h2>
+            <p className="text-body-sm text-error-700">
+              {sentimentError.message}
+            </p>
+          </div>
+        </div>
+      </Section>
+    );
+  }
+
+  // Use stock data if available, otherwise use defaults
+  const displayData = stockData ? {
+    symbol: stockData.overview.ticker,
+    name: stockData.overview.name,
+    exchange: stockData.overview.exchange,
+    price: stockData.overview.price,
+    change: stockData.overview.change_dollar,
+    changePercent: stockData.overview.change_percent,
+  } : {
+    symbol,
+    name: symbol,
+    exchange: 'UNKNOWN',
+    price: 0,
+    change: 0,
+    changePercent: 0,
   };
 
   return (
     <>
       {/* Header */}
       <AnalysisHeader
-        symbol={stockData.symbol}
-        name={stockData.name}
-        exchange={stockData.exchange}
-        price={stockData.price}
-        change={stockData.change}
-        changePercent={stockData.changePercent}
+        symbol={displayData.symbol}
+        name={displayData.name}
+        exchange={displayData.exchange}
+        price={displayData.price}
+        change={displayData.change}
+        changePercent={displayData.changePercent}
         onAddToWatchlist={handleWatchlist}
         inWatchlist={inWatchlist}
       />
@@ -101,10 +172,47 @@ export default function SentimentPage() {
             {/* Main content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Timeline */}
-              <SentimentTimeline data={timelineData} />
+              {timelineData.length > 0 && <SentimentTimeline data={timelineData} />}
 
               {/* Source breakdown */}
-              <SourceBreakdown sources={mockSources} />
+              {sourcesData.length > 0 && <SourceBreakdown sources={sourcesData} />}
+
+              {/* Articles list */}
+              {sentimentData && (
+                <div className="bg-white rounded-xl border border-border-light p-6">
+                  <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
+                    Recent Articles ({sentimentData.articles.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {sentimentData.articles.slice(0, 5).map((article, index) => (
+                      <div key={index} className="border-b border-border-light pb-4 last:border-0 last:pb-0">
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-body-md font-medium text-navy-900 hover:text-terra-600 transition-colors"
+                        >
+                          {article.title}
+                        </a>
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="text-caption text-neutral-500">{article.source}</span>
+                          <span className="text-caption text-neutral-400">•</span>
+                          <span className="text-caption text-neutral-500">
+                            {new Date(article.published_date).toLocaleDateString()}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-caption font-medium ${
+                            article.sentiment === 'positive' ? 'bg-success-100 text-success-700' :
+                            article.sentiment === 'negative' ? 'bg-error-100 text-error-700' :
+                            'bg-neutral-100 text-neutral-700'
+                          }`}>
+                            {article.sentiment}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
@@ -117,43 +225,45 @@ export default function SentimentPage() {
               />
 
               {/* Key insights */}
-              <div className="bg-white rounded-xl border border-border-light p-6">
-                <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
-                  Key Insights
-                </h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-success-100 text-success-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </span>
-                    <p className="text-body-sm text-neutral-600">
-                      Sentiment up <strong className="text-success-600">15%</strong> from last week
-                    </p>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-terra-100 text-terra-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                    </span>
-                    <p className="text-body-sm text-neutral-600">
-                      Reddit mentions increased <strong className="text-terra-600">18%</strong> today
-                    </p>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 rounded-full bg-navy-100 text-navy-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                      </svg>
-                    </span>
-                    <p className="text-body-sm text-neutral-600">
-                      News sentiment mostly <strong className="text-navy-600">neutral</strong> to positive
-                    </p>
-                  </li>
-                </ul>
-              </div>
+              {sentimentData && (
+                <div className="bg-white rounded-xl border border-border-light p-6">
+                  <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
+                    Key Insights
+                  </h3>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-success-100 text-success-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                      <p className="text-body-sm text-neutral-600">
+                        <strong className="text-success-600">{sentimentData.summary.Positive?.percentage.toFixed(1)}%</strong> positive sentiment
+                      </p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-error-100 text-error-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                      <p className="text-body-sm text-neutral-600">
+                        <strong className="text-error-600">{sentimentData.summary.Negative?.percentage.toFixed(1)}%</strong> negative sentiment
+                      </p>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-neutral-100 text-neutral-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                        </svg>
+                      </span>
+                      <p className="text-body-sm text-neutral-600">
+                        <strong className="text-neutral-600">{sentimentData.summary.Neutral?.percentage.toFixed(1)}%</strong> neutral sentiment
+                      </p>
+                    </li>
+                  </ul>
+                </div>
+              )}
 
               {/* Data sources */}
               <div className="bg-cream-50 rounded-xl p-6">
@@ -161,7 +271,7 @@ export default function SentimentPage() {
                   Data Sources
                 </h4>
                 <p className="text-caption text-neutral-500">
-                  Sentiment is calculated using FinBERT and VADER models analyzing data from StockTwits, X/Twitter, Reddit, and major financial news outlets. Updated every 15 minutes.
+                  Sentiment is calculated using FinBERT model analyzing data from major financial news outlets.
                 </p>
               </div>
             </div>

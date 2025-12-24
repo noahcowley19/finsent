@@ -9,14 +9,15 @@
 //
 // =============================================================================
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { PageHeader, Container, Section, Grid, AuthGuard } from '@/components/layout';
 import { StatsCard, RecentActivity, WatchlistPreview } from '@/components/dashboard';
 import type { Activity, WatchlistStock } from '@/components/dashboard';
+import { useWatchlist, usePortfolio } from '@/lib/hooks';
 
-// Mock data - replace with real data from your API
+// Mock activities - ideally this would come from a user activity API
 const mockActivities: Activity[] = [
   {
     id: '1',
@@ -50,23 +51,42 @@ const mockActivities: Activity[] = [
   },
 ];
 
-const mockWatchlist: WatchlistStock[] = [
-  { symbol: 'AAPL', name: 'Apple Inc.', price: 178.72, change: 2.34, changePercent: 1.33 },
-  { symbol: 'TSLA', name: 'Tesla, Inc.', price: 248.50, change: -5.20, changePercent: -2.05 },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 875.28, change: 12.45, changePercent: 1.44 },
-  { symbol: 'MSFT', name: 'Microsoft Corporation', price: 378.91, change: 4.12, changePercent: 1.10 },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 141.80, change: -0.92, changePercent: -0.64 },
-];
-
 function DashboardContent() {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'there';
+  
+  // Use real hooks
+  const { enrichedItems, refresh: refreshWatchlist } = useWatchlist();
+  const { positions, analysis, analyze } = usePortfolio();
 
-  // Mock stats - replace with real data
+  // Refresh data on mount
+  useEffect(() => {
+    if (enrichedItems.length > 0) {
+      refreshWatchlist();
+    }
+    if (positions.length > 0) {
+      analyze();
+    }
+  }, []);
+
+  // Convert enriched watchlist items to dashboard format
+  const watchlistStocks: WatchlistStock[] = enrichedItems.slice(0, 5).map(item => ({
+    symbol: item.ticker,
+    name: item.company || item.ticker,
+    price: item.price || 0,
+    change: item.change || 0,
+    changePercent: item.pct_change || 0,
+  }));
+
+  // Calculate stats (mock for now - ideally from user API)
   const searchesUsed = 3;
   const searchesLimit = user?.tier === 'pro' ? '∞' : 10;
   const analysesUsed = 1;
   const analysesLimit = user?.tier === 'pro' ? '∞' : 3;
+  
+  // Portfolio value from analysis
+  const portfolioValue = analysis?.portfolio_metrics?.total_value || 0;
+  const portfolioChange = analysis?.portfolio_metrics?.total_gain_loss_percent || 0;
 
   return (
     <>
@@ -129,8 +149,8 @@ function DashboardContent() {
           />
           <StatsCard
             title="Portfolio Value"
-            value="$24,832"
-            change={{ value: 2.4, label: 'vs last week' }}
+            value={portfolioValue > 0 ? `$${portfolioValue.toLocaleString()}` : '$0'}
+            change={portfolioValue > 0 ? { value: portfolioChange, label: 'total return' } : undefined}
             icon={
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -140,8 +160,8 @@ function DashboardContent() {
           />
           <StatsCard
             title="Watchlist Stocks"
-            value={mockWatchlist.length}
-            subtitle={user?.tier === 'free' ? `${10 - mockWatchlist.length} slots remaining` : 'Unlimited'}
+            value={enrichedItems.length}
+            subtitle={user?.tier === 'free' ? `${10 - enrichedItems.length} slots remaining` : 'Unlimited'}
             icon={
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -238,7 +258,7 @@ function DashboardContent() {
 
           {/* Watchlist - 1 column */}
           <div>
-            <WatchlistPreview stocks={mockWatchlist} />
+            <WatchlistPreview stocks={watchlistStocks} />
           </div>
         </Grid>
       </Section>

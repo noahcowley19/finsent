@@ -9,72 +9,44 @@
 //
 // =============================================================================
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Section, AuthGuard } from '@/components/layout';
 import { WatchlistTable, AddStockModal } from '@/components/watchlist';
 import type { WatchlistItem } from '@/components/watchlist';
-
-// Mock data - replace with real API calls
-const mockWatchlist: WatchlistItem[] = [
-  {
-    id: '1',
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    price: 178.72,
-    change: 2.34,
-    changePercent: 1.33,
-    sentiment: 42,
-    addedAt: new Date('2024-12-01'),
-  },
-  {
-    id: '2',
-    symbol: 'TSLA',
-    name: 'Tesla, Inc.',
-    price: 248.50,
-    change: -5.20,
-    changePercent: -2.05,
-    sentiment: -15,
-    addedAt: new Date('2024-12-05'),
-  },
-  {
-    id: '3',
-    symbol: 'NVDA',
-    name: 'NVIDIA Corporation',
-    price: 875.28,
-    change: 12.45,
-    changePercent: 1.44,
-    sentiment: 65,
-    addedAt: new Date('2024-12-10'),
-  },
-  {
-    id: '4',
-    symbol: 'AMD',
-    name: 'Advanced Micro Devices',
-    price: 164.50,
-    change: -2.15,
-    changePercent: -1.29,
-    sentiment: 28,
-    addedAt: new Date('2024-12-12'),
-  },
-  {
-    id: '5',
-    symbol: 'META',
-    name: 'Meta Platforms, Inc.',
-    price: 505.75,
-    change: 8.32,
-    changePercent: 1.67,
-    sentiment: 35,
-    addedAt: new Date('2024-12-15'),
-  },
-];
+import { useWatchlist, useQuickSearch } from '@/lib/hooks';
+import { api } from '@/lib/api';
 
 function WatchlistContent() {
-  const [items, setItems] = useState<WatchlistItem[]>(mockWatchlist);
+  const { items: watchlistItems, enrichedItems, addItem, removeItem, refresh, loading: watchlistLoading } = useWatchlist();
+  const { execute: quickSearch } = useQuickSearch();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [items, setItems] = useState<WatchlistItem[]>([]);
+
+  // Convert enriched items to WatchlistItem format
+  useEffect(() => {
+    const convertedItems: WatchlistItem[] = enrichedItems.map((item) => ({
+      id: item.id,
+      symbol: item.ticker,
+      name: item.company || item.ticker,
+      price: item.price || 0,
+      change: item.change || 0,
+      changePercent: item.pct_change || 0,
+      sentiment: item.composite || 0,
+      addedAt: new Date(item.dateAdded),
+    }));
+    setItems(convertedItems);
+  }, [enrichedItems]);
+
+  // Auto-refresh on mount and when items change
+  useEffect(() => {
+    if (watchlistItems.length > 0) {
+      refresh();
+    }
+  }, [watchlistItems.length]);
 
   const handleRemove = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    removeItem(id);
   };
 
   const handleAddToPortfolio = (item: WatchlistItem) => {
@@ -82,19 +54,24 @@ function WatchlistContent() {
     // TODO: Open add to portfolio modal
   };
 
-  const handleAddStock = (symbol: string) => {
-    // TODO: Fetch stock data and add to watchlist
-    const newItem: WatchlistItem = {
-      id: Date.now().toString(),
-      symbol,
-      name: `${symbol} Company`,
-      price: Math.random() * 500 + 50,
-      change: (Math.random() - 0.5) * 10,
-      changePercent: (Math.random() - 0.5) * 5,
-      sentiment: Math.round((Math.random() - 0.5) * 100),
-      addedAt: new Date(),
-    };
-    setItems((prev) => [...prev, newItem]);
+  const handleAddStock = async (symbol: string) => {
+    // Check if ticker is valid using quick search
+    try {
+      const result = await quickSearch(symbol.toUpperCase());
+      
+      if (result?.found) {
+        // Add to watchlist
+        addItem(symbol.toUpperCase());
+        
+        // Refresh to get enriched data
+        setTimeout(() => refresh(), 100);
+      } else {
+        alert(`Stock ticker "${symbol}" not found. Please verify the symbol.`);
+      }
+    } catch (error) {
+      console.error('Error adding stock:', error);
+      alert('Failed to add stock. Please try again.');
+    }
   };
 
   const existingSymbols = items.map((item) => item.symbol);
