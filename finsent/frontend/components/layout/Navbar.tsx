@@ -49,6 +49,7 @@ export const navLinks: NavLink[] = [
   { label: 'Financials', href: '/financials', requiresAuth: true },
   { label: 'Insider', href: '/insider', requiresAuth: true },
   { label: 'Portfolio', href: '/portfolio', requiresAuth: true },
+  { label: 'Watchlist', href: '/watchlist', requiresAuth: true },
   { label: 'Quant Lab', href: '/quant-lab', requiresAuth: true, requiresPro: true },
 ];
 
