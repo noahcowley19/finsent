@@ -136,9 +136,9 @@ export default function SentimentPage() {
     symbol: stockData.overview.ticker,
     name: stockData.overview.name,
     exchange: stockData.overview.exchange,
-    price: stockData.overview.price,
-    change: stockData.overview.change,
-    changePercent: stockData.overview.change_percent,
+    price: stockData.overview.price ?? 0,
+    change: stockData.overview.change ?? 0,
+    changePercent: stockData.overview.change_percent ?? 0,
   } : {
     symbol,
     name: symbol,
