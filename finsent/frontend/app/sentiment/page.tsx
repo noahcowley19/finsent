@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { LoadingOverlay, Badge, BarChart } from '@/components';
 import { analyzeSentiment, getSocialScreening } from '@/lib/api';
-import type { SentimentAnalysisResponse, ScreeningResponse, SentimentArticle, ScreeningStock } from '@/lib/types';
+import type { SentimentAnalysisResponse, SocialScreeningResponse, SentimentArticle, ScreeningStock } from '@/lib/types';
 
 // ============================================================================
 // CONSTANTS & CONFIGURATION
@@ -102,7 +102,7 @@ const saveHistory = (history: SentimentSnapshot[]) => {
   }
 };
 
-const addSnapshot = (data: ScreeningResponse) => {
+const addSnapshot = (data: SocialScreeningResponse) => {
   const history = loadHistory();
   const timestamp = Date.now();
   
@@ -357,7 +357,7 @@ export default function SentimentPage() {
   
   // Screener state
   const [screenerLoading, setScreenerLoading] = useState(true);
-  const [screenerData, setScreenerData] = useState<ScreeningResponse | null>(null);
+  const [screenerData, setScreenerData] = useState<SocialScreeningResponse | null>(null);
   const [selectedTickers, setSelectedTickers] = useState<string[]>(DEFAULT_TICKERS);
   
   // News analyzer state

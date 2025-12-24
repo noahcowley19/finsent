@@ -889,3 +889,65 @@ export type { RequestOptions };
 export const createApiClient = (baseUrl?: string, options?: RequestOptions): CaverayApiClient => {
   return new CaverayApiClient(baseUrl, options);
 };
+
+// -----------------------------------------------------------------------------
+// CONVENIENCE FUNCTION EXPORTS
+// -----------------------------------------------------------------------------
+// These functions provide a simpler interface for common operations
+// They use the default api singleton instance
+
+/** Analyze sentiment for a ticker */
+export const analyzeSentiment = (ticker: string, numArticles?: number, options?: RequestOptions) =>
+  api.sentiment.analyze(ticker, numArticles, options);
+
+/** Get social sentiment screening */
+export const getSocialScreening = (tickers?: string[], options?: RequestOptions) =>
+  api.sentiment.socialScreening(tickers, options);
+
+/** Analyze financials for a ticker */
+export const analyzeFinancials = (ticker: string, options?: RequestOptions) =>
+  api.financials.analyze(ticker, options);
+
+/** Analyze insider trading for a ticker */
+export const analyzeInsider = (ticker: string, months?: number, options?: RequestOptions) =>
+  api.insider.analyze(ticker, months, options);
+
+/** Search for stock data */
+export const searchStock = (ticker: string, options?: RequestOptions) =>
+  api.search.getStock(ticker, options);
+
+/** Get chart data for a ticker */
+export const getChartData = (ticker: string, period?: '1d' | '5d' | '1m' | '3m' | '6m' | 'ytd' | '1y' | '2y' | '5y' | 'max', options?: RequestOptions) =>
+  api.search.getChart(ticker, period, options);
+
+/** Quick search for a ticker */
+export const quickSearch = (ticker: string, options?: RequestOptions) =>
+  api.search.quick(ticker, options);
+
+/** Compare multiple stocks */
+export const compareStocks = (tickers: string[], options?: RequestOptions) =>
+  api.search.compare(tickers, options);
+
+/** Get comparison chart data */
+export const getCompareChart = (tickers: string[], period?: '1m' | '3m' | '6m' | 'ytd' | '1y' | '2y' | '5y', options?: RequestOptions) =>
+  api.search.compareChart(tickers, period, options);
+
+/** Get market movers */
+export const getMarketMovers = (options?: RequestOptions) =>
+  api.search.getMovers(options);
+
+/** Get sector heatmap */
+export const getSectorHeatmap = (options?: RequestOptions) =>
+  api.search.getSectorHeatmap(options);
+
+/** Analyze portfolio */
+export const analyzePortfolio = (
+  positions: PortfolioPositionInput[],
+  riskFreeRate?: number,
+  marketReturn?: number,
+  options?: RequestOptions
+) => api.portfolio.analyze(positions, riskFreeRate, marketReturn, options);
+
+/** Analyze with Quant Lab */
+export const analyzeQuantLab = (ticker: string, options?: RequestOptions) =>
+  api.quantLab.analyze(ticker, options);

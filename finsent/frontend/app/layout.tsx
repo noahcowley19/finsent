@@ -12,7 +12,6 @@
 // =============================================================================
 
 import type { Metadata } from 'next';
-import { Fraunces, Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/components/ui';
 import { ConnectedNavbar } from '@/components/layout/ConnectedNavbar';
@@ -22,24 +21,8 @@ import './globals.css';
 // =============================================================================
 // FONTS
 // =============================================================================
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-  display: 'swap',
-});
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
+// Note: Fonts are loaded via CSS @import in globals.css to avoid build-time
+// network requests that may fail in restricted environments
 
 // =============================================================================
 // METADATA
@@ -93,10 +76,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${fraunces.variable} ${plusJakarta.variable} ${inter.variable}`}
-    >
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
+      </head>
       <body className="min-h-screen bg-cream-50 font-body text-navy-900 antialiased flex flex-col">
         <AuthProvider>
           <ToastProvider position="top-right">
