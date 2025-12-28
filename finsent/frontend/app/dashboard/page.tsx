@@ -12,7 +12,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { PageHeader, Container, Section, Grid, AuthGuard } from '@/components/layout';
+import { PageHeader, Container, Section, Grid } from '@/components/layout';
 import { StatsCard, RecentActivity, WatchlistPreview } from '@/components/dashboard';
 import type { Activity as DashboardActivity, WatchlistStock } from '@/components/dashboard';
 import { useWatchlist, usePortfolio } from '@/lib/hooks';
@@ -249,9 +249,5 @@ function DashboardContent() {
 }
 
 export default function DashboardPage() {
-  return (
-    <AuthGuard>
-      <DashboardContent />
-    </AuthGuard>
-  );
+  return <DashboardContent />;
 }
