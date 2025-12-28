@@ -1,16 +1,16 @@
 'use client';
 
 // =============================================================================
-// PRICING SECTION
+// PRICING SECTION - REDESIGNED
 // =============================================================================
-// Pricing cards with monthly/annual toggle
+// Premium pricing cards with gradient accents and modern toggle
 //
 // Location: frontend/components/landing/Pricing.tsx
-//
 // =============================================================================
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { HiCheck, HiX, HiSparkles, HiArrowRight } from 'react-icons/hi';
 
 const plans = [
   {
@@ -63,49 +63,52 @@ export const Pricing: React.FC = () => {
   const [isAnnual, setIsAnnual] = useState(true);
 
   return (
-    <section className="py-20 lg:py-28 bg-cream-50">
+    <section className="py-24 lg:py-32 bg-cream-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <p className="text-overline text-terra-500 uppercase tracking-widest mb-4">
+          <p className="text-body-sm font-semibold text-terra-500 uppercase tracking-widest mb-4">
             Pricing
           </p>
-          <h2 className="font-display text-display-md lg:text-display-lg text-navy-900 mb-4">
+          <h2 className="font-display text-display-md lg:text-display-lg text-navy-900 mb-6">
             Simple, transparent pricing
           </h2>
-          <p className="text-body-lg text-neutral-600">
+          <p className="text-body-lg text-navy-600/70">
             Start free and upgrade when you&apos;re ready for more power.
           </p>
         </div>
 
         {/* Billing toggle */}
-        <div className="flex items-center justify-center gap-4 mb-12">
-          <span className={`text-body-md ${!isAnnual ? 'text-navy-900 font-medium' : 'text-neutral-500'}`}>
+        <div className="flex items-center justify-center gap-4 mb-16">
+          <span className={`text-body-md transition-colors duration-200 ${!isAnnual ? 'text-navy-900 font-semibold' : 'text-navy-400'}`}>
             Monthly
           </span>
           <button
             onClick={() => setIsAnnual(!isAnnual)}
             className={`
-              relative w-14 h-8 rounded-full
-              transition-colors duration-fast
+              relative w-16 h-9 rounded-full
+              transition-all duration-300
               focus:outline-none focus:ring-2 focus:ring-terra-500 focus:ring-offset-2
-              ${isAnnual ? 'bg-terra-500' : 'bg-neutral-300'}
+              ${isAnnual
+                ? 'bg-gradient-to-r from-terra-500 to-pink-500'
+                : 'bg-navy-200'
+              }
             `}
             aria-label="Toggle annual billing"
           >
             <span
               className={`
-                absolute top-1 w-6 h-6 rounded-full bg-white shadow-md
-                transition-transform duration-fast
-                ${isAnnual ? 'left-7' : 'left-1'}
+                absolute top-1.5 w-6 h-6 rounded-full bg-white shadow-md
+                transition-all duration-300 ease-out
+                ${isAnnual ? 'left-8' : 'left-1.5'}
               `}
             />
           </button>
-          <span className={`text-body-md ${isAnnual ? 'text-navy-900 font-medium' : 'text-neutral-500'}`}>
+          <span className={`text-body-md transition-colors duration-200 ${isAnnual ? 'text-navy-900 font-semibold' : 'text-navy-400'}`}>
             Annual
           </span>
           {isAnnual && (
-            <span className="ml-2 px-2 py-1 text-caption font-medium text-success-700 bg-success-100 rounded-full">
+            <span className="ml-2 px-3 py-1.5 text-caption font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-500 rounded-full shadow-sm">
               Save 20%
             </span>
           )}
@@ -117,108 +120,130 @@ export const Pricing: React.FC = () => {
             <div
               key={plan.name}
               className={`
-                relative rounded-2xl p-8 lg:p-10
+                relative rounded-3xl overflow-hidden
                 ${plan.highlighted
-                  ? 'bg-navy-900 text-white ring-4 ring-terra-500/50'
-                  : 'bg-white border border-border-light'
+                  ? 'bg-navy-900 text-white shadow-2xl shadow-navy-900/20'
+                  : 'bg-white border border-navy-100/50 shadow-lg shadow-navy-900/5'
                 }
               `}
             >
-              {/* Popular badge */}
+              {/* Gradient accent for highlighted plan */}
               {plan.highlighted && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <span className="px-4 py-1.5 bg-terra-500 text-white text-caption font-semibold uppercase tracking-wider rounded-full">
-                    Most Popular
-                  </span>
-                </div>
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-terra-500 via-pink-500 to-purple-500" />
               )}
 
-              {/* Plan header */}
-              <div className="mb-8">
-                <h3 className={`font-heading font-semibold text-heading-lg mb-2 ${plan.highlighted ? 'text-white' : 'text-navy-900'}`}>
-                  {plan.name}
-                </h3>
-                <p className={`text-body-md ${plan.highlighted ? 'text-white/70' : 'text-neutral-600'}`}>
-                  {plan.description}
-                </p>
-              </div>
-
-              {/* Price */}
-              <div className="mb-8">
-                <div className="flex items-baseline gap-2">
-                  <span className={`font-display text-display-md ${plan.highlighted ? 'text-white' : 'text-navy-900'}`}>
-                    ${isAnnual ? plan.priceAnnual : plan.priceMonthly}
-                  </span>
-                  {plan.priceMonthly > 0 && (
-                    <span className={`text-body-md ${plan.highlighted ? 'text-white/60' : 'text-neutral-500'}`}>
-                      /month
+              <div className="p-8 lg:p-10">
+                {/* Popular badge */}
+                {plan.highlighted && (
+                  <div className="flex items-center gap-2 mb-6">
+                    <HiSparkles className="w-5 h-5 text-terra-400" />
+                    <span className="text-body-sm font-semibold text-terra-400 uppercase tracking-wider">
+                      Most Popular
                     </span>
+                  </div>
+                )}
+
+                {/* Plan header */}
+                <div className="mb-6">
+                  <h3 className={`font-heading font-bold text-2xl mb-2 ${plan.highlighted ? 'text-white' : 'text-navy-900'}`}>
+                    {plan.name}
+                  </h3>
+                  <p className={`text-body-md ${plan.highlighted ? 'text-white/60' : 'text-navy-500'}`}>
+                    {plan.description}
+                  </p>
+                </div>
+
+                {/* Price */}
+                <div className="mb-8">
+                  <div className="flex items-baseline gap-2">
+                    <span className={`font-display text-5xl ${plan.highlighted ? 'text-white' : 'text-navy-900'}`}>
+                      ${isAnnual ? plan.priceAnnual : plan.priceMonthly}
+                    </span>
+                    {plan.priceMonthly > 0 && (
+                      <span className={`text-body-lg ${plan.highlighted ? 'text-white/50' : 'text-navy-400'}`}>
+                        /month
+                      </span>
+                    )}
+                  </div>
+                  {isAnnual && plan.priceMonthly > 0 && (
+                    <p className={`text-body-sm mt-2 ${plan.highlighted ? 'text-white/50' : 'text-navy-400'}`}>
+                      Billed annually (${(plan.priceAnnual * 12).toFixed(0)}/year)
+                    </p>
                   )}
                 </div>
-                {isAnnual && plan.priceMonthly > 0 && (
-                  <p className={`text-body-sm mt-1 ${plan.highlighted ? 'text-white/60' : 'text-neutral-500'}`}>
-                    Billed annually (${(plan.priceAnnual * 12).toFixed(0)}/year)
-                  </p>
-                )}
-              </div>
 
-              {/* CTA */}
-              <Link
-                href={plan.href}
-                className={`
-                  block w-full py-4 rounded-xl
-                  font-heading font-semibold text-body-md text-center
-                  transition-all duration-fast
-                  ${plan.highlighted
-                    ? 'bg-terra-500 text-white hover:bg-terra-600 hover:-translate-y-0.5 hover:shadow-terra'
-                    : 'bg-navy-900 text-white hover:bg-navy-800 hover:-translate-y-0.5'
-                  }
-                `}
-              >
-                {plan.cta}
-              </Link>
+                {/* CTA */}
+                <Link
+                  href={plan.href}
+                  className={`
+                    flex items-center justify-center gap-2
+                    w-full py-4 rounded-xl
+                    font-heading font-semibold text-body-md
+                    transition-all duration-200
+                    ${plan.highlighted
+                      ? 'bg-white text-navy-900 hover:bg-cream-50 shadow-lg'
+                      : 'bg-navy-900 text-white hover:bg-navy-800'
+                    }
+                    hover:scale-[1.02]
+                  `}
+                >
+                  {plan.cta}
+                  <HiArrowRight className="w-5 h-5" />
+                </Link>
 
-              {/* Features */}
-              <div className="mt-8 pt-8 border-t border-white/10">
-                <ul className="space-y-4">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <svg
-                        className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.highlighted ? 'text-success-400' : 'text-success-500'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      <span className={`text-body-sm ${plan.highlighted ? 'text-white/90' : 'text-neutral-700'}`}>
-                        {feature}
-                      </span>
-                    </li>
-                  ))}
-                  {plan.limitations.map((limitation, index) => (
-                    <li key={`limit-${index}`} className="flex items-start gap-3">
-                      <svg
-                        className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.highlighted ? 'text-white/30' : 'text-neutral-300'}`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                      <span className={`text-body-sm ${plan.highlighted ? 'text-white/50' : 'text-neutral-400'}`}>
-                        {limitation}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                {/* Features */}
+                <div className="mt-8 pt-8 border-t border-white/10">
+                  <ul className="space-y-4">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <div className={`
+                          flex-shrink-0 w-5 h-5 rounded-full
+                          flex items-center justify-center
+                          ${plan.highlighted ? 'bg-green-500/20' : 'bg-green-100'}
+                        `}>
+                          <HiCheck className={`w-3 h-3 ${plan.highlighted ? 'text-green-400' : 'text-green-600'}`} />
+                        </div>
+                        <span className={`text-body-sm ${plan.highlighted ? 'text-white/80' : 'text-navy-600'}`}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                    {plan.limitations.map((limitation, index) => (
+                      <li key={`limit-${index}`} className="flex items-start gap-3">
+                        <div className={`
+                          flex-shrink-0 w-5 h-5 rounded-full
+                          flex items-center justify-center
+                          ${plan.highlighted ? 'bg-white/5' : 'bg-navy-50'}
+                        `}>
+                          <HiX className={`w-3 h-3 ${plan.highlighted ? 'text-white/30' : 'text-navy-300'}`} />
+                        </div>
+                        <span className={`text-body-sm ${plan.highlighted ? 'text-white/40' : 'text-navy-400'}`}>
+                          {limitation}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         {/* Guarantee */}
-        <p className="text-center text-body-sm text-neutral-500 mt-10">
-          ✓ No credit card required for free plan &nbsp;•&nbsp; ✓ Cancel anytime &nbsp;•&nbsp; ✓ 7-day money-back guarantee
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-body-sm text-navy-500">
+          <div className="flex items-center gap-2">
+            <HiCheck className="w-5 h-5 text-green-500" />
+            <span>No credit card required for free plan</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <HiCheck className="w-5 h-5 text-green-500" />
+            <span>Cancel anytime</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <HiCheck className="w-5 h-5 text-green-500" />
+            <span>7-day money-back guarantee</span>
+          </div>
+        </div>
       </div>
     </section>
   );

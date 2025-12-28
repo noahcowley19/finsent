@@ -9,21 +9,19 @@
     "lint": "next lint",
     "postinstall": "bash ./prisma-generate.sh || npx prisma generate"
   },
-
-
   "dependencies": {
     "next": "14.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "chart.js": "^4.4.1",
     "react-chartjs-2": "^5.2.0",
+    "react-icons": "^5.4.0",
     "clsx": "^2.0.0",
     "tailwind-merge": "^2.2.0",
     "zod": "^3.23.8",
     "@prisma/client": "^5.8.0",
     "@auth/prisma-adapter": "^1.0.7",
     "bcryptjs": "^2.4.3",
-
     "next-auth": "^4.24.7"
   },
   "devDependencies": {
@@ -36,6 +34,5 @@
     "tailwindcss": "3.4.0",
     "typescript": "5.3.3",
     "prisma": "^5.8.0"
-
   }
 }

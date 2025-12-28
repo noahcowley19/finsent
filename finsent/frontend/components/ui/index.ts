@@ -207,3 +207,4 @@ export {
 // -----------------------------------------------------------------------------
 export { AnimatedCounter, type default as AnimatedCounterDefault } from './AnimatedCounter';
 export { GlassCard, GlassPanel } from './GlassCard';
+export { MeshGradient, type default as MeshGradientDefault } from './MeshGradient';
