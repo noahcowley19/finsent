@@ -171,7 +171,7 @@ export default function ComparePage() {
                         <p className="text-caption uppercase opacity-80">Overall Winner</p>
                         <p className="text-display-xs font-bold">{result.overall_winner}</p>
                         <p className="text-body-sm mt-2 opacity-90">
-                            Wins in {result.win_counts[result.overall_winner]} of {Object.values(result.winners).flatMap(c => Object.values(c)).length} categories
+                            Wins in {result.win_counts[result.overall_winner]} of {metrics.length} metrics
                         </p>
                     </div>
 
