@@ -81,7 +81,7 @@ export default function MoversPage() {
 
             {/* Market Breadth */}
             {summary?.market_breadth && (
-                <Section spacing="sm" background="secondary">
+                <Section spacing="sm" background="alt">
                     <div className="flex flex-wrap justify-center gap-6">
                         <div className="text-center">
                             <p className="text-display-xs font-semibold text-success-600">{summary.market_breadth.advances}</p>
@@ -118,8 +118,8 @@ export default function MoversPage() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === tab.id
-                                    ? 'border-terra-500 text-terra-600'
-                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                ? 'border-terra-500 text-terra-600'
+                                : 'border-transparent text-neutral-500 hover:text-neutral-700'
                                 }`}
                         >
                             {tab.icon} {tab.label}
