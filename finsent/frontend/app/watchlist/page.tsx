@@ -10,7 +10,7 @@
 // =============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { Section, AuthGuard } from '@/components/layout';
+import { Section } from '@/components/layout';
 import { WatchlistTable, AddStockModal } from '@/components/watchlist';
 import type { WatchlistItem } from '@/components/watchlist';
 import { useWatchlist, useQuickSearch } from '@/lib/hooks';
@@ -58,11 +58,11 @@ function WatchlistContent() {
     // Check if ticker is valid using quick search
     try {
       const result = await quickSearch(symbol.toUpperCase());
-      
+
       if (result?.found) {
         // Add to watchlist
         addItem(symbol.toUpperCase());
-        
+
         // Refresh to get enriched data
         setTimeout(() => refresh(), 100);
       } else {
@@ -94,9 +94,8 @@ function WatchlistContent() {
             <div className="flex bg-cream-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === 'list' ? 'bg-white shadow-sm text-navy-900' : 'text-neutral-500'
-                }`}
+                className={`p-2 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm text-navy-900' : 'text-neutral-500'
+                  }`}
                 title="List view"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,9 +104,8 @@ function WatchlistContent() {
               </button>
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded transition-colors ${
-                  viewMode === 'grid' ? 'bg-white shadow-sm text-navy-900' : 'text-neutral-500'
-                }`}
+                className={`p-2 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm text-navy-900' : 'text-neutral-500'
+                  }`}
                 title="Grid view"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,11 +148,10 @@ function WatchlistContent() {
           </div>
           <div className="bg-white rounded-xl border border-border-light p-4">
             <p className="text-caption text-neutral-500 mb-1">Avg Change</p>
-            <p className={`text-heading-md font-semibold ${
-              items.reduce((sum, i) => sum + i.changePercent, 0) / items.length >= 0
+            <p className={`text-heading-md font-semibold ${items.reduce((sum, i) => sum + i.changePercent, 0) / items.length >= 0
                 ? 'text-success-600'
                 : 'text-error-600'
-            }`}>
+              }`}>
               {items.length > 0
                 ? `${(items.reduce((sum, i) => sum + i.changePercent, 0) / items.length).toFixed(2)}%`
                 : '-'}
@@ -185,9 +182,5 @@ function WatchlistContent() {
 }
 
 export default function WatchlistPage() {
-  return (
-    <AuthGuard>
-      <WatchlistContent />
-    </AuthGuard>
-  );
+  return <WatchlistContent />;
 }
