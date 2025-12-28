@@ -30,8 +30,6 @@ export {
 
 export {
   Footer,
-  type FooterProps,
-  type FooterVariant,
 } from './Footer';
 
 // -----------------------------------------------------------------------------
