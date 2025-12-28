@@ -10,3 +10,4 @@
 export { SearchBar, type SearchBarProps } from './SearchBar';
 export { StockCard, type StockCardProps, type Stock } from './StockCard';
 export { SearchResults, type SearchResultsProps } from './SearchResults';
+export { RecentSearches, useRecentSearches, addRecentSearch } from './RecentSearches';
