@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { NavLink, User } from './Navbar';
+import type { NavLink, User } from '@/components/layout/Navbar';
 
 // =============================================================================
 // TYPES
@@ -58,11 +58,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    
+
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
     }
-    
+
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
@@ -138,11 +138,11 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
         <nav className="p-4">
           <ul className="space-y-1">
             {links.map((link, index) => {
-              const isActive = pathname === link.href || 
+              const isActive = pathname === link.href ||
                 (link.href !== '/' && pathname.startsWith(link.href));
 
               return (
-                <li 
+                <li
                   key={link.href}
                   className="animate-fade-in-up"
                   style={{ animationDelay: `${index * 50}ms` }}
@@ -154,8 +154,8 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({
                       flex items-center gap-3 px-4 py-3 rounded-lg
                       text-body-md font-medium
                       transition-colors duration-fast
-                      ${isActive 
-                        ? 'bg-navy-500/10 text-navy-900' 
+                      ${isActive
+                        ? 'bg-navy-500/10 text-navy-900'
                         : 'text-navy-700 hover:bg-cream-100'
                       }
                     `}
