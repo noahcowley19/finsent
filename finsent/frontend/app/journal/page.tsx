@@ -135,7 +135,7 @@ export default function JournalPage() {
             </Section>
 
             {/* Stats */}
-            <Section spacing="sm" background="secondary">
+            <Section spacing="sm" background="alt">
                 <div className="flex flex-wrap justify-center gap-8">
                     <div className="text-center">
                         <p className="text-display-xs font-bold text-navy-900">{stats.total}</p>
@@ -247,10 +247,10 @@ export default function JournalPage() {
                                                 type="button"
                                                 onClick={() => setForm({ ...form, emotion })}
                                                 className={`px-4 py-2 rounded-lg text-body-sm font-medium ${form.emotion === emotion
-                                                        ? emotion === 'confident' ? 'bg-success-100 text-success-700' :
-                                                            emotion === 'fearful' ? 'bg-error-100 text-error-700' :
-                                                                'bg-neutral-100 text-neutral-700'
-                                                        : 'bg-cream-100 text-neutral-500'
+                                                    ? emotion === 'confident' ? 'bg-success-100 text-success-700' :
+                                                        emotion === 'fearful' ? 'bg-error-100 text-error-700' :
+                                                            'bg-neutral-100 text-neutral-700'
+                                                    : 'bg-cream-100 text-neutral-500'
                                                     }`}
                                             >
                                                 {emotion === 'confident' ? '😎' : emotion === 'fearful' ? '😰' : '😐'} {emotion}
@@ -296,8 +296,8 @@ export default function JournalPage() {
                             key={f}
                             onClick={() => setFilter(f)}
                             className={`px-4 py-3 text-body-sm font-medium border-b-2 -mb-px transition-colors ${filter === f
-                                    ? 'border-terra-500 text-terra-600'
-                                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                                ? 'border-terra-500 text-terra-600'
+                                : 'border-transparent text-neutral-500 hover:text-neutral-700'
                                 }`}
                         >
                             {f === 'all' ? 'All Trades' : f === 'pending' ? 'Open' : f === 'win' ? 'Wins' : 'Losses'}
@@ -321,8 +321,8 @@ export default function JournalPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={`px-2 py-1 rounded text-caption font-medium ${entry.outcome === 'win' ? 'bg-success-100 text-success-700' :
-                                                entry.outcome === 'loss' ? 'bg-error-100 text-error-700' :
-                                                    'bg-warning-100 text-warning-700'
+                                            entry.outcome === 'loss' ? 'bg-error-100 text-error-700' :
+                                                'bg-warning-100 text-warning-700'
                                             }`}>
                                             {entry.outcome === 'pending' ? 'Open' : entry.outcome}
                                         </span>
