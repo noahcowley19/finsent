@@ -1,315 +1,262 @@
 'use client';
 
-import { useState } from 'react';
-import { LoadingOverlay, Badge } from '@/components';
-import { analyzeInsider } from '@/lib/api';
-import type { InsiderResponse, InsiderTransaction, ClusterAlert } from '@/lib/types';
+// =============================================================================
+// INSIDER TRADING PAGE
+// =============================================================================
+// Detailed insider trading analysis for a stock
+//
+// Location: frontend/app/insider/[symbol]/page.tsx
+//
+// =============================================================================
 
-/**
- * Local BadgeVariant type mirrors the allowed variants in your Badge component.
- * This ensures mapping returns only valid values.
- */
-type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
+import { Section, Grid } from '@/components/layout';
+import {
+  AnalysisHeader,
+  AnalysisTabs,
+  InsiderSummary,
+  InsiderTable,
+} from '@/components/analysis';
+import type { InsiderSummaryData, InsiderTransaction } from '@/components/analysis';
+
+// Mock data - replace with real API calls
+const mockStockData = {
+  symbol: 'AAPL',
+  name: 'Apple Inc.',
+  exchange: 'NASDAQ',
+  price: 178.72,
+  change: 2.34,
+  changePercent: 1.33,
+};
+
+const mockSummary: InsiderSummaryData = {
+  buyCount: 8,
+  sellCount: 12,
+  buyValue: 3250000,
+  sellValue: 850000,
+  netShares: 45000,
+  period: 'Last 90 days',
+};
+
+const mockTransactions: InsiderTransaction[] = [
+  {
+    id: '1',
+    date: new Date('2024-12-15'),
+    insider: 'Tim Cook',
+    title: 'CEO',
+    type: 'sell',
+    shares: 50000,
+    price: 178.50,
+    value: 8925000,
+  },
+  {
+    id: '2',
+    date: new Date('2024-12-10'),
+    insider: 'Luca Maestri',
+    title: 'CFO',
+    type: 'buy',
+    shares: 10000,
+    price: 175.20,
+    value: 1752000,
+  },
+  {
+    id: '3',
+    date: new Date('2024-12-05'),
+    insider: 'Jeff Williams',
+    title: 'COO',
+    type: 'buy',
+    shares: 5000,
+    price: 176.80,
+    value: 884000,
+  },
+  {
+    id: '4',
+    date: new Date('2024-11-28'),
+    insider: 'Katherine Adams',
+    title: 'General Counsel',
+    type: 'sell',
+    shares: 8000,
+    price: 174.25,
+    value: 1394000,
+  },
+  {
+    id: '5',
+    date: new Date('2024-11-20'),
+    insider: 'Deirdre O\'Brien',
+    title: 'SVP Retail',
+    type: 'buy',
+    shares: 3000,
+    price: 172.50,
+    value: 517500,
+  },
+  {
+    id: '6',
+    date: new Date('2024-11-15'),
+    insider: 'Craig Federighi',
+    title: 'SVP Software',
+    type: 'option',
+    shares: 25000,
+    price: 171.00,
+    value: 4275000,
+  },
+  {
+    id: '7',
+    date: new Date('2024-11-10'),
+    insider: 'Tim Cook',
+    title: 'CEO',
+    type: 'sell',
+    shares: 75000,
+    price: 169.80,
+    value: 12735000,
+  },
+  {
+    id: '8',
+    date: new Date('2024-11-01'),
+    insider: 'Luca Maestri',
+    title: 'CFO',
+    type: 'buy',
+    shares: 15000,
+    price: 168.25,
+    value: 2523750,
+  },
+];
 
 export default function InsiderPage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<InsiderResponse | null>(null);
-  const [tickerInput, setTickerInput] = useState('AAPL');
-  const [periodMonths, setPeriodMonths] = useState(12);
-  const [showExplainer, setShowExplainer] = useState(false);
+  const params = useParams();
+  const symbol = (params.symbol as string)?.toUpperCase() || 'AAPL';
+  
+  const [inWatchlist, setInWatchlist] = useState(false);
 
-  const handleAnalyze = async () => {
-    if (!tickerInput.trim()) return;
-    
-    setLoading(true);
-    setError(null);
-    setData(null);
-    
-    try {
-      const result = await analyzeInsider(tickerInput.trim().toUpperCase(), periodMonths);
-      setData(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze insider activity');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // In real app, fetch data based on symbol
+  const stockData = { ...mockStockData, symbol };
 
-  /**
-   * Map incoming status/type strings to the BadgeVariant union.
-   * Extend this map if you add more statuses.
-   */
-  const statusToVariant = (status: string | undefined): BadgeVariant => {
-    const map: Record<string, BadgeVariant> = {
-      positive: 'success',
-      negative: 'danger',
-      neutral: 'default',
-      warning: 'warning',
-      // transaction-specific or legacy values
-      buy: 'success',
-      sell: 'danger',
-      cluster_buy: 'success',
-      cluster_sell: 'danger',
-      up: 'success',
-      down: 'danger',
-      // fallback
-      default: 'default',
-    };
-    if (!status) return 'default';
-    return map[status] ?? 'default';
+  const handleWatchlist = () => {
+    setInWatchlist(!inWatchlist);
   };
 
   return (
-    <div className="container" style={{ maxWidth: '1400px' }}>
-      {loading && <LoadingOverlay message="Fetching insider trading data..." />}
-      
-      <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 700, marginBottom: '12px' }}>
-          Insider Trading
-        </h1>
-        <p className="subtitle" style={{ maxWidth: '700px', margin: '0 auto' }}>
-          Track insider transactions and institutional ownership changes. Insider buying often indicates company strength, and clustered insider selling often indicates company weakness. These indications are not definitive.
-        </p>
-      </header>
+    <>
+      {/* Header */}
+      <AnalysisHeader
+        symbol={stockData.symbol}
+        name={stockData.name}
+        exchange={stockData.exchange}
+        price={stockData.price}
+        change={stockData.change}
+        changePercent={stockData.changePercent}
+        onAddToWatchlist={handleWatchlist}
+        inWatchlist={inWatchlist}
+      />
 
-      <div className="card" style={{ padding: '40px', marginBottom: '40px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <label className="input-label">Enter a stock ticker symbol (e.g., AAPL for Apple).</label>
-            <input
-              type="text"
-              value={tickerInput}
-              onChange={(e) => setTickerInput(e.target.value.toUpperCase())}
-              onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
-              placeholder="Enter ticker symbol"
-              className="input-field"
-            />
-          </div>
-          <div style={{ minWidth: '150px' }}>
-            <label className="input-label">Time Period</label>
-            <select
-              value={periodMonths}
-              onChange={(e) => setPeriodMonths(parseInt(e.target.value))}
-              className="input-field"
-              style={{ appearance: 'auto' }}
-            >
-              <option value={3}>3 Months</option>
-              <option value={6}>6 Months</option>
-              <option value={12}>12 Months</option>
-              <option value={24}>24 Months</option>
-            </select>
-          </div>
-          <button onClick={handleAnalyze} className="btn-primary" disabled={loading}>
-            Analyze
-          </button>
-        </div>
+      {/* Tabs */}
+      <AnalysisTabs symbol={symbol} />
 
-        {error && <div className="error-message" style={{ marginTop: '20px' }}>{error}</div>}
-      </div>
-
-      {data && (
-        <div id="results">
-          {/* Company Header */}
-          <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '16px' }}>{data.company.name}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginBottom: '12px' }}>
-              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Ticker: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.ticker}</span></div>
-              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Sector: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.sector}</span></div>
-              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Price: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.price_display}</span></div>
-              <div><span style={{ fontSize: '13px', color: 'var(--secondary)' }}>Market Cap: </span><span style={{ fontSize: '14px', fontWeight: 600 }}>{data.company.market_cap_display}</span></div>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>Data as of: {new Date(data.timestamp).toLocaleString()}</div>
+      {/* Content */}
+      <Section spacing="lg" background="default">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Summary cards */}
+          <div className="mb-8">
+            <InsiderSummary data={mockSummary} />
           </div>
 
-          {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--positive)' }} />
-              <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '12px' }}>Total Buy Value</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--positive)', marginBottom: '8px' }}>{data.summary.buy_value_display}</div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--secondary)' }}>{data.summary.total_buys} transactions</div>
+          <Grid cols={1} colsLg={3} gap="lg">
+            {/* Transaction table */}
+            <div className="lg:col-span-2">
+              <InsiderTable transactions={mockTransactions} />
             </div>
-            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'var(--negative)' }} />
-              <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '12px' }}>Total Sell Value</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--negative)', marginBottom: '8px' }}>{data.summary.sell_value_display}</div>
-              <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--secondary)' }}>{data.summary.total_sells} transactions</div>
-            </div>
-            <div className="card" style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: data.summary.net_positive ? 'var(--positive)' : 'var(--negative)' }} />
-              <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '12px' }}>Net Value</div>
-              <div style={{ fontSize: '2.5rem', fontWeight: 700, color: data.summary.net_positive ? 'var(--positive)' : 'var(--negative)', marginBottom: '8px' }}>{data.summary.net_value_display}</div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, marginTop: '8px', background: data.sentiment.status === 'positive' ? 'var(--positive-light)' : data.sentiment.status === 'negative' ? 'var(--negative-light)' : 'var(--warning-light)', color: data.sentiment.status === 'positive' ? 'var(--positive-dark)' : data.sentiment.status === 'negative' ? 'var(--negative-dark)' : 'var(--warning-dark)' }}>
-                {data.sentiment.sentiment}
-              </div>
-            </div>
-          </div>
 
-          {/* Signals */}
-          {data.signals.length > 0 && (
-            <div style={{ marginBottom: '32px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                {data.signals.map((signal, i) => (
-                  <div key={i} className="card" style={{ padding: '20px', borderLeft: `4px solid ${signal.status === 'positive' ? 'var(--positive)' : signal.status === 'negative' ? 'var(--negative)' : 'var(--warning)'}` }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '4px' }}>{signal.title}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--secondary)', lineHeight: 1.5 }}>{signal.description}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Cluster Alerts */}
-          {data.cluster_alerts.length > 0 && (
-            <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                <div style={{ fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)' }}>Cluster Trading Activity</div>
-                <div style={{ fontSize: '13px', color: 'var(--secondary)' }}>{data.cluster_alerts.length} cluster(s) detected</div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-                {data.cluster_alerts.map((alert: ClusterAlert, i) => (
-                  <div key={i} style={{ background: 'var(--background)', borderRadius: '12px', padding: '20px', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: alert.status === 'positive' ? 'var(--positive)' : 'var(--negative)' }} />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                      <Badge variant={statusToVariant(alert.status)}>{alert.type === 'cluster_buy' ? 'Cluster Buy' : 'Cluster Sell'}</Badge>
-                      <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>{alert.week_display}</div>
-                    </div>
-                    <div style={{ fontSize: '15px', fontWeight: 600, marginBottom: '8px' }}>{alert.message}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--secondary)', marginBottom: '12px' }}>{alert.description}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: alert.status === 'positive' ? 'var(--positive)' : 'var(--negative)' }}>{alert.total_value_display}</div>
-                    {alert.insiders.length > 0 && (
-                      <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border)' }}>
-                        <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>Insiders involved:</div>
-                        {alert.insiders.map((insider, j) => (
-                          <div key={j} style={{ fontSize: '13px', color: 'var(--secondary)', marginBottom: '4px' }}>
-                            {insider.name} ({insider.title}) - {insider.value}
-                          </div>
-                        ))}
+            {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Notable insiders */}
+              <div className="bg-white rounded-xl border border-border-light p-6">
+                <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
+                  Notable Insiders
+                </h3>
+                <div className="space-y-4">
+                  {[
+                    { name: 'Tim Cook', title: 'CEO', activity: 'Net Seller', color: 'error' },
+                    { name: 'Luca Maestri', title: 'CFO', activity: 'Net Buyer', color: 'success' },
+                    { name: 'Jeff Williams', title: 'COO', activity: 'Net Buyer', color: 'success' },
+                  ].map((insider) => (
+                    <div
+                      key={insider.name}
+                      className="flex items-center justify-between py-2"
+                    >
+                      <div>
+                        <p className="text-body-sm font-medium text-navy-900">
+                          {insider.name}
+                        </p>
+                        <p className="text-caption text-neutral-500">
+                          {insider.title}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Monthly Activity Chart */}
-          {data.monthly_data.length > 0 && (
-            <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '24px' }}>Monthly Activity</div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', height: '200px', gap: '8px' }}>
-                {data.monthly_data.map((month, i) => {
-                  const maxVal = Math.max(...data.monthly_data.map(m => Math.max(m.buys, m.sells))) || 1;
-                  return (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, maxWidth: '60px' }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: '150px' }}>
-                        <div style={{ width: '20px', background: 'var(--positive)', borderRadius: '4px 4px 0 0', height: `${(month.buys / maxVal) * 100}%`, minHeight: month.buys > 0 ? '4px' : '0' }} title={`${month.buys} buys`} />
-                        <div style={{ width: '20px', background: 'var(--negative)', borderRadius: '4px 4px 0 0', height: `${(month.sells / maxVal) * 100}%`, minHeight: month.sells > 0 ? '4px' : '0' }} title={`${month.sells} sells`} />
-                      </div>
-                      <div style={{ fontSize: '10px', color: 'var(--secondary)', marginTop: '8px', transform: 'rotate(-45deg)', whiteSpace: 'nowrap' }}>{month.label}</div>
+                      <span
+                        className={`
+                          px-2 py-1 text-caption font-medium rounded
+                          ${insider.color === 'success' ? 'bg-success-100 text-success-700' : ''}
+                          ${insider.color === 'error' ? 'bg-error-100 text-error-700' : ''}
+                        `}
+                      >
+                        {insider.activity}
+                      </span>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', background: 'var(--positive)', borderRadius: '2px' }} />
-                  <span>Buys</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                  <div style={{ width: '12px', height: '12px', background: 'var(--negative)', borderRadius: '2px' }} />
-                  <span>Sells</span>
-                </div>
+
+              {/* Insights */}
+              <div className="bg-white rounded-xl border border-border-light p-6">
+                <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
+                  Insights
+                </h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-success-100 text-success-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                    <p className="text-body-sm text-neutral-600">
+                      Net insider buying of <strong className="text-success-600">$2.4M</strong> in last 90 days
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-navy-100 text-navy-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </span>
+                    <p className="text-body-sm text-neutral-600">
+                      <strong className="text-navy-900">3 of 5</strong> top executives are net buyers
+                    </p>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-warning-100 text-warning-600 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </span>
+                    <p className="text-body-sm text-neutral-600">
+                      CEO Tim Cook sells primarily for <strong className="text-navy-900">tax purposes</strong>
+                    </p>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Data note */}
+              <div className="bg-cream-50 rounded-xl p-6">
+                <h4 className="text-body-sm font-medium text-navy-700 mb-2">
+                  Data Sources
+                </h4>
+                <p className="text-caption text-neutral-500">
+                  Insider trading data sourced from SEC Form 4 filings. Transactions are typically reported within 2 business days of execution.
+                </p>
               </div>
             </div>
-          )}
-
-          {/* Transactions Table */}
-          {data.has_transaction_data && data.transactions.length > 0 && (
-            <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '24px' }}>
-                Recent Transactions ({data.transactions.length})
-              </div>
-              <div style={{ overflowX: 'auto' }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Insider</th>
-                      <th>Title</th>
-                      <th>Type</th>
-                      <th style={{ textAlign: 'right' }}>Shares</th>
-                      <th style={{ textAlign: 'right' }}>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.transactions.slice(0, 20).map((tx: InsiderTransaction, i) => (
-                      <tr key={i}>
-                        <td>{tx.date}</td>
-                        <td style={{ fontWeight: 600 }}>{tx.insider}</td>
-                        <td style={{ color: 'var(--secondary)', fontSize: '13px' }}>{tx.title}</td>
-                        <td><Badge variant={statusToVariant(tx.type_status)}>{tx.type}</Badge></td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{tx.shares_display}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{tx.value_display}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* Institutional Holders */}
-          {data.has_institutional_data && data.institutional.holders.length > 0 && (
-            <div className="card" style={{ padding: '32px', marginBottom: '32px' }}>
-              <div style={{ fontSize: '14px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary)', marginBottom: '24px' }}>
-                Top Institutional Holders
-              </div>
-              {data.institutional.holders.slice(0, 10).map((holder, i) => (
-                <div key={i} style={{ padding: '16px 0', borderBottom: i < Math.min(data.institutional.holders.length, 10) - 1 ? '1px solid var(--border)' : 'none', display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '24px', alignItems: 'center' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 500 }}>{holder.name}</div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600 }}>{holder.shares_display}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>shares</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600 }}>{holder.value_display}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>value</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontWeight: 600 }}>{holder.percent_display}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--secondary)' }}>of float</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Explainer */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <button onClick={() => setShowExplainer(!showExplainer)} style={{ width: '100%', padding: '20px 24px', background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', fontSize: '15px', fontWeight: 600, color: 'var(--primary)' }}>
-              <span>How to interpret insider trading data?</span>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ width: '20px', height: '20px', transform: showExplainer ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease', color: 'var(--secondary)' }}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            {showExplainer && (
-              <div style={{ padding: '0 24px 24px' }}>
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>Cluster Buying</h4>
-                  <p style={{ fontSize: '14px', color: 'var(--secondary)', lineHeight: 1.6 }}>When multiple insiders buy shares around the same time, it may indicate confidence in the company&apos;s future. This is often seen as a positive signal.</p>
-                </div>
-                <div style={{ marginBottom: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>Cluster Selling</h4>
-                  <p style={{ fontSize: '14px', color: 'var(--secondary)', lineHeight: 1.6 }}>Coordinated selling by multiple insiders may indicate concern about the company&apos;s prospects. However, insiders sell for many reasons (diversification, taxes, etc.).</p>
-                </div>
-                <div style={{ padding: '16px', background: 'var(--neutral-light)', borderRadius: '8px', fontSize: '13px', color: 'var(--neutral-dark)', fontStyle: 'italic' }}>
-                  Insider trading data should be used alongside other analysis methods. Insiders may have non-investment reasons for their transactions.
-                </div>
-              </div>
-            )}
-          </div>
+          </Grid>
         </div>
-      )}
-    </div>
+      </Section>
+    </>
   );
 }
