@@ -1,5 +1,5 @@
 // Layout
-export { default as Navbar } from './Navbar';
+export { Navbar } from './layout/Navbar';
 export { default as Footer } from './Footer';
 
 // UI Components
