@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Section, Grid } from '@/components/layout';
+import { Section, Grid, AuthGuard } from '@/components/layout';
 import { useWatchlist } from '@/lib/hooks';
 
 // =============================================================================
@@ -260,6 +260,15 @@ const DEFAULT_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA'
 
 export default function EarningsCalendarPage() {
     const { items } = useWatchlist();
+    return (
+        <AuthGuard>
+            <EarningsCalendarContent />
+        </AuthGuard>
+    );
+}
+
+function EarningsCalendarContent() {
+    const { items = [] } = useWatchlist();
     const [events, setEvents] = useState<EarningsEvent[]>([]);
     const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<EarningsAnalysis | null>(null);
@@ -269,8 +278,11 @@ export default function EarningsCalendarPage() {
     const [searchTicker, setSearchTicker] = useState('');
 
     // Get tickers from watchlist or use defaults
-    const tickers = items.length > 0
-        ? items.map(item => item.ticker).slice(0, 20)
+    const tickers = (items && items.length > 0)
+        ? items.map((item: any) => {
+            if (typeof item === 'string') return item;
+            return item.ticker || item.symbol || '';
+        }).filter(Boolean).slice(0, 20)
         : DEFAULT_TICKERS;
 
     const loadCalendar = useCallback(async () => {
