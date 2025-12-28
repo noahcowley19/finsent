@@ -154,4 +154,130 @@ export const BentoItem: React.FC<BentoItemProps> = ({
   );
 };
 
+// =============================================================================
+// GRID ITEM
+// =============================================================================
+
+export interface GridItemProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  colSpan?: number;
+  rowSpan?: number;
+}
+
+export const GridItem: React.FC<GridItemProps> = ({
+  children,
+  colSpan,
+  rowSpan,
+  className = '',
+  ...props
+}) => {
+  return (
+    <div
+      className={`
+        ${colSpan ? `col-span-${colSpan}` : ''}
+        ${rowSpan ? `row-span-${rowSpan}` : ''}
+        ${className}
+      `.trim().replace(/\s+/g, ' ')}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+// =============================================================================
+// STACK
+// =============================================================================
+
+export interface StackProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  direction?: 'row' | 'col';
+  align?: 'start' | 'center' | 'end' | 'stretch';
+  justify?: 'start' | 'center' | 'end' | 'between';
+  spacing?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+}
+
+const stackSpacing: Record<string, string> = {
+  none: 'gap-0',
+  xs: 'gap-2',
+  sm: 'gap-4',
+  md: 'gap-6',
+  lg: 'gap-8',
+  xl: 'gap-12',
+};
+
+export const Stack: React.FC<StackProps> = ({
+  children,
+  direction = 'col',
+  align = 'stretch',
+  justify = 'start',
+  spacing = 'md',
+  className = '',
+  ...props
+}) => {
+  const directionClass = direction === 'row' ? 'flex-row' : 'flex-col';
+  const alignClass = `items-${align}`;
+  const justifyClass = `justify-${justify}`;
+
+  return (
+    <div
+      className={`
+        flex
+        ${directionClass}
+        ${alignClass}
+        ${justifyClass}
+        ${stackSpacing[spacing]}
+        ${className}
+      `.trim().replace(/\s+/g, ' ')}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
+// =============================================================================
+// TWO COLUMN
+// =============================================================================
+
+export interface TwoColumnProps extends HTMLAttributes<HTMLDivElement> {
+  children: [ReactNode, ReactNode];
+  ratio?: '1:1' | '1:2' | '2:1';
+  align?: 'start' | 'center' | 'end';
+}
+
+export const TwoColumn: React.FC<TwoColumnProps> = ({
+  children,
+  ratio = '1:1',
+  align = 'start',
+  className = '',
+  ...props
+}) => {
+  const ratioClasses: Record<string, string> = {
+    '1:1': 'grid-cols-1 md:grid-cols-2',
+    '1:2': 'grid-cols-1 md:grid-cols-3 [&>*:last-child]:md:col-span-2',
+    '2:1': 'grid-cols-1 md:grid-cols-3 [&>*:first-child]:md:col-span-2',
+  };
+
+  const alignClass: Record<string, string> = {
+    start: 'items-start',
+    center: 'items-center',
+    end: 'items-end',
+  };
+
+  return (
+    <div
+      className={`
+        grid gap-8 lg:gap-12
+        ${ratioClasses[ratio]}
+        ${alignClass[align]}
+        ${className}
+      `.trim().replace(/\s+/g, ' ')}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default Grid;

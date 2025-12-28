@@ -90,4 +90,32 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
 
 GlassCard.displayName = 'GlassCard';
 
+// =============================================================================
+// GLASS PANEL
+// =============================================================================
+
+export interface GlassPanelProps extends GlassCardProps {
+    /** Background opacity multiplier */
+    opacity?: number;
+}
+
+export const GlassPanel: React.FC<GlassPanelProps> = ({
+    children,
+    className = '',
+    ...props
+}) => {
+    return (
+        <GlassCard
+            className={`relative overflow-hidden ${className}`}
+            {...props}
+        >
+            {/* Subtle shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-50 pointer-events-none" />
+            <div className="relative z-10">
+                {children}
+            </div>
+        </GlassCard>
+    );
+};
+
 export default GlassCard;

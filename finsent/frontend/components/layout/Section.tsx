@@ -7,7 +7,7 @@ import React, { ReactNode, HTMLAttributes } from 'react';
 // =============================================================================
 
 export type SectionSpacing = 'none' | 'sm' | 'md' | 'lg' | 'xl';
-export type SectionBackground = 'default' | 'alt' | 'white' | 'transparent';
+export type SectionBackground = 'default' | 'alt' | 'white' | 'transparent' | 'gradient';
 
 export interface SectionProps extends HTMLAttributes<HTMLElement> {
   /** Content */
@@ -39,6 +39,7 @@ const backgroundStyles: Record<SectionBackground, string> = {
   alt: 'bg-ink-100',
   white: 'bg-white',
   transparent: 'bg-transparent',
+  gradient: 'bg-gradient-to-br from-cream-50 via-white to-cream-100',
 };
 
 // =============================================================================
@@ -71,6 +72,73 @@ export const Section: React.FC<SectionProps> = ({
         children
       )}
     </Component>
+  );
+};
+
+export const SectionHeader: React.FC<SectionHeaderProps> = ({
+  title,
+  subtitle,
+  align = 'left',
+  className = '',
+}) => {
+  const alignmentClasses: Record<string, string> = {
+    left: 'text-left',
+    center: 'text-center mx-auto',
+    right: 'text-right ml-auto',
+  };
+
+  return (
+    <div className={`mb-8 lg:mb-12 max-w-3xl ${alignmentClasses[align]} ${className}`}>
+      {title && (
+        <h2 className="text-display-sm lg:text-display-md font-display text-navy-900 mb-4">
+          {title}
+        </h2>
+      )}
+      {subtitle && (
+        <p className="text-body-lg text-neutral-600">
+          {subtitle}
+        </p>
+      )}
+    </div>
+  );
+};
+
+export interface SectionHeaderProps {
+  title?: string;
+  subtitle?: string;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+}
+
+// =============================================================================
+// HERO SECTION
+// =============================================================================
+
+export interface HeroSectionProps extends SectionProps {
+  gradient?: boolean;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({
+  children,
+  gradient = true,
+  className = '',
+  ...props
+}) => {
+  return (
+    <Section
+      spacing="xl"
+      background={gradient ? 'gradient' : 'white'}
+      className={`relative overflow-hidden ${className}`}
+      {...props}
+    >
+      <div className="relative z-10">
+        {children}
+      </div>
+
+      {/* Subtle atmospheric blobs */}
+      <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-[500px] h-[500px] bg-terra-100/30 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/4 w-[400px] h-[400px] bg-warning-100/20 rounded-full blur-3xl" />
+    </Section>
   );
 };
 

@@ -142,18 +142,18 @@ const getTabStyles = (variant: TabsVariant, isActive: boolean, disabled: boolean
   switch (variant) {
     case 'line':
       return `${baseStyles} -mb-px border-b-2 ${isActive
-          ? 'text-ink-900 border-ink-900'
-          : 'text-ink-500 border-transparent hover:text-ink-700 hover:border-ink-300'
+        ? 'text-ink-900 border-ink-900'
+        : 'text-ink-500 border-transparent hover:text-ink-700 hover:border-ink-300'
         }`;
     case 'pills':
       return `${baseStyles} rounded-lg ${isActive
-          ? 'bg-white text-ink-900 shadow-sm'
-          : 'text-ink-600 hover:text-ink-900 hover:bg-white/50'
+        ? 'bg-white text-ink-900 shadow-sm'
+        : 'text-ink-600 hover:text-ink-900 hover:bg-white/50'
         }`;
     case 'enclosed':
       return `${baseStyles} rounded-lg ${isActive
-          ? 'bg-white text-ink-900 shadow-sm'
-          : 'text-ink-500 hover:text-ink-700'
+        ? 'bg-white text-ink-900 shadow-sm'
+        : 'text-ink-500 hover:text-ink-700'
         }`;
     default:
       return baseStyles;
@@ -242,6 +242,56 @@ export const TabPanel: React.FC<TabPanelProps> = ({
     >
       {children}
     </div>
+  );
+};
+
+// =============================================================================
+// SIMPLE TABS
+// =============================================================================
+
+export interface TabItem {
+  id: string;
+  label: string;
+  content: ReactNode;
+  disabled?: boolean;
+}
+
+export interface SimpleTabsProps extends Omit<TabsProps, 'children' | 'defaultTab'> {
+  items: TabItem[];
+  defaultTab?: string;
+}
+
+export const SimpleTabs: React.FC<SimpleTabsProps> = ({
+  items,
+  defaultTab,
+  variant = 'line',
+  size = 'md',
+  className = '',
+  ...props
+}: SimpleTabsProps) => {
+  return (
+    <Tabs
+      defaultTab={defaultTab || items[0]?.id}
+      variant={variant}
+      size={size}
+      className={className}
+      {...props}
+    >
+      <TabList>
+        {items.map((item: TabItem) => (
+          <Tab key={item.id} id={item.id} disabled={item.disabled}>
+            {item.label}
+          </Tab>
+        ))}
+      </TabList>
+      <TabPanels className="mt-4">
+        {items.map((item: TabItem) => (
+          <TabPanel key={item.id} id={item.id}>
+            {item.content}
+          </TabPanel>
+        ))}
+      </TabPanels>
+    </Tabs>
   );
 };
 

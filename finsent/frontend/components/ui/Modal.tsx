@@ -226,4 +226,67 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({
   );
 };
 
+// =============================================================================
+// CONFIRM MODAL
+// =============================================================================
+
+export interface ConfirmModalProps extends Omit<ModalProps, 'children'> {
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  variant?: 'danger' | 'primary';
+  isLoading?: boolean;
+}
+
+export const ConfirmModal: React.FC<ConfirmModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  description,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  variant = 'primary',
+  isLoading = false,
+  ...props
+}: ConfirmModalProps) => {
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" {...props}>
+      <ModalHeader title={title} showClose={!isLoading} onClose={onClose} />
+      <ModalBody>
+        <p className="text-body-md text-ink-600">{description}</p>
+      </ModalBody>
+      <ModalFooter>
+        <button
+          onClick={onClose}
+          disabled={isLoading}
+          className="px-4 py-2 text-body-sm font-medium text-ink-600 hover:text-ink-900 transition-colors disabled:opacity-50"
+        >
+          {cancelLabel}
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={isLoading}
+          className={`
+            px-4 py-2 rounded-lg text-body-sm font-semibold text-white transition-all
+            ${variant === 'danger' ? 'bg-error-600 hover:bg-error-700' : 'bg-ink-900 hover:bg-ink-800'}
+            disabled:opacity-50
+          `}
+        >
+          {isLoading ? (
+            <svg className="w-4 h-4 animate-spin mx-auto" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            confirmLabel
+          )}
+        </button>
+      </ModalFooter>
+    </Modal>
+  );
+};
+
 export default Modal;
