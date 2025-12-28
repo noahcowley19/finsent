@@ -1,15 +1,10 @@
 'use client';
 
 // =============================================================================
-// FAQ SECTION - REDESIGNED
-// =============================================================================
-// Clean accordion FAQ with smooth animations
-//
-// Location: frontend/components/landing/FAQ.tsx
+// FAQ SECTION - FIXED VERSION
 // =============================================================================
 
 import React, { useState } from 'react';
-import { HiPlus, HiMinus } from 'react-icons/hi';
 
 const faqs = [
   {
@@ -21,7 +16,7 @@ const faqs = [
     answer: 'Yes! Our free plan includes stock search, basic sentiment analysis, portfolio tracking for up to 5 positions, and 7-day analysis history. No credit card required to get started.',
   },
   {
-    question: 'What\'s included in the Pro plan?',
+    question: "What's included in the Pro plan?",
     answer: 'Pro unlocks unlimited searches and analyses, full Quant Lab access for backtesting strategies, export capabilities, email alerts, 90-day history, and priority support. It\'s designed for serious investors who want comprehensive tools.',
   },
   {
@@ -46,38 +41,24 @@ const FAQItem: React.FC<{
 }> = ({ question, answer, isOpen, onToggle }) => {
   return (
     <div className="border-b border-navy-100/50 last:border-b-0">
-      <button
-        onClick={onToggle}
-        className="
-          w-full flex items-center justify-between gap-4
-          py-6 text-left
-          group
-        "
-      >
+      <button onClick={onToggle} className="w-full flex items-center justify-between gap-4 py-6 text-left group">
         <span className="font-heading font-semibold text-heading-sm text-navy-900 group-hover:text-navy-700 transition-colors">
           {question}
         </span>
-        <div className={`
-          flex-shrink-0 w-8 h-8 rounded-full
-          flex items-center justify-center
-          transition-all duration-300
-          ${isOpen
-            ? 'bg-navy-900 text-white rotate-0'
-            : 'bg-navy-100 text-navy-600 group-hover:bg-navy-200'
-          }
-        `}>
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isOpen ? 'bg-navy-900 text-white rotate-0' : 'bg-navy-100 text-navy-600 group-hover:bg-navy-200'}`}>
           {isOpen ? (
-            <HiMinus className="w-4 h-4" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+            </svg>
           ) : (
-            <HiPlus className="w-4 h-4" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           )}
         </div>
       </button>
 
-      <div className={`
-        overflow-hidden transition-all duration-300 ease-out
-        ${isOpen ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'}
-      `}>
+      <div className={`overflow-hidden transition-all duration-300 ease-out ${isOpen ? 'max-h-96 opacity-100 pb-6' : 'max-h-0 opacity-0'}`}>
         <p className="text-body-md text-navy-600/80 leading-relaxed pr-12">
           {answer}
         </p>
@@ -92,7 +73,6 @@ export const FAQ: React.FC = () => {
   return (
     <section className="py-24 lg:py-32 bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
         <div className="text-center mb-12">
           <p className="text-body-sm font-semibold text-terra-500 uppercase tracking-widest mb-4">
             FAQ
@@ -102,7 +82,6 @@ export const FAQ: React.FC = () => {
           </h2>
         </div>
 
-        {/* FAQ list */}
         <div className="bg-cream-50/50 rounded-2xl border border-navy-100/30 p-2">
           <div className="bg-white rounded-xl px-6">
             {faqs.map((faq, index) => (
