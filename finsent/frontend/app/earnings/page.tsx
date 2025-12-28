@@ -10,7 +10,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Section, Grid, AuthGuard } from '@/components/layout';
+import { Section, Grid } from '@/components/layout';
 import { useWatchlist } from '@/lib/hooks';
 
 // =============================================================================
@@ -259,12 +259,7 @@ const VolatilityIndicator: React.FC<{ volatility?: EarningsAnalysis['volatility'
 const DEFAULT_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM'];
 
 export default function EarningsCalendarPage() {
-    const { items } = useWatchlist();
-    return (
-        <AuthGuard>
-            <EarningsCalendarContent />
-        </AuthGuard>
-    );
+    return <EarningsCalendarContent />;
 }
 
 function EarningsCalendarContent() {
