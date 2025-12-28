@@ -201,3 +201,9 @@ export {
   type DividerOrientation,
   type DividerVariant,
 } from './Divider';
+
+// -----------------------------------------------------------------------------
+// ANIMATION & EFFECTS
+// -----------------------------------------------------------------------------
+export { AnimatedCounter, type default as AnimatedCounterDefault } from './AnimatedCounter';
+export { GlassCard, GlassPanel } from './GlassCard';
