@@ -12,7 +12,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { Section, Grid, AuthGuard } from '@/components/layout';
+import { Section, Grid } from '@/components/layout';
 import { StrategyBuilder, BacktestResults, StrategyList } from '@/components/quant-lab';
 import type { Strategy, BacktestResultsData, SavedStrategy } from '@/components/quant-lab';
 import { useStrategies, useLazyQuantLab } from '@/lib/hooks';
@@ -27,11 +27,11 @@ function ProUpgradePrompt() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
         </div>
-        
+
         <h1 className="font-display text-display-sm text-navy-900 mb-4">
           Quant Lab is a Pro Feature
         </h1>
-        
+
         <p className="text-body-lg text-neutral-600 mb-8">
           Build, backtest, and optimize trading strategies with our powerful quantitative analysis tools. Upgrade to Pro to unlock this feature.
         </p>
@@ -98,14 +98,14 @@ function QuantLabContent() {
     try {
       // Use real Quant Lab API
       const analysis = await analyzeQuantLab(strategy.symbol);
-      
+
       if (analysis) {
         // Convert API response to BacktestResultsData format
         // Note: The API provides quantitative analysis, not a traditional backtest
         // This is a simplified conversion - in production you'd want to enhance the API
         const alphaScore = analysis.alpha_score.score || 0;
         const maxDrawdown = Math.abs(analysis.risk_analysis.drawdown.max_drawdown || 0);
-        
+
         const mockResults: BacktestResultsData = {
           totalReturn: alphaScore * 100, // Simplified conversion
           totalReturnPercent: alphaScore,
@@ -120,7 +120,7 @@ function QuantLabContent() {
           trades: [], // Not provided by API
           equityCurve: [], // Not provided by API
         };
-        
+
         setResults(mockResults);
       }
     } catch (error) {
@@ -203,9 +203,5 @@ function QuantLabContent() {
 }
 
 export default function QuantLabPage() {
-  return (
-    <AuthGuard>
-      <QuantLabContent />
-    </AuthGuard>
-  );
+  return <QuantLabContent />;
 }
