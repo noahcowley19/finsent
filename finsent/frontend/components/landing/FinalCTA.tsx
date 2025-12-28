@@ -1,41 +1,58 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import { ScrollReveal, MagneticButton, ArrowIcon } from '@/components/ui';
+import { AtmosphericBackground } from './AtmosphericBackground';
 
 // =============================================================================
-// FINAL CTA - Bottom call to action
+// FINAL CTA SECTION - Atmospheric with Magnetic Button
 // =============================================================================
 
 export const FinalCTA: React.FC = () => {
   return (
-    <section className="py-20 lg:py-28 bg-ink-900">
+    <AtmosphericBackground className="py-24 lg:py-32" variant="intense">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 className="text-display-sm lg:text-display-md text-white mb-4">
-          Ready to invest smarter?
-        </h2>
-        <p className="text-body-lg text-ink-400 mb-8 max-w-xl mx-auto">
-          Join thousands of investors using AI-powered insights to make better decisions.
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center gap-2 h-12 px-6 text-body-md font-medium text-ink-900 bg-white hover:bg-ink-100 rounded-xl transition-all duration-150"
-          >
-            Get started for free
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center justify-center h-12 px-6 text-body-md font-medium text-ink-300 hover:text-white transition-colors"
-          >
-            View pricing
-          </Link>
-        </div>
+        <ScrollReveal>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-obsidian-900 mb-6 tracking-tightest">
+            Ready to invest smarter?
+          </h2>
+        </ScrollReveal>
+
+        <ScrollReveal delay={100}>
+          <p className="text-lg lg:text-xl text-obsidian-500 mb-10 max-w-2xl mx-auto">
+            Join thousands of investors using Caveray to make data-driven decisions.
+            Start your free trial today.
+          </p>
+        </ScrollReveal>
+
+        <ScrollReveal delay={200}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <MagneticButton
+              href="/signup"
+              variant="primary"
+              size="lg"
+              icon={<ArrowIcon className="w-4 h-4" />}
+            >
+              Get started free
+            </MagneticButton>
+
+            <MagneticButton
+              href="/pricing"
+              variant="secondary"
+              size="lg"
+            >
+              View pricing
+            </MagneticButton>
+          </div>
+        </ScrollReveal>
+
+        <ScrollReveal delay={300}>
+          <p className="text-sm text-obsidian-400 mt-8">
+            No credit card required • 14-day free trial • Cancel anytime
+          </p>
+        </ScrollReveal>
       </div>
-    </section>
+    </AtmosphericBackground>
   );
 };
 

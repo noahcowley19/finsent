@@ -18,3 +18,6 @@ export { Pricing } from './Pricing';
 export { Testimonials } from './Testimonials';
 export { FAQ } from './FAQ';
 export { FinalCTA } from './FinalCTA';
+export { AtmosphericBackground } from './AtmosphericBackground';
+export { FloatingDashboard } from './FloatingDashboard';
+

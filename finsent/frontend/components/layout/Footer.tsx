@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 // =============================================================================
-// FOOTER COMPONENT - Modern SaaS Aesthetic
+// FOOTER COMPONENT - Cream/Obsidian Aesthetic
 // =============================================================================
 
 const footerLinks = {
@@ -40,7 +40,7 @@ export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-ink-50 border-t border-ink-200/50">
+    <footer className="bg-cream-100/50 border-t border-cream-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="py-12 lg:py-16">
@@ -54,14 +54,14 @@ export const Footer: React.FC = () => {
                 height={28}
                 className="h-7 w-auto object-contain mb-4"
               />
-              <p className="text-body-sm text-ink-500 max-w-xs">
+              <p className="text-sm text-obsidian-500 max-w-xs leading-relaxed">
                 AI-powered financial intelligence for smarter investment decisions.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h3 className="text-body-sm font-semibold text-ink-900 tracking-tight mb-4">
+              <h3 className="text-sm font-semibold text-obsidian-900 tracking-tight mb-4">
                 Product
               </h3>
               <ul className="space-y-2.5">
@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-body-sm text-ink-500 hover:text-ink-900 transition-colors"
+                      className="text-sm text-obsidian-500 hover:text-obsidian-900 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -80,7 +80,7 @@ export const Footer: React.FC = () => {
 
             {/* Resources */}
             <div>
-              <h3 className="text-body-sm font-semibold text-ink-900 tracking-tight mb-4">
+              <h3 className="text-sm font-semibold text-obsidian-900 tracking-tight mb-4">
                 Resources
               </h3>
               <ul className="space-y-2.5">
@@ -88,7 +88,7 @@ export const Footer: React.FC = () => {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-body-sm text-ink-500 hover:text-ink-900 transition-colors"
+                      className="text-sm text-obsidian-500 hover:text-obsidian-900 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -99,7 +99,7 @@ export const Footer: React.FC = () => {
 
             {/* Tools */}
             <div>
-              <h3 className="text-body-sm font-semibold text-ink-900 tracking-tight mb-4">
+              <h3 className="text-sm font-semibold text-obsidian-900 tracking-tight mb-4">
                 Tools
               </h3>
               <ul className="space-y-2.5">
@@ -107,7 +107,7 @@ export const Footer: React.FC = () => {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-body-sm text-ink-500 hover:text-ink-900 transition-colors"
+                      className="text-sm text-obsidian-500 hover:text-obsidian-900 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -118,7 +118,7 @@ export const Footer: React.FC = () => {
 
             {/* Company */}
             <div>
-              <h3 className="text-body-sm font-semibold text-ink-900 tracking-tight mb-4">
+              <h3 className="text-sm font-semibold text-obsidian-900 tracking-tight mb-4">
                 Company
               </h3>
               <ul className="space-y-2.5">
@@ -126,7 +126,7 @@ export const Footer: React.FC = () => {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="text-body-sm text-ink-500 hover:text-ink-900 transition-colors"
+                      className="text-sm text-obsidian-500 hover:text-obsidian-900 transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -138,9 +138,9 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="py-6 border-t border-ink-200/50">
+        <div className="py-6 border-t border-cream-200/50">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-body-xs text-ink-400">
+            <p className="text-xs text-obsidian-400">
               © {currentYear} Caveray. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
@@ -148,7 +148,7 @@ export const Footer: React.FC = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink-400 hover:text-ink-600 transition-colors"
+                className="text-obsidian-400 hover:text-obsidian-600 transition-colors"
                 aria-label="Twitter"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -159,7 +159,7 @@ export const Footer: React.FC = () => {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink-400 hover:text-ink-600 transition-colors"
+                className="text-obsidian-400 hover:text-obsidian-600 transition-colors"
                 aria-label="LinkedIn"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@ export const Footer: React.FC = () => {
                 href="https://github.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink-400 hover:text-ink-600 transition-colors"
+                className="text-obsidian-400 hover:text-obsidian-600 transition-colors"
                 aria-label="GitHub"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

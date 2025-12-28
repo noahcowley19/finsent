@@ -85,7 +85,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
       </head>
-      <body className="min-h-screen bg-cream-50 font-body text-navy-900 antialiased flex flex-col">
+      <body className="min-h-screen bg-cream-50 font-sans text-obsidian-900 antialiased flex flex-col">
         <AuthProvider>
           <ToastProvider position="top-right">
             {/* Navigation */}

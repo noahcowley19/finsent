@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { ScrollReveal, MagneticButton, ArrowIcon } from '@/components/ui';
 
 // =============================================================================
-// PRICING SECTION - Modern SaaS Aesthetic
+// PRICING SECTION - Glass Morphism Cards
+// =============================================================================
+// Pricing cards with glassmorphism effect and obsidian primary buttons.
 // =============================================================================
 
 type BillingPeriod = 'monthly' | 'yearly';
@@ -51,112 +54,129 @@ export const Pricing: React.FC = () => {
   const [billing, setBilling] = useState<BillingPeriod>('monthly');
 
   return (
-    <section className="py-20 lg:py-28 bg-ink-50">
+    <section className="py-24 lg:py-32 bg-cream-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-body-sm font-medium text-accent mb-3">Pricing</p>
-          <h2 className="text-display-sm lg:text-display-md text-ink-900 mb-4">
-            Simple, transparent pricing
-          </h2>
-          <p className="text-body-lg text-ink-500 max-w-xl mx-auto">
-            Start free and upgrade when you need more. No hidden fees.
-          </p>
-        </div>
+        <ScrollReveal>
+          <div className="text-center mb-12">
+            <p className="text-sm font-medium text-electric-500 mb-3 tracking-wide uppercase">
+              Pricing
+            </p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-obsidian-900 mb-4 tracking-tightest">
+              Simple, transparent pricing
+            </h2>
+            <p className="text-lg text-obsidian-500 max-w-xl mx-auto">
+              Start free and upgrade when you need more. No hidden fees.
+            </p>
+          </div>
+        </ScrollReveal>
 
         {/* Billing Toggle */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <button
-            onClick={() => setBilling('monthly')}
-            className={`px-4 py-2 text-body-sm font-medium rounded-lg transition-all ${billing === 'monthly'
-                ? 'bg-ink-900 text-white'
-                : 'text-ink-600 hover:text-ink-900'
-              }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => setBilling('yearly')}
-            className={`px-4 py-2 text-body-sm font-medium rounded-lg transition-all ${billing === 'yearly'
-                ? 'bg-ink-900 text-white'
-                : 'text-ink-600 hover:text-ink-900'
-              }`}
-          >
-            Yearly
-            <span className="ml-1.5 text-body-xs text-success-600">Save 17%</span>
-          </button>
-        </div>
-
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
+        <ScrollReveal delay={100}>
+          <div className="flex items-center justify-center gap-1 mb-12 p-1 rounded-xl bg-cream-100 max-w-xs mx-auto">
+            <button
+              onClick={() => setBilling('monthly')}
               className={`
-                relative p-8 rounded-2xl bg-white border transition-all duration-200
-                ${plan.popular
-                  ? 'border-accent shadow-lg shadow-accent/10'
-                  : 'border-ink-200/50 hover:border-ink-300/50 hover:shadow-lg'
+                flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
+                ${billing === 'monthly'
+                  ? 'bg-white text-obsidian-900 shadow-sm'
+                  : 'text-obsidian-500 hover:text-obsidian-700'
                 }
               `}
             >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="px-3 py-1 text-body-xs font-medium text-white bg-accent rounded-full">
-                    Most popular
-                  </span>
-                </div>
-              )}
+              Monthly
+            </button>
+            <button
+              onClick={() => setBilling('yearly')}
+              className={`
+                flex-1 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200
+                ${billing === 'yearly'
+                  ? 'bg-white text-obsidian-900 shadow-sm'
+                  : 'text-obsidian-500 hover:text-obsidian-700'
+                }
+              `}
+            >
+              Yearly
+              <span className="ml-1.5 text-xs text-success-600 font-semibold">-17%</span>
+            </button>
+          </div>
+        </ScrollReveal>
 
-              <div className="mb-6">
-                <h3 className="text-heading-lg font-semibold text-ink-900 tracking-tight mb-1">
-                  {plan.name}
-                </h3>
-                <p className="text-body-sm text-ink-500">{plan.description}</p>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-display-md text-ink-900">
-                    ${billing === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
-                  </span>
-                  <span className="text-body-sm text-ink-400">
-                    /{billing === 'monthly' ? 'mo' : 'yr'}
-                  </span>
-                </div>
-              </div>
-
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5">
-                    <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-body-sm text-ink-600">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href={plan.ctaHref}
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+          {plans.map((plan, index) => (
+            <ScrollReveal key={plan.name} delay={150 + index * 75}>
+              <div
                 className={`
-                  block w-full py-3 text-center text-body-sm font-medium rounded-xl transition-all duration-150
+                  relative p-8 rounded-3xl transition-all duration-300 hover:-translate-y-1
                   ${plan.popular
-                    ? 'bg-ink-900 text-white hover:bg-ink-800 hover:-translate-y-0.5 hover:shadow-lg'
-                    : 'bg-ink-100 text-ink-700 hover:bg-ink-200'
+                    ? 'bg-white shadow-diffuse border-2 border-electric-500/20'
+                    : 'bg-white/80 backdrop-blur-lg border border-cream-200/50 shadow-glass hover:shadow-glass-lg'
                   }
                 `}
               >
-                {plan.cta}
-              </Link>
-            </div>
+                {/* Popular Badge */}
+                {plan.popular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span className="px-4 py-1.5 text-xs font-semibold text-white bg-electric-500 rounded-full shadow-lg">
+                      Most popular
+                    </span>
+                  </div>
+                )}
+
+                {/* Plan Header */}
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-obsidian-900 tracking-tight mb-1">
+                    {plan.name}
+                  </h3>
+                  <p className="text-sm text-obsidian-500">{plan.description}</p>
+                </div>
+
+                {/* Price */}
+                <div className="mb-8">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl lg:text-5xl font-bold text-obsidian-900 tracking-tight">
+                      ${billing === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
+                    </span>
+                    <span className="text-sm text-obsidian-400">
+                      /{billing === 'monthly' ? 'mo' : 'yr'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Features */}
+                <ul className="space-y-3.5 mb-8">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <svg className="w-5 h-5 text-success-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-sm text-obsidian-600">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Button */}
+                <MagneticButton
+                  href={plan.ctaHref}
+                  variant={plan.popular ? 'primary' : 'secondary'}
+                  size="lg"
+                  className="w-full justify-center"
+                  icon={plan.popular ? <ArrowIcon className="w-4 h-4" /> : undefined}
+                >
+                  {plan.cta}
+                </MagneticButton>
+              </div>
+            </ScrollReveal>
           ))}
         </div>
 
         {/* Footer Note */}
-        <p className="text-center text-body-sm text-ink-400 mt-8">
-          All plans include a 14-day free trial. Cancel anytime.
-        </p>
+        <ScrollReveal delay={300}>
+          <p className="text-center text-sm text-obsidian-400 mt-10">
+            All plans include a 14-day free trial. Cancel anytime.
+          </p>
+        </ScrollReveal>
       </div>
     </section>
   );
