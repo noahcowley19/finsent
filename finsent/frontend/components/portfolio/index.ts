@@ -11,3 +11,12 @@ export { PortfolioSummary, type PortfolioSummaryProps, type PortfolioSummaryData
 export { HoldingsTable, type HoldingsTableProps, type Holding } from './HoldingsTable';
 export { PerformanceChart, type PerformanceChartProps, type PerformanceDataPoint } from './PerformanceChart';
 export { AllocationChart, type AllocationChartProps, type AllocationItem } from './AllocationChart';
+
+// Advanced Portfolio Analytics
+export {
+    CorrelationMatrix,
+    MonteCarloSimulation,
+    VaRCard,
+    OptimizationPanel,
+    WhatIfSimulator
+} from './AdvancedPortfolio';
