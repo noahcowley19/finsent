@@ -500,3 +500,549 @@ def calculate_capm_endpoint():
             'error_type': 'server_error'
         }), 500
 
+
+# =============================================================================
+# ADVANCED PORTFOLIO ANALYTICS
+# =============================================================================
+
+def get_price_history(tickers, period='1y'):
+    """Get historical price data for multiple tickers"""
+    prices = {}
+    for ticker in tickers:
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period=period)
+            if not hist.empty:
+                prices[ticker] = hist['Close']
+        except:
+            continue
+    
+    if not prices:
+        return None
+    
+    # Align dates
+    df = pd.DataFrame(prices)
+    df = df.dropna()
+    return df
+
+
+def calculate_correlation_matrix(tickers):
+    """Calculate correlation matrix between holdings"""
+    prices = get_price_history(tickers)
+    
+    if prices is None or prices.empty:
+        return None
+    
+    # Calculate returns
+    returns = prices.pct_change().dropna()
+    
+    # Calculate correlation
+    corr_matrix = returns.corr()
+    
+    # Convert to serializable format
+    result = {
+        'tickers': list(corr_matrix.columns),
+        'matrix': []
+    }
+    
+    for i, row_ticker in enumerate(corr_matrix.index):
+        row = []
+        for j, col_ticker in enumerate(corr_matrix.columns):
+            value = corr_matrix.iloc[i, j]
+            row.append(safe_round(value, 3) if not np.isnan(value) else 0)
+        result['matrix'].append(row)
+    
+    return result
+
+
+def run_monte_carlo_simulation(positions, num_simulations=1000, time_horizon=252):
+    """Run Monte Carlo simulation for portfolio"""
+    if not positions:
+        return None
+    
+    tickers = [p.get('ticker', '').upper() for p in positions]
+    weights = []
+    
+    # Get prices and calculate weights
+    prices = get_price_history(tickers)
+    if prices is None or prices.empty:
+        return None
+    
+    # Calculate portfolio weights based on current values
+    total_value = 0
+    position_values = {}
+    
+    for pos in positions:
+        ticker = pos.get('ticker', '').upper()
+        shares = float(pos.get('shares', 0))
+        if ticker in prices.columns:
+            current_price = prices[ticker].iloc[-1]
+            value = shares * current_price
+            position_values[ticker] = value
+            total_value += value
+    
+    if total_value == 0:
+        return None
+    
+    # Calculate weights
+    weights = np.array([position_values.get(t, 0) / total_value for t in tickers if t in prices.columns])
+    valid_tickers = [t for t in tickers if t in prices.columns]
+    
+    # Calculate returns
+    returns = prices[valid_tickers].pct_change().dropna()
+    
+    # Calculate mean and covariance
+    mean_returns = returns.mean().values
+    cov_matrix = returns.cov().values
+    
+    # Run simulations
+    np.random.seed(42)  # For reproducibility
+    simulated_values = []
+    
+    for _ in range(num_simulations):
+        # Generate random returns using multivariate normal
+        random_returns = np.random.multivariate_normal(mean_returns, cov_matrix, time_horizon)
+        
+        # Calculate portfolio returns
+        portfolio_returns = np.dot(random_returns, weights)
+        
+        # Calculate cumulative value
+        cumulative = total_value * np.cumprod(1 + portfolio_returns)
+        simulated_values.append(cumulative)
+    
+    simulated_values = np.array(simulated_values)
+    
+    # Calculate percentiles
+    percentiles = [5, 25, 50, 75, 95]
+    percentile_values = {}
+    
+    for p in percentiles:
+        values = np.percentile(simulated_values, p, axis=0)
+        percentile_values[f'p{p}'] = [safe_round(v, 2) for v in values[::21]]  # Monthly samples
+    
+    # Final values statistics
+    final_values = simulated_values[:, -1]
+    
+    return {
+        'initial_value': safe_round(total_value, 2),
+        'simulations': num_simulations,
+        'time_horizon_days': time_horizon,
+        'percentile_paths': percentile_values,
+        'final_value_stats': {
+            'mean': safe_round(np.mean(final_values), 2),
+            'median': safe_round(np.median(final_values), 2),
+            'std': safe_round(np.std(final_values), 2),
+            'min': safe_round(np.min(final_values), 2),
+            'max': safe_round(np.max(final_values), 2),
+            'p5': safe_round(np.percentile(final_values, 5), 2),
+            'p95': safe_round(np.percentile(final_values, 95), 2),
+        },
+        'expected_return': safe_round((np.mean(final_values) / total_value - 1) * 100, 2),
+        'worst_case_return': safe_round((np.percentile(final_values, 5) / total_value - 1) * 100, 2),
+        'best_case_return': safe_round((np.percentile(final_values, 95) / total_value - 1) * 100, 2),
+    }
+
+
+def calculate_var_cvar(positions, confidence=0.95, time_horizon=1):
+    """Calculate Value at Risk and Conditional VaR"""
+    if not positions:
+        return None
+    
+    tickers = [p.get('ticker', '').upper() for p in positions]
+    prices = get_price_history(tickers)
+    
+    if prices is None or prices.empty:
+        return None
+    
+    # Calculate weights
+    total_value = 0
+    position_values = {}
+    
+    for pos in positions:
+        ticker = pos.get('ticker', '').upper()
+        shares = float(pos.get('shares', 0))
+        if ticker in prices.columns:
+            current_price = prices[ticker].iloc[-1]
+            value = shares * current_price
+            position_values[ticker] = value
+            total_value += value
+    
+    if total_value == 0:
+        return None
+    
+    valid_tickers = [t for t in tickers if t in prices.columns]
+    weights = np.array([position_values.get(t, 0) / total_value for t in valid_tickers])
+    
+    # Calculate portfolio returns
+    returns = prices[valid_tickers].pct_change().dropna()
+    portfolio_returns = returns.dot(weights)
+    
+    # Calculate VaR
+    var_pct = np.percentile(portfolio_returns, (1 - confidence) * 100)
+    var_dollar = total_value * var_pct * np.sqrt(time_horizon)
+    
+    # Calculate CVaR (Expected Shortfall)
+    cvar_returns = portfolio_returns[portfolio_returns <= var_pct]
+    cvar_pct = cvar_returns.mean() if len(cvar_returns) > 0 else var_pct
+    cvar_dollar = total_value * cvar_pct * np.sqrt(time_horizon)
+    
+    return {
+        'portfolio_value': safe_round(total_value, 2),
+        'confidence_level': confidence,
+        'time_horizon_days': time_horizon,
+        'var': {
+            'percentage': safe_round(var_pct * 100, 2),
+            'dollar_amount': safe_round(abs(var_dollar), 2),
+            'interpretation': f'There is a {(1-confidence)*100:.0f}% chance of losing more than ${abs(var_dollar):,.2f} in {time_horizon} day(s)'
+        },
+        'cvar': {
+            'percentage': safe_round(cvar_pct * 100, 2),
+            'dollar_amount': safe_round(abs(cvar_dollar), 2),
+            'interpretation': f'If losses exceed VaR, the expected loss is ${abs(cvar_dollar):,.2f}'
+        }
+    }
+
+
+def generate_optimization_recommendations(positions):
+    """Generate portfolio optimization suggestions"""
+    if not positions:
+        return None
+    
+    recommendations = []
+    
+    # Analyze concentration
+    total_value = sum(p.get('current_value', 0) for p in positions)
+    if total_value == 0:
+        return None
+    
+    for pos in positions:
+        weight = pos.get('current_value', 0) / total_value
+        ticker = pos.get('ticker', '')
+        
+        # Over-concentration warning
+        if weight > 0.25:
+            recommendations.append({
+                'type': 'rebalance',
+                'priority': 'high',
+                'ticker': ticker,
+                'message': f'{ticker} represents {weight*100:.1f}% of portfolio. Consider reducing to below 25%.',
+                'current_weight': safe_round(weight * 100, 1),
+                'suggested_weight': 25.0
+            })
+        elif weight > 0.15:
+            recommendations.append({
+                'type': 'rebalance',
+                'priority': 'medium',
+                'ticker': ticker,
+                'message': f'{ticker} at {weight*100:.1f}% is above recommended 15% single-stock limit.',
+                'current_weight': safe_round(weight * 100, 1),
+                'suggested_weight': 15.0
+            })
+    
+    # Sector concentration
+    sector_weights = {}
+    for pos in positions:
+        sector = pos.get('sector', 'Unknown')
+        sector_weights[sector] = sector_weights.get(sector, 0) + pos.get('current_value', 0) / total_value
+    
+    for sector, weight in sector_weights.items():
+        if weight > 0.40:
+            recommendations.append({
+                'type': 'diversify',
+                'priority': 'high',
+                'sector': sector,
+                'message': f'{sector} sector at {weight*100:.1f}% of portfolio. Consider diversifying.',
+                'current_weight': safe_round(weight * 100, 1),
+                'suggested_weight': 40.0
+            })
+    
+    # Low number of holdings
+    if len(positions) < 5:
+        recommendations.append({
+            'type': 'diversify',
+            'priority': 'medium',
+            'message': f'Portfolio has only {len(positions)} holdings. Consider adding more for diversification.',
+            'current_count': len(positions),
+            'suggested_count': 10
+        })
+    
+    return {
+        'recommendations': recommendations,
+        'diversification_score': calculate_portfolio_risk_metrics(positions).get('diversification_score', 0),
+        'positions_count': len(positions),
+        'sectors_count': len(sector_weights)
+    }
+
+
+def simulate_what_if(current_positions, trades):
+    """Simulate what-if portfolio changes"""
+    if not current_positions:
+        return None
+    
+    # Deep copy positions
+    simulated_positions = []
+    for pos in current_positions:
+        simulated_positions.append(dict(pos))
+    
+    # Apply trades
+    for trade in trades:
+        action = trade.get('action')  # 'buy' or 'sell'
+        ticker = trade.get('ticker', '').upper()
+        shares = float(trade.get('shares', 0))
+        price = float(trade.get('price', 0))
+        
+        if action == 'buy':
+            # Check if position exists
+            existing = next((p for p in simulated_positions if p['ticker'] == ticker), None)
+            if existing:
+                # Add to existing
+                old_value = existing['shares'] * existing.get('cost_basis', existing.get('current_price', price))
+                new_value = shares * price
+                total_shares = existing['shares'] + shares
+                existing['shares'] = total_shares
+                existing['cost_basis'] = (old_value + new_value) / total_shares
+                existing['cost_basis_total'] = existing['shares'] * existing['cost_basis']
+            else:
+                # New position
+                stock_data = get_stock_data(ticker)
+                simulated_positions.append({
+                    'ticker': ticker,
+                    'shares': shares,
+                    'cost_basis': price,
+                    'cost_basis_total': shares * price,
+                    'current_price': stock_data.get('current_price', price) if 'error' not in stock_data else price,
+                    'sector': stock_data.get('sector', 'Unknown') if 'error' not in stock_data else 'Unknown'
+                })
+        
+        elif action == 'sell':
+            existing = next((p for p in simulated_positions if p['ticker'] == ticker), None)
+            if existing:
+                if shares >= existing['shares']:
+                    # Remove position
+                    simulated_positions = [p for p in simulated_positions if p['ticker'] != ticker]
+                else:
+                    existing['shares'] -= shares
+                    existing['cost_basis_total'] = existing['shares'] * existing.get('cost_basis', 0)
+    
+    # Calculate metrics for both portfolios
+    current_metrics = calculate_portfolio_metrics([
+        {'ticker': p['ticker'], 'shares': p['shares'], 'total_cost_basis': p.get('cost_basis_total', p.get('shares', 0) * p.get('cost_basis', 0))}
+        for p in current_positions
+    ])
+    
+    simulated_metrics = calculate_portfolio_metrics([
+        {'ticker': p['ticker'], 'shares': p['shares'], 'total_cost_basis': p.get('cost_basis_total', p.get('shares', 0) * p.get('cost_basis', 0))}
+        for p in simulated_positions
+    ])
+    
+    current_risk = calculate_portfolio_risk_metrics(current_metrics.get('positions', []))
+    simulated_risk = calculate_portfolio_risk_metrics(simulated_metrics.get('positions', []))
+    
+    return {
+        'current': {
+            'total_value': current_metrics.get('total_value', 0),
+            'total_positions': current_metrics.get('positions_count', 0),
+            'portfolio_beta': current_risk.get('portfolio_beta', 1.0),
+            'diversification_score': current_risk.get('diversification_score', 0),
+            'concentration_risk': current_risk.get('concentration_risk', 'N/A')
+        },
+        'simulated': {
+            'total_value': simulated_metrics.get('total_value', 0),
+            'total_positions': simulated_metrics.get('positions_count', 0),
+            'portfolio_beta': simulated_risk.get('portfolio_beta', 1.0),
+            'diversification_score': simulated_risk.get('diversification_score', 0),
+            'concentration_risk': simulated_risk.get('concentration_risk', 'N/A')
+        },
+        'changes': {
+            'value_change': safe_round(simulated_metrics.get('total_value', 0) - current_metrics.get('total_value', 0), 2),
+            'beta_change': safe_round(simulated_risk.get('portfolio_beta', 1.0) - current_risk.get('portfolio_beta', 1.0), 2),
+            'diversification_change': safe_round(simulated_risk.get('diversification_score', 0) - current_risk.get('diversification_score', 0), 1),
+        },
+        'trades_applied': trades,
+        'simulated_positions': simulated_metrics.get('positions', [])
+    }
+
+
+# =============================================================================
+# ADVANCED PORTFOLIO ENDPOINTS
+# =============================================================================
+
+@portfolio_bp.route('/api/portfolio/correlation', methods=['POST'])
+def get_correlation():
+    """Get correlation matrix for portfolio holdings"""
+    try:
+        data = request.get_json()
+        tickers = data.get('tickers', [])
+        
+        if not tickers:
+            return jsonify({
+                'error': 'No tickers provided',
+                'error_type': 'validation'
+            }), 400
+        
+        tickers = [t.upper() for t in tickers]
+        result = calculate_correlation_matrix(tickers)
+        
+        if result is None:
+            return jsonify({
+                'error': 'Unable to calculate correlation matrix',
+                'error_type': 'data_error'
+            }), 400
+        
+        result['timestamp'] = datetime.now().isoformat()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
+@portfolio_bp.route('/api/portfolio/monte-carlo', methods=['POST'])
+def monte_carlo():
+    """Run Monte Carlo simulation"""
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        num_simulations = min(data.get('simulations', 1000), 2000)  # Cap at 2000
+        time_horizon = min(data.get('time_horizon', 252), 504)  # Cap at 2 years
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        result = run_monte_carlo_simulation(positions, num_simulations, time_horizon)
+        
+        if result is None:
+            return jsonify({
+                'error': 'Unable to run Monte Carlo simulation',
+                'error_type': 'data_error'
+            }), 400
+        
+        result['timestamp'] = datetime.now().isoformat()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
+@portfolio_bp.route('/api/portfolio/var', methods=['POST'])
+def get_var():
+    """Calculate Value at Risk and CVaR"""
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        confidence = data.get('confidence', 0.95)
+        time_horizon = data.get('time_horizon', 1)
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        # Get position data
+        portfolio_metrics = calculate_portfolio_metrics(positions)
+        positions_data = portfolio_metrics.get('positions', [])
+        
+        result = calculate_var_cvar(positions_data, confidence, time_horizon)
+        
+        if result is None:
+            return jsonify({
+                'error': 'Unable to calculate VaR',
+                'error_type': 'data_error'
+            }), 400
+        
+        result['timestamp'] = datetime.now().isoformat()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
+@portfolio_bp.route('/api/portfolio/optimize', methods=['POST'])
+def optimize():
+    """Get portfolio optimization recommendations"""
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        # Get position data
+        portfolio_metrics = calculate_portfolio_metrics(positions)
+        positions_data = portfolio_metrics.get('positions', [])
+        
+        result = generate_optimization_recommendations(positions_data)
+        
+        if result is None:
+            return jsonify({
+                'error': 'Unable to generate recommendations',
+                'error_type': 'data_error'
+            }), 400
+        
+        result['timestamp'] = datetime.now().isoformat()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
+@portfolio_bp.route('/api/portfolio/what-if', methods=['POST'])
+def what_if():
+    """Simulate what-if portfolio changes"""
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        trades = data.get('trades', [])
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        if not trades:
+            return jsonify({
+                'error': 'No trades provided',
+                'error_type': 'validation'
+            }), 400
+        
+        # Get position data
+        portfolio_metrics = calculate_portfolio_metrics(positions)
+        positions_data = portfolio_metrics.get('positions', [])
+        
+        result = simulate_what_if(positions_data, trades)
+        
+        if result is None:
+            return jsonify({
+                'error': 'Unable to simulate trades',
+                'error_type': 'data_error'
+            }), 400
+        
+        result['timestamp'] = datetime.now().isoformat()
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
