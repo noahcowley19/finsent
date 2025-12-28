@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { MobileMenu } from './MobileMenu';
+import { MobileMenu } from '@/components/layout/MobileMenu';
 
 // =============================================================================
 // TYPES
@@ -43,26 +43,32 @@ export interface NavbarProps {
 // =============================================================================
 
 export const navLinks: NavLink[] = [
-  { label: 'Dashboard', href: '/' },
+  { label: 'Dashboard', href: '/dashboard' },
   { label: 'Search', href: '/search' },
-  { label: 'Sentiment', href: '/sentiment', requiresAuth: true },
-  { label: 'Financials', href: '/financials', requiresAuth: true },
-  { label: 'Insider', href: '/insider', requiresAuth: true },
-  { label: 'Portfolio', href: '/portfolio', requiresAuth: true },
-  { label: 'Watchlist', href: '/watchlist', requiresAuth: true },
-  { label: 'Quant Lab', href: '/quant-lab', requiresAuth: true, requiresPro: true },
+  { label: 'Sentiment', href: '/sentiment' },
+  { label: 'Screener', href: '/screener' },
+  { label: 'Movers', href: '/movers' },
+  { label: 'Sectors', href: '/sectors' },
+  { label: 'Technicals', href: '/technicals' },
+  { label: 'Compare', href: '/compare' },
+  { label: 'Dividends', href: '/dividends' },
+  { label: 'Earnings', href: '/earnings' },
+  { label: 'Portfolio', href: '/portfolio' },
+  { label: 'Watchlist', href: '/watchlist' },
+  { label: 'Journal', href: '/journal' },
+  { label: 'Quant Lab', href: '/quant-lab' },
 ];
 
 // =============================================================================
 // LOGO COMPONENT
 // =============================================================================
 
-const Logo: React.FC<{ scrolled?: boolean; transparent?: boolean }> = ({ 
-  scrolled, 
-  transparent 
+const Logo: React.FC<{ scrolled?: boolean; transparent?: boolean }> = ({
+  scrolled,
+  transparent
 }) => {
   const textColor = transparent && !scrolled ? 'text-white' : 'text-navy-900';
-  
+
   return (
     <Link href="/" className="flex items-center gap-2 group">
       {/* Logo mark */}
@@ -135,7 +141,7 @@ const UserMenu: React.FC<{
             className="fixed inset-0 z-dropdown"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Menu */}
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-border-light z-dropdown animate-fade-in-down">
             {/* User info */}
@@ -166,7 +172,7 @@ const UserMenu: React.FC<{
                 </svg>
                 Account Settings
               </Link>
-              
+
               {user.tier === 'free' && (
                 <Link
                   href="/pricing"
@@ -245,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const bgClass = transparent && !scrolled
     ? 'bg-transparent'
     : 'bg-cream-50/95 backdrop-blur-md shadow-sm';
-  
+
   const textColor = transparent && !scrolled ? 'text-white' : 'text-navy-700';
   const activeTextColor = transparent && !scrolled ? 'text-white' : 'text-navy-900';
 
@@ -270,7 +276,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-1">
               {visibleLinks.map((link) => {
-                const isActive = pathname === link.href || 
+                const isActive = pathname === link.href ||
                   (link.href !== '/' && pathname.startsWith(link.href));
 
                 return (
@@ -281,8 +287,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       relative px-4 py-2 rounded-lg
                       text-body-sm font-medium
                       transition-all duration-fast
-                      ${isActive 
-                        ? `${activeTextColor} bg-navy-500/10` 
+                      ${isActive
+                        ? `${activeTextColor} bg-navy-500/10`
                         : `${textColor} hover:bg-navy-500/5`
                       }
                     `}
@@ -301,8 +307,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Right section */}
             <div className="flex items-center gap-3">
               {user ? (
-                <UserMenu 
-                  user={user} 
+                <UserMenu
+                  user={user}
                   onSignOut={onSignOut}
                   scrolled={scrolled}
                   transparent={transparent}
