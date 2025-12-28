@@ -6,8 +6,8 @@ import React, { forwardRef, ButtonHTMLAttributes, ReactNode } from 'react';
 // TYPES
 // =============================================================================
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost';
-export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'accent';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Visual style variant */
@@ -27,56 +27,54 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // =============================================================================
-// STYLES
+// STYLES - Modern SaaS Aesthetic
 // =============================================================================
 
 const baseStyles = `
   inline-flex items-center justify-center gap-2
-  font-heading font-medium
-  rounded-sm
+  font-medium tracking-tight
+  rounded-lg
   border
   cursor-pointer
-  transition-all duration-fast ease-out
-  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2
+  transition-all duration-150 ease-out
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
   disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
   select-none
 `;
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: `
-    bg-terra-500 text-white border-transparent
-    hover:bg-terra-600 hover:-translate-y-0.5 hover:shadow-terra
-    active:bg-terra-700 active:translate-y-0
+    bg-ink-900 text-white border-transparent
+    hover:bg-ink-800 hover:-translate-y-px hover:shadow-lg
+    active:bg-ink-950 active:translate-y-0
   `,
   secondary: `
-    bg-transparent text-navy-500 border-navy-500
-    hover:bg-navy-500/5 hover:border-navy-700 hover:text-navy-700
-    active:bg-navy-500/10
-  `,
-  tertiary: `
-    bg-transparent text-navy-500 border-transparent
-    hover:text-navy-700 hover:underline
-    active:text-navy-900
+    bg-white text-ink-700 border-ink-200
+    hover:bg-ink-50 hover:border-ink-300 hover:-translate-y-px
+    active:bg-ink-100 active:translate-y-0
   `,
   ghost: `
-    bg-transparent text-neutral-600 border-transparent
-    hover:bg-cream-100 hover:text-navy-900
-    active:bg-cream-200
+    bg-transparent text-ink-600 border-transparent
+    hover:bg-ink-100 hover:text-ink-900
+    active:bg-ink-200
+  `,
+  accent: `
+    bg-accent text-white border-transparent
+    hover:bg-accent-600 hover:-translate-y-px hover:shadow-glow-sm
+    active:bg-accent-700 active:translate-y-0
   `,
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
   sm: 'h-8 px-3 text-body-sm',
-  md: 'h-10 px-5 text-body-md',
+  md: 'h-10 px-4 text-body-sm',
   lg: 'h-12 px-6 text-body-md',
-  xl: 'h-14 px-8 text-body-lg',
 };
 
 const iconSizeStyles: Record<ButtonSize, string> = {
   sm: 'w-4 h-4',
-  md: 'w-5 h-5',
+  md: 'w-4 h-4',
   lg: 'w-5 h-5',
-  xl: 'w-6 h-6',
 };
 
 // =============================================================================
@@ -96,7 +94,7 @@ const ButtonSpinner: React.FC<{ size: ButtonSize }> = ({ size }) => (
       cy="12"
       r="10"
       stroke="currentColor"
-      strokeWidth="4"
+      strokeWidth="3"
     />
     <path
       className="opacity-75"
@@ -107,7 +105,7 @@ const ButtonSpinner: React.FC<{ size: ButtonSize }> = ({ size }) => (
 );
 
 // =============================================================================
-// COMPONENT
+// BUTTON COMPONENT
 // =============================================================================
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -146,9 +144,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ) : leftIcon ? (
           <span className={iconSizeStyles[size]}>{leftIcon}</span>
         ) : null}
-        
+
         <span className={isLoading ? 'opacity-0' : ''}>{children}</span>
-        
+
         {!isLoading && rightIcon && (
           <span className={iconSizeStyles[size]}>{rightIcon}</span>
         )}
@@ -176,7 +174,6 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       sm: 'w-8 h-8 p-0',
       md: 'w-10 h-10 p-0',
       lg: 'w-12 h-12 p-0',
-      xl: 'w-14 h-14 p-0',
     };
 
     return (
@@ -214,7 +211,7 @@ export const ButtonGroup: React.FC<ButtonGroupProps> = ({
     <div
       className={`
         inline-flex
-        ${attached ? '[&>button]:rounded-none [&>button:first-child]:rounded-l-sm [&>button:last-child]:rounded-r-sm [&>button:not(:last-child)]:border-r-0' : 'gap-2'}
+        ${attached ? '[&>button]:rounded-none [&>button:first-child]:rounded-l-lg [&>button:last-child]:rounded-r-lg [&>button:not(:last-child)]:border-r-0' : 'gap-2'}
         ${className}
       `}
       role="group"

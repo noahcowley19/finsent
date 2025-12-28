@@ -6,7 +6,7 @@ import React, { forwardRef, HTMLAttributes, ReactNode } from 'react';
 // TYPES
 // =============================================================================
 
-export type CardVariant = 'elevated' | 'outlined' | 'ghost';
+export type CardVariant = 'default' | 'glass' | 'outline' | 'ghost';
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -23,21 +23,23 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 // =============================================================================
-// STYLES
+// STYLES - Modern SaaS Aesthetic
 // =============================================================================
 
-const baseStyles = 'rounded-lg transition-all duration-fast ease-out';
+const baseStyles = 'rounded-xl transition-all duration-200 ease-out';
 
 const variantStyles: Record<CardVariant, string> = {
-  elevated: 'bg-white shadow-md',
-  outlined: 'bg-cream-50 border border-border-light',
+  default: 'bg-white border border-ink-200/50 shadow-sm',
+  glass: 'bg-white/80 backdrop-blur-xl border border-white/20 shadow-glass',
+  outline: 'bg-transparent border border-ink-200',
   ghost: 'bg-transparent',
 };
 
 const hoverStyles: Record<CardVariant, string> = {
-  elevated: 'hover:-translate-y-1 hover:shadow-lg cursor-pointer',
-  outlined: 'hover:border-border-medium hover:bg-cream-100 cursor-pointer',
-  ghost: 'hover:bg-cream-50 cursor-pointer',
+  default: 'hover:-translate-y-0.5 hover:shadow-lg hover:border-ink-300/50 cursor-pointer',
+  glass: 'hover:-translate-y-0.5 hover:shadow-glass-lg hover:border-white/30 cursor-pointer',
+  outline: 'hover:bg-ink-50 hover:border-ink-300 cursor-pointer',
+  ghost: 'hover:bg-ink-50 cursor-pointer',
 };
 
 const paddingStyles: Record<CardPadding, string> = {
@@ -48,13 +50,13 @@ const paddingStyles: Record<CardPadding, string> = {
 };
 
 // =============================================================================
-// COMPONENT
+// CARD COMPONENT
 // =============================================================================
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   (
     {
-      variant = 'elevated',
+      variant = 'default',
       hover = false,
       padding = 'md',
       as: Component = 'div',
@@ -120,10 +122,10 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
     <div className={`flex items-start justify-between gap-4 mb-4 ${className}`} {...props}>
       <div>
         {title && (
-          <h3 className="font-heading text-heading-md text-navy-900">{title}</h3>
+          <h3 className="font-semibold text-heading-md text-ink-900 tracking-tight">{title}</h3>
         )}
         {subtitle && (
-          <p className="mt-1 text-body-sm text-neutral-500">{subtitle}</p>
+          <p className="mt-1 text-body-sm text-ink-500">{subtitle}</p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
@@ -176,7 +178,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-3 mt-6 pt-4 border-t border-border-light ${alignStyles[align]} ${className}`}
+      className={`flex items-center gap-3 mt-6 pt-4 border-t border-ink-100 ${alignStyles[align]} ${className}`}
       {...props}
     >
       {children}
@@ -185,7 +187,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({
 };
 
 // =============================================================================
-// METRIC CARD
+// METRIC CARD - For dashboard metrics
 // =============================================================================
 
 export interface MetricCardProps extends HTMLAttributes<HTMLDivElement> {
@@ -209,28 +211,28 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   change,
   changePositive,
   icon,
-  variant = 'elevated',
+  variant = 'default',
   className = '',
   ...props
 }) => {
   return (
-    <Card variant={variant} padding="md" className={className} {...props}>
+    <Card variant={variant} padding="md" hover className={`group ${className}`} {...props}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-body-sm text-neutral-500 mb-1">{label}</p>
-          <p className="font-heading text-display-sm text-navy-900">{value}</p>
+          <p className="text-body-sm text-ink-500 mb-1">{label}</p>
+          <p className="font-semibold text-display-sm text-ink-900 tracking-tight">{value}</p>
           {change && (
             <p
-              className={`mt-1 text-body-sm font-medium ${
-                changePositive ? 'text-success-500' : 'text-error-500'
-              }`}
+              className={`mt-2 text-body-sm font-medium flex items-center gap-1 ${changePositive ? 'text-success-600' : 'text-error-600'
+                }`}
             >
-              {changePositive ? '↑' : '↓'} {change}
+              <span className="text-xs">{changePositive ? '↑' : '↓'}</span>
+              {change}
             </p>
           )}
         </div>
         {icon && (
-          <div className="w-10 h-10 rounded-lg bg-cream-100 flex items-center justify-center text-navy-500">
+          <div className="w-10 h-10 rounded-lg bg-ink-100 flex items-center justify-center text-ink-500 group-hover:bg-ink-200 group-hover:text-ink-600 transition-colors">
             {icon}
           </div>
         )}
@@ -240,7 +242,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 };
 
 // =============================================================================
-// FEATURE CARD
+// FEATURE CARD - For landing page features
 // =============================================================================
 
 export interface FeatureCardProps extends HTMLAttributes<HTMLDivElement> {
@@ -269,20 +271,20 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
   ...props
 }) => {
   return (
-    <Card variant="elevated" hover padding="lg" className={className} {...props}>
-      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-navy-500 to-navy-700 flex items-center justify-center text-white mb-4">
+    <Card variant="default" hover padding="lg" className={`group ${className}`} {...props}>
+      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-ink-100 to-ink-200 flex items-center justify-center text-ink-600 mb-4 group-hover:from-accent/10 group-hover:to-accent/20 group-hover:text-accent transition-all">
         {icon}
       </div>
-      <h3 className="font-heading text-heading-md text-navy-900 mb-2">{title}</h3>
-      <p className="text-body-sm text-neutral-600 mb-4 line-clamp-3">{description}</p>
+      <h3 className="font-semibold text-heading-md text-ink-900 tracking-tight mb-2">{title}</h3>
+      <p className="text-body-sm text-ink-500 mb-4 line-clamp-3">{description}</p>
       {ctaText && (
         <a
           href={ctaHref}
           onClick={onCtaClick}
-          className="inline-flex items-center gap-1 text-body-sm font-medium text-navy-500 hover:text-navy-700 transition-colors"
+          className="inline-flex items-center gap-1 text-body-sm font-medium text-accent hover:text-accent-600 transition-colors"
         >
           {ctaText}
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </a>

@@ -10,31 +10,20 @@ export type GridCols = 1 | 2 | 3 | 4 | 5 | 6 | 12;
 export type GridGap = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 
 export interface GridProps extends HTMLAttributes<HTMLDivElement> {
-  /** Number of columns */
+  /** Content */
+  children: ReactNode;
+  /** Default columns */
   cols?: GridCols;
-  /** Number of columns on small screens */
+  /** Columns at sm breakpoint */
   colsSm?: GridCols;
-  /** Number of columns on medium screens */
+  /** Columns at md breakpoint */
   colsMd?: GridCols;
-  /** Number of columns on large screens */
+  /** Columns at lg breakpoint */
   colsLg?: GridCols;
+  /** Columns at xl breakpoint */
+  colsXl?: GridCols;
   /** Gap between items */
   gap?: GridGap;
-  /** Content */
-  children: ReactNode;
-}
-
-export interface GridItemProps extends HTMLAttributes<HTMLDivElement> {
-  /** Column span */
-  span?: 1 | 2 | 3 | 4 | 5 | 6 | 12 | 'full';
-  /** Column span on small screens */
-  spanSm?: 1 | 2 | 3 | 4 | 5 | 6 | 12 | 'full';
-  /** Column span on medium screens */
-  spanMd?: 1 | 2 | 3 | 4 | 5 | 6 | 12 | 'full';
-  /** Column span on large screens */
-  spanLg?: 1 | 2 | 3 | 4 | 5 | 6 | 12 | 'full';
-  /** Content */
-  children: ReactNode;
 }
 
 // =============================================================================
@@ -51,86 +40,12 @@ const colStyles: Record<GridCols, string> = {
   12: 'grid-cols-12',
 };
 
-const colSmStyles: Record<GridCols, string> = {
-  1: 'sm:grid-cols-1',
-  2: 'sm:grid-cols-2',
-  3: 'sm:grid-cols-3',
-  4: 'sm:grid-cols-4',
-  5: 'sm:grid-cols-5',
-  6: 'sm:grid-cols-6',
-  12: 'sm:grid-cols-12',
-};
-
-const colMdStyles: Record<GridCols, string> = {
-  1: 'md:grid-cols-1',
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-3',
-  4: 'md:grid-cols-4',
-  5: 'md:grid-cols-5',
-  6: 'md:grid-cols-6',
-  12: 'md:grid-cols-12',
-};
-
-const colLgStyles: Record<GridCols, string> = {
-  1: 'lg:grid-cols-1',
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
-  4: 'lg:grid-cols-4',
-  5: 'lg:grid-cols-5',
-  6: 'lg:grid-cols-6',
-  12: 'lg:grid-cols-12',
-};
-
 const gapStyles: Record<GridGap, string> = {
   none: 'gap-0',
-  sm: 'gap-4',
-  md: 'gap-6',
-  lg: 'gap-8',
-  xl: 'gap-12',
-};
-
-const spanStyles: Record<string, string> = {
-  '1': 'col-span-1',
-  '2': 'col-span-2',
-  '3': 'col-span-3',
-  '4': 'col-span-4',
-  '5': 'col-span-5',
-  '6': 'col-span-6',
-  '12': 'col-span-12',
-  'full': 'col-span-full',
-};
-
-const spanSmStyles: Record<string, string> = {
-  '1': 'sm:col-span-1',
-  '2': 'sm:col-span-2',
-  '3': 'sm:col-span-3',
-  '4': 'sm:col-span-4',
-  '5': 'sm:col-span-5',
-  '6': 'sm:col-span-6',
-  '12': 'sm:col-span-12',
-  'full': 'sm:col-span-full',
-};
-
-const spanMdStyles: Record<string, string> = {
-  '1': 'md:col-span-1',
-  '2': 'md:col-span-2',
-  '3': 'md:col-span-3',
-  '4': 'md:col-span-4',
-  '5': 'md:col-span-5',
-  '6': 'md:col-span-6',
-  '12': 'md:col-span-12',
-  'full': 'md:col-span-full',
-};
-
-const spanLgStyles: Record<string, string> = {
-  '1': 'lg:col-span-1',
-  '2': 'lg:col-span-2',
-  '3': 'lg:col-span-3',
-  '4': 'lg:col-span-4',
-  '5': 'lg:col-span-5',
-  '6': 'lg:col-span-6',
-  '12': 'lg:col-span-12',
-  'full': 'lg:col-span-full',
+  sm: 'gap-3',
+  md: 'gap-4 lg:gap-5',
+  lg: 'gap-5 lg:gap-6',
+  xl: 'gap-6 lg:gap-8',
 };
 
 // =============================================================================
@@ -138,23 +53,29 @@ const spanLgStyles: Record<string, string> = {
 // =============================================================================
 
 export const Grid: React.FC<GridProps> = ({
+  children,
   cols = 1,
   colsSm,
   colsMd,
   colsLg,
+  colsXl,
   gap = 'md',
-  children,
   className = '',
   ...props
 }) => {
+  const responsiveClasses = [
+    colStyles[cols],
+    colsSm && `sm:${colStyles[colsSm]}`,
+    colsMd && `md:${colStyles[colsMd]}`,
+    colsLg && `lg:${colStyles[colsLg]}`,
+    colsXl && `xl:${colStyles[colsXl]}`,
+  ].filter(Boolean).join(' ');
+
   return (
     <div
       className={`
         grid
-        ${colStyles[cols]}
-        ${colsSm ? colSmStyles[colsSm] : ''}
-        ${colsMd ? colMdStyles[colsMd] : ''}
-        ${colsLg ? colLgStyles[colsLg] : ''}
+        ${responsiveClasses}
         ${gapStyles[gap]}
         ${className}
       `.trim().replace(/\s+/g, ' ')}
@@ -166,87 +87,23 @@ export const Grid: React.FC<GridProps> = ({
 };
 
 // =============================================================================
-// GRID ITEM COMPONENT
+// BENTO GRID
 // =============================================================================
 
-export const GridItem: React.FC<GridItemProps> = ({
-  span,
-  spanSm,
-  spanMd,
-  spanLg,
-  children,
-  className = '',
-  ...props
-}) => {
-  return (
-    <div
-      className={`
-        ${span ? spanStyles[String(span)] : ''}
-        ${spanSm ? spanSmStyles[String(spanSm)] : ''}
-        ${spanMd ? spanMdStyles[String(spanMd)] : ''}
-        ${spanLg ? spanLgStyles[String(spanLg)] : ''}
-        ${className}
-      `.trim().replace(/\s+/g, ' ')}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
-
-// =============================================================================
-// FLEX LAYOUT HELPERS
-// =============================================================================
-
-export interface StackProps extends HTMLAttributes<HTMLDivElement> {
-  /** Direction */
-  direction?: 'vertical' | 'horizontal';
-  /** Gap between items */
-  gap?: GridGap;
-  /** Alignment */
-  align?: 'start' | 'center' | 'end' | 'stretch';
-  /** Justify content */
-  justify?: 'start' | 'center' | 'end' | 'between' | 'around';
-  /** Wrap items */
-  wrap?: boolean;
-  /** Content */
+export interface BentoGridProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
 }
 
-export const Stack: React.FC<StackProps> = ({
-  direction = 'vertical',
-  gap = 'md',
-  align = 'stretch',
-  justify = 'start',
-  wrap = false,
+export const BentoGrid: React.FC<BentoGridProps> = ({
   children,
   className = '',
   ...props
 }) => {
-  const alignStyles = {
-    start: 'items-start',
-    center: 'items-center',
-    end: 'items-end',
-    stretch: 'items-stretch',
-  };
-
-  const justifyStyles = {
-    start: 'justify-start',
-    center: 'justify-center',
-    end: 'justify-end',
-    between: 'justify-between',
-    around: 'justify-around',
-  };
-
   return (
     <div
       className={`
-        flex
-        ${direction === 'horizontal' ? 'flex-row' : 'flex-col'}
-        ${gapStyles[gap]}
-        ${alignStyles[align]}
-        ${justifyStyles[justify]}
-        ${wrap ? 'flex-wrap' : ''}
+        grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4
+        gap-4 lg:gap-5
         ${className}
       `.trim().replace(/\s+/g, ' ')}
       {...props}
@@ -256,62 +113,43 @@ export const Stack: React.FC<StackProps> = ({
   );
 };
 
-// =============================================================================
-// TWO COLUMN LAYOUT
-// =============================================================================
-
-export interface TwoColumnProps extends HTMLAttributes<HTMLDivElement> {
-  /** Left column (or main content) */
-  main: ReactNode;
-  /** Right column (or sidebar) */
-  sidebar: ReactNode;
-  /** Sidebar position */
-  sidebarPosition?: 'left' | 'right';
-  /** Sidebar width */
-  sidebarWidth?: 'narrow' | 'medium' | 'wide';
-  /** Gap between columns */
-  gap?: GridGap;
-  /** Stack on mobile */
-  stackOnMobile?: boolean;
+export interface BentoItemProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  /** Span multiple columns */
+  colSpan?: 1 | 2 | 3 | 4;
+  /** Span multiple rows */
+  rowSpan?: 1 | 2;
 }
 
-export const TwoColumn: React.FC<TwoColumnProps> = ({
-  main,
-  sidebar,
-  sidebarPosition = 'right',
-  sidebarWidth = 'medium',
-  gap = 'lg',
-  stackOnMobile = true,
+export const BentoItem: React.FC<BentoItemProps> = ({
+  children,
+  colSpan = 1,
+  rowSpan = 1,
   className = '',
   ...props
 }) => {
-  const sidebarWidths = {
-    narrow: 'lg:w-64',
-    medium: 'lg:w-80',
-    wide: 'lg:w-96',
+  const colSpanStyles: Record<number, string> = {
+    1: '',
+    2: 'md:col-span-2',
+    3: 'md:col-span-2 lg:col-span-3',
+    4: 'md:col-span-2 lg:col-span-3 xl:col-span-4',
+  };
+
+  const rowSpanStyles: Record<number, string> = {
+    1: '',
+    2: 'row-span-2',
   };
 
   return (
     <div
       className={`
-        flex
-        ${stackOnMobile ? 'flex-col lg:flex-row' : 'flex-row'}
-        ${gapStyles[gap]}
+        ${colSpanStyles[colSpan]}
+        ${rowSpanStyles[rowSpan]}
         ${className}
-      `}
+      `.trim().replace(/\s+/g, ' ')}
       {...props}
     >
-      {sidebarPosition === 'left' && (
-        <aside className={`flex-shrink-0 ${sidebarWidths[sidebarWidth]}`}>
-          {sidebar}
-        </aside>
-      )}
-      <main className="flex-1 min-w-0">{main}</main>
-      {sidebarPosition === 'right' && (
-        <aside className={`flex-shrink-0 ${sidebarWidths[sidebarWidth]}`}>
-          {sidebar}
-        </aside>
-      )}
+      {children}
     </div>
   );
 };
