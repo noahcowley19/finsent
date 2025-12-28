@@ -1,7 +1,12 @@
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 import os
+import re
+import logging
+from flask import Flask, request, abort, jsonify
+from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
+# Blueprints
 from sentiment import sentiment_bp
 from financials import financials_bp
 from insider import insider_bp
@@ -18,20 +23,14 @@ from technicals import technicals_bp
 from compare import compare_bp
 from dividends import dividends_bp
 
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-import os
-import re
-from flask import Flask, request, abort, jsonify
-from flask_cors import CORS
-import logging
-
 
 
 app = Flask(__name__)
 
 # Configure CORS origins from environment variable or use defaults
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("app")
+
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "")
 if allowed_origins_env:
     # Parse comma-separated origins from environment
@@ -55,12 +54,6 @@ limiter = Limiter(
     app=app,
     default_limits=[rate_limit] 
 )
-
-
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("app")
 
 
 def get_client_ip():
