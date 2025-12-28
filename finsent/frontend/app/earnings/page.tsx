@@ -11,7 +11,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Section, Grid } from '@/components/layout';
-import { useWatchlist } from '@/lib/hooks/useWatchlist';
+import { useWatchlist } from '@/lib/hooks';
 
 // =============================================================================
 // TYPES
@@ -135,8 +135,8 @@ const EarningsCard: React.FC<{
                     <p className="text-body-sm text-neutral-600 line-clamp-1">{event.company_name}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-caption font-medium ${daysUntil <= 7 ? 'bg-error-100 text-error-700' :
-                        daysUntil <= 14 ? 'bg-warning-100 text-warning-700' :
-                            'bg-success-100 text-success-700'
+                    daysUntil <= 14 ? 'bg-warning-100 text-warning-700' :
+                        'bg-success-100 text-success-700'
                     }`}>
                     {daysUntil} days
                 </span>
@@ -196,8 +196,8 @@ const EarningsHistoryChart: React.FC<{ history: EarningsHistory[] }> = ({ histor
                         )}
                         <div className="absolute inset-0 flex items-center justify-center">
                             <span className={`text-caption font-medium ${quarter.result === 'beat' ? 'text-success-700' :
-                                    quarter.result === 'miss' ? 'text-error-700' :
-                                        'text-neutral-700'
+                                quarter.result === 'miss' ? 'text-error-700' :
+                                    'text-neutral-700'
                                 }`}>
                                 {quarter.result === 'beat' ? '✓ Beat' :
                                     quarter.result === 'miss' ? '✗ Miss' :
@@ -259,7 +259,7 @@ const VolatilityIndicator: React.FC<{ volatility?: EarningsAnalysis['volatility'
 const DEFAULT_TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'JPM'];
 
 export default function EarningsCalendarPage() {
-    const { watchlistItems } = useWatchlist();
+    const { items } = useWatchlist();
     const [events, setEvents] = useState<EarningsEvent[]>([]);
     const [selectedTicker, setSelectedTicker] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<EarningsAnalysis | null>(null);
@@ -269,8 +269,8 @@ export default function EarningsCalendarPage() {
     const [searchTicker, setSearchTicker] = useState('');
 
     // Get tickers from watchlist or use defaults
-    const tickers = watchlistItems.length > 0
-        ? watchlistItems.map(item => item.ticker).slice(0, 20)
+    const tickers = items.length > 0
+        ? items.map(item => item.ticker).slice(0, 20)
         : DEFAULT_TICKERS;
 
     const loadCalendar = useCallback(async () => {
