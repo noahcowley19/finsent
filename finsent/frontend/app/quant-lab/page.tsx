@@ -89,10 +89,7 @@ function QuantLabContent() {
   const [isRunning, setIsRunning] = useState(false);
   const { execute: analyzeQuantLab, loading: quantLabLoading } = useLazyQuantLab();
 
-  // If not Pro, show upgrade prompt
-  if (!isPro) {
-    return <ProUpgradePrompt />;
-  }
+  // Quant Lab is now accessible to all authenticated users
 
   const handleRunBacktest = async (strategy: Strategy) => {
     setIsRunning(true);
