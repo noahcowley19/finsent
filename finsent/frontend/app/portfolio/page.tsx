@@ -10,7 +10,7 @@
 // =============================================================================
 
 import React, { useEffect, useState } from 'react';
-import { Section, Grid, AuthGuard } from '@/components/layout';
+import { Section, Grid } from '@/components/layout';
 import {
   PortfolioSummary,
   HoldingsTable,
@@ -27,7 +27,7 @@ import { usePortfolio } from '@/lib/hooks';
 
 function PortfolioContent() {
   const { positions, analysis, loading, error, addPosition, removePosition, updatePosition, analyze } = usePortfolio();
-  
+
   const [summary, setSummary] = useState<PortfolioSummaryData>({
     totalValue: 0,
     totalCost: 0,
@@ -37,7 +37,7 @@ function PortfolioContent() {
     totalGainPercent: 0,
     cashBalance: 0,
   });
-  
+
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [allocationData, setAllocationData] = useState<AllocationItem[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceDataPoint[]>([]);
@@ -96,7 +96,7 @@ function PortfolioContent() {
       const perfData: PerformanceDataPoint[] = [];
       const now = new Date();
       let value = metrics.total_cost;
-      
+
       for (let i = 90; i >= 0; i--) {
         const date = new Date(now);
         date.setDate(date.getDate() - i);
@@ -172,9 +172,5 @@ function PortfolioContent() {
 }
 
 export default function PortfolioPage() {
-  return (
-    <AuthGuard>
-      <PortfolioContent />
-    </AuthGuard>
-  );
+  return <PortfolioContent />;
 }
