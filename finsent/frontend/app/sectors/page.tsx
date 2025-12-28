@@ -89,12 +89,12 @@ export default function SectorsPage() {
 
             {/* Market Phase */}
             {rotationData && (
-                <Section spacing="sm" background="secondary">
+                <Section spacing="sm" background="alt">
                     <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                         <div className="text-center">
                             <span className={`inline-block px-4 py-2 rounded-full font-semibold ${rotationData.market_phase === 'Risk-On' ? 'bg-success-100 text-success-700' :
-                                    rotationData.market_phase === 'Risk-Off' ? 'bg-error-100 text-error-700' :
-                                        'bg-neutral-100 text-neutral-700'
+                                rotationData.market_phase === 'Risk-Off' ? 'bg-error-100 text-error-700' :
+                                    'bg-neutral-100 text-neutral-700'
                                 }`}>
                                 {rotationData.market_phase}
                             </span>
@@ -194,8 +194,8 @@ export default function SectorsPage() {
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <span className={`px-2 py-1 rounded text-caption font-medium ${s.momentum_score >= 5 ? 'bg-success-100 text-success-700' :
-                                                        s.momentum_score >= 0 ? 'bg-warning-100 text-warning-700' :
-                                                            'bg-error-100 text-error-700'
+                                                    s.momentum_score >= 0 ? 'bg-warning-100 text-warning-700' :
+                                                        'bg-error-100 text-error-700'
                                                     }`}>
                                                     {s.momentum_score?.toFixed(1)}
                                                 </span>
