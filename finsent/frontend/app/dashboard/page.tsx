@@ -14,50 +14,32 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { PageHeader, Container, Section, Grid, AuthGuard } from '@/components/layout';
 import { StatsCard, RecentActivity, WatchlistPreview } from '@/components/dashboard';
-import type { Activity, WatchlistStock } from '@/components/dashboard';
+import type { Activity as DashboardActivity, WatchlistStock } from '@/components/dashboard';
 import { useWatchlist, usePortfolio } from '@/lib/hooks';
+import { useActivities, type Activity } from '@/components/utils/activity-tracker';
 
-// Mock activities - ideally this would come from a user activity API
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'search',
-    title: 'Searched for AAPL',
-    description: 'Apple Inc.',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    link: '/stock/AAPL',
-  },
-  {
-    id: '2',
-    type: 'analysis',
-    title: 'Sentiment Analysis',
-    description: 'TSLA - Bullish sentiment detected',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    link: '/sentiment/TSLA',
-  },
-  {
-    id: '3',
-    type: 'watchlist',
-    title: 'Added to Watchlist',
-    description: 'NVDA - NVIDIA Corporation',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-  {
-    id: '4',
-    type: 'portfolio',
-    title: 'Portfolio Updated',
-    description: 'Added 10 shares of MSFT',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-  },
-];
+// Convert activity tracker format to dashboard Activity format
+const convertActivity = (activity: Activity): DashboardActivity => ({
+  id: activity.id,
+  type: activity.type === 'quant' ? 'analysis' : activity.type as DashboardActivity['type'],
+  title: activity.title,
+  description: activity.description,
+  timestamp: activity.timestamp,
+  link: activity.link,
+});
+
 
 function DashboardContent() {
   const { user } = useAuth();
   const firstName = user?.name?.split(' ')[0] || 'there';
-  
+
   // Use real hooks
   const { enrichedItems, refresh: refreshWatchlist } = useWatchlist();
   const { positions, analysis, analyze } = usePortfolio();
+  const { activities: rawActivities, isLoading: activitiesLoading } = useActivities(10);
+
+  // Convert activity tracker format to dashboard format
+  const userActivities: DashboardActivity[] = rawActivities.map(convertActivity);
 
   // Refresh data on mount
   useEffect(() => {
@@ -83,7 +65,7 @@ function DashboardContent() {
   const searchesLimit = user?.tier === 'pro' ? '∞' : 10;
   const analysesUsed = 1;
   const analysesLimit = user?.tier === 'pro' ? '∞' : 3;
-  
+
   // Portfolio value from analysis
   const portfolioValue = analysis?.portfolio_metrics?.total_value || 0;
   const portfolioChange = analysis?.portfolio_metrics?.total_gain_loss_percent || 0;
@@ -178,7 +160,7 @@ function DashboardContent() {
         <Grid cols={1} colsLg={3} gap="lg">
           {/* Activity & Quick Actions - 2 columns */}
           <div className="lg:col-span-2 space-y-6">
-            <RecentActivity activities={mockActivities} />
+            <RecentActivity activities={userActivities} />
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-border-light p-6">
