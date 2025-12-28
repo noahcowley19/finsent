@@ -1,244 +1,230 @@
 'use client';
 
 // =============================================================================
-// PROFILE SETTINGS PAGE
+// SEARCH PAGE
 // =============================================================================
-// User profile and password management
+// Stock search page
 //
-// Location: frontend/app/settings/profile/page.tsx
+// Location: frontend/app/search/page.tsx
 //
 // =============================================================================
 
 import React, { useState } from 'react';
-import { useAuth } from '@/lib/auth-context';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Section, Container } from '@/components/layout';
+import { SearchBar, SearchResults, Stock } from '@/components/search';
 
-export default function ProfileSettingsPage() {
-  const { user } = useAuth();
+// Mock data - replace with real API calls
+const trendingStocks: Stock[] = [
+  { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', price: 178.72, changePercent: 1.33 },
+  { symbol: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 248.50, changePercent: -2.05 },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 875.28, changePercent: 1.44 },
+  { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', price: 378.91, changePercent: 1.10 },
+];
+
+const recentSearches = ['AAPL', 'TSLA', 'GOOGL', 'AMZN'];
+
+// Mock search function - replace with real API
+async function searchStocks(query: string): Promise<Stock[]> {
+  // Simulate API delay
+  await new Promise((resolve) => setTimeout(resolve, 500));
   
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-  });
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Mock results
+  const allStocks: Stock[] = [
+    { symbol: 'AAPL', name: 'Apple Inc.', exchange: 'NASDAQ', price: 178.72, change: 2.34, changePercent: 1.33, marketCap: 2800000000000, volume: 52000000 },
+    { symbol: 'TSLA', name: 'Tesla, Inc.', exchange: 'NASDAQ', price: 248.50, change: -5.20, changePercent: -2.05, marketCap: 790000000000, volume: 98000000 },
+    { symbol: 'NVDA', name: 'NVIDIA Corporation', exchange: 'NASDAQ', price: 875.28, change: 12.45, changePercent: 1.44, marketCap: 2150000000000, volume: 45000000 },
+    { symbol: 'MSFT', name: 'Microsoft Corporation', exchange: 'NASDAQ', price: 378.91, change: 4.12, changePercent: 1.10, marketCap: 2810000000000, volume: 22000000 },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', exchange: 'NASDAQ', price: 141.80, change: -0.92, changePercent: -0.64, marketCap: 1780000000000, volume: 25000000 },
+    { symbol: 'AMZN', name: 'Amazon.com, Inc.', exchange: 'NASDAQ', price: 178.25, change: 1.89, changePercent: 1.07, marketCap: 1850000000000, volume: 42000000 },
+    { symbol: 'META', name: 'Meta Platforms, Inc.', exchange: 'NASDAQ', price: 505.75, change: 8.32, changePercent: 1.67, marketCap: 1290000000000, volume: 18000000 },
+    { symbol: 'AMD', name: 'Advanced Micro Devices', exchange: 'NASDAQ', price: 164.50, change: -2.15, changePercent: -1.29, marketCap: 266000000000, volume: 55000000 },
+  ];
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingProfile(true);
-    setProfileMessage(null);
+  const queryLower = query.toLowerCase();
+  return allStocks.filter(
+    (stock) =>
+      stock.symbol.toLowerCase().includes(queryLower) ||
+      stock.name.toLowerCase().includes(queryLower)
+  );
+}
+
+export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+
+  const [query, setQuery] = useState(initialQuery);
+  const [results, setResults] = useState<Stock[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [watchlist, setWatchlist] = useState<string[]>(['AAPL', 'NVDA']);
+
+  const handleSearch = async (searchQuery: string) => {
+    setQuery(searchQuery);
+    setIsLoading(true);
+    setHasSearched(true);
 
     try {
-      // TODO: Implement API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setProfileMessage({ type: 'success', text: 'Profile updated successfully' });
+      const data = await searchStocks(searchQuery);
+      setResults(data);
     } catch (error) {
-      setProfileMessage({ type: 'error', text: 'Failed to update profile' });
+      console.error('Search error:', error);
     } finally {
-      setIsSavingProfile(false);
+      setIsLoading(false);
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingPassword(true);
-    setPasswordMessage(null);
-
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordMessage({ type: 'error', text: 'Passwords do not match' });
-      setIsSavingPassword(false);
-      return;
-    }
-
-    try {
-      // TODO: Implement API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setPasswordMessage({ type: 'success', text: 'Password changed successfully' });
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error) {
-      setPasswordMessage({ type: 'error', text: 'Failed to change password' });
-    } finally {
-      setIsSavingPassword(false);
-    }
+  const handleAddToWatchlist = (symbol: string) => {
+    setWatchlist((prev) =>
+      prev.includes(symbol)
+        ? prev.filter((s) => s !== symbol)
+        : [...prev, symbol]
+    );
   };
 
   return (
-    <div className="space-y-8">
-      {/* Profile section */}
-      <div className="bg-white rounded-xl border border-border-light p-6">
-        <h2 className="font-heading font-semibold text-heading-md text-navy-900 mb-6">
-          Profile Information
-        </h2>
-
-        <form onSubmit={handleProfileSubmit} className="space-y-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-terra-400 to-terra-600 flex items-center justify-center text-white text-2xl font-semibold">
-              {user?.name?.charAt(0) || user?.email?.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <button
-                type="button"
-                className="px-4 py-2 bg-white border border-border-medium rounded-lg text-body-sm font-medium text-navy-700 hover:bg-cream-50 transition-colors"
-              >
-                Change Avatar
-              </button>
-              <p className="text-caption text-neutral-500 mt-1">
-                JPG, PNG or GIF. Max 2MB.
-              </p>
-            </div>
+    <>
+      {/* Hero search section */}
+      <Section spacing="xl" background="gradient">
+        <Container size="md">
+          <div className="text-center mb-8">
+            <h1 className="font-display text-display-md lg:text-display-lg text-navy-900 mb-4">
+              Search Stocks
+            </h1>
+            <p className="text-body-lg text-neutral-600">
+              Search by ticker symbol or company name to get started
+            </p>
           </div>
 
-          {/* Name */}
-          <div>
-            <label htmlFor="name" className="block text-body-sm font-medium text-navy-700 mb-2">
-              Full Name
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={profileData.name}
-              onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-              className="w-full h-12 px-4 bg-white border border-border-medium rounded-lg text-navy-900 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
+          <SearchBar
+            initialValue={initialQuery}
+            onSearch={handleSearch}
+            isLoading={isLoading}
+            size="large"
+            autoFocus
+          />
+        </Container>
+      </Section>
+
+      {/* Results or initial state */}
+      <Section spacing="lg" background="default">
+        <Container>
+          {hasSearched ? (
+            <SearchResults
+              query={query}
+              results={results}
+              isLoading={isLoading}
+              onAddToWatchlist={handleAddToWatchlist}
+              watchlistSymbols={watchlist}
             />
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Trending stocks */}
+              <div>
+                <h2 className="font-heading font-semibold text-heading-md text-navy-900 mb-4">
+                  Trending Stocks
+                </h2>
+                <div className="space-y-3">
+                  {trendingStocks.map((stock) => (
+                    <Link
+                      key={stock.symbol}
+                      href={`/stock/${stock.symbol}`}
+                      className="flex items-center justify-between p-4 bg-white rounded-xl border border-border-light hover:border-border-medium hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-navy-100 flex items-center justify-center">
+                          <span className="text-body-sm font-semibold text-navy-600">
+                            {stock.symbol.slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-navy-900">{stock.symbol}</p>
+                          <p className="text-body-sm text-neutral-500">{stock.name}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-navy-900">${stock.price?.toFixed(2)}</p>
+                        <p
+                          className={`text-body-sm ${
+                            (stock.changePercent ?? 0) >= 0
+                              ? 'text-success-600'
+                              : 'text-error-600'
+                          }`}
+                        >
+                          {(stock.changePercent ?? 0) >= 0 ? '+' : ''}
+                          {stock.changePercent?.toFixed(2)}%
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
 
-          {/* Email */}
-          <div>
-            <label htmlFor="email" className="block text-body-sm font-medium text-navy-700 mb-2">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={profileData.email}
-              onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-              className="w-full h-12 px-4 bg-white border border-border-medium rounded-lg text-navy-900 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
-            />
-          </div>
+              {/* Recent searches */}
+              <div>
+                <h2 className="font-heading font-semibold text-heading-md text-navy-900 mb-4">
+                  Recent Searches
+                </h2>
+                {recentSearches.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((symbol) => (
+                      <button
+                        key={symbol}
+                        onClick={() => handleSearch(symbol)}
+                        className="px-4 py-2 bg-white border border-border-light rounded-lg text-body-sm font-medium text-navy-700 hover:bg-cream-50 hover:border-border-medium transition-colors"
+                      >
+                        {symbol}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-body-sm text-neutral-500">
+                    Your recent searches will appear here
+                  </p>
+                )}
 
-          {/* Message */}
-          {profileMessage && (
-            <div
-              className={`p-4 rounded-lg ${
-                profileMessage.type === 'success'
-                  ? 'bg-success-50 text-success-700'
-                  : 'bg-error-50 text-error-700'
-              }`}
-            >
-              {profileMessage.text}
-            </div>
-          )}
-
-          {/* Submit */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSavingProfile}
-              className="px-6 py-2.5 bg-terra-500 text-white font-medium rounded-lg hover:bg-terra-600 transition-colors disabled:opacity-50"
-            >
-              {isSavingProfile ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Password section */}
-      <div className="bg-white rounded-xl border border-border-light p-6">
-        <h2 className="font-heading font-semibold text-heading-md text-navy-900 mb-6">
-          Change Password
-        </h2>
-
-        <form onSubmit={handlePasswordSubmit} className="space-y-6">
-          {/* Current password */}
-          <div>
-            <label htmlFor="currentPassword" className="block text-body-sm font-medium text-navy-700 mb-2">
-              Current Password
-            </label>
-            <input
-              id="currentPassword"
-              type="password"
-              value={passwordData.currentPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-              className="w-full h-12 px-4 bg-white border border-border-medium rounded-lg text-navy-900 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
-            />
-          </div>
-
-          {/* New password */}
-          <div>
-            <label htmlFor="newPassword" className="block text-body-sm font-medium text-navy-700 mb-2">
-              New Password
-            </label>
-            <input
-              id="newPassword"
-              type="password"
-              value={passwordData.newPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-              className="w-full h-12 px-4 bg-white border border-border-medium rounded-lg text-navy-900 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
-            />
-          </div>
-
-          {/* Confirm password */}
-          <div>
-            <label htmlFor="confirmPassword" className="block text-body-sm font-medium text-navy-700 mb-2">
-              Confirm New Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={passwordData.confirmPassword}
-              onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-              className="w-full h-12 px-4 bg-white border border-border-medium rounded-lg text-navy-900 focus:outline-none focus:border-navy-500 focus:ring-2 focus:ring-navy-500/20"
-            />
-          </div>
-
-          {/* Message */}
-          {passwordMessage && (
-            <div
-              className={`p-4 rounded-lg ${
-                passwordMessage.type === 'success'
-                  ? 'bg-success-50 text-success-700'
-                  : 'bg-error-50 text-error-700'
-              }`}
-            >
-              {passwordMessage.text}
+                {/* Quick links */}
+                <div className="mt-8">
+                  <h3 className="font-heading font-semibold text-heading-sm text-navy-900 mb-4">
+                    Popular Categories
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      href="/search?q=tech"
+                      className="p-4 bg-white border border-border-light rounded-xl hover:border-border-medium transition-colors text-center"
+                    >
+                      <span className="text-2xl mb-2 block">💻</span>
+                      <span className="text-body-sm font-medium text-navy-700">Tech</span>
+                    </Link>
+                    <Link
+                      href="/search?q=finance"
+                      className="p-4 bg-white border border-border-light rounded-xl hover:border-border-medium transition-colors text-center"
+                    >
+                      <span className="text-2xl mb-2 block">🏦</span>
+                      <span className="text-body-sm font-medium text-navy-700">Finance</span>
+                    </Link>
+                    <Link
+                      href="/search?q=healthcare"
+                      className="p-4 bg-white border border-border-light rounded-xl hover:border-border-medium transition-colors text-center"
+                    >
+                      <span className="text-2xl mb-2 block">🏥</span>
+                      <span className="text-body-sm font-medium text-navy-700">Healthcare</span>
+                    </Link>
+                    <Link
+                      href="/search?q=energy"
+                      className="p-4 bg-white border border-border-light rounded-xl hover:border-border-medium transition-colors text-center"
+                    >
+                      <span className="text-2xl mb-2 block">⚡</span>
+                      <span className="text-body-sm font-medium text-navy-700">Energy</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-
-          {/* Submit */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isSavingPassword}
-              className="px-6 py-2.5 bg-navy-900 text-white font-medium rounded-lg hover:bg-navy-800 transition-colors disabled:opacity-50"
-            >
-              {isSavingPassword ? 'Changing...' : 'Change Password'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Danger zone */}
-      <div className="bg-white rounded-xl border border-error-200 p-6">
-        <h2 className="font-heading font-semibold text-heading-md text-error-700 mb-2">
-          Danger Zone
-        </h2>
-        <p className="text-body-sm text-neutral-600 mb-4">
-          Once you delete your account, there is no going back. Please be certain.
-        </p>
-        <button
-          type="button"
-          className="px-4 py-2 bg-white border border-error-300 text-error-600 font-medium rounded-lg hover:bg-error-50 transition-colors"
-        >
-          Delete Account
-        </button>
-      </div>
-    </div>
+        </Container>
+      </Section>
+    </>
   );
 }
