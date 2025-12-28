@@ -8,6 +8,15 @@ from insider import insider_bp
 from search import search_bp
 from portfolio import portfolio_bp
 from quant_lab import quant_lab_bp
+from economic import economic_bp
+from earnings import earnings_bp
+from alerts import alerts_bp
+from screener import screener_bp
+from movers import movers_bp
+from sectors import sectors_bp
+from technicals import technicals_bp
+from compare import compare_bp
+from dividends import dividends_bp
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -202,6 +211,15 @@ app.register_blueprint(insider_bp)
 app.register_blueprint(search_bp)
 app.register_blueprint(portfolio_bp)
 app.register_blueprint(quant_lab_bp)
+app.register_blueprint(economic_bp)
+app.register_blueprint(earnings_bp)
+app.register_blueprint(alerts_bp)
+app.register_blueprint(screener_bp)
+app.register_blueprint(movers_bp)
+app.register_blueprint(sectors_bp)
+app.register_blueprint(technicals_bp)
+app.register_blueprint(compare_bp)
+app.register_blueprint(dividends_bp)
 
 
 if __name__ == '__main__':
