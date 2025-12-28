@@ -14,7 +14,7 @@
 import React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { Navbar } from './Navbar';
+import { Navbar } from '@/components/layout/Navbar';
 
 export const ConnectedNavbar: React.FC = () => {
   const router = useRouter();
@@ -22,10 +22,10 @@ export const ConnectedNavbar: React.FC = () => {
   const { user, signOut, isLoading } = useAuth();
 
   // Don't show navbar on auth pages
-  const isAuthPage = pathname.startsWith('/signin') || 
-                     pathname.startsWith('/signup') || 
-                     pathname.startsWith('/forgot-password') ||
-                     pathname.startsWith('/reset-password');
+  const isAuthPage = pathname.startsWith('/signin') ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password');
 
   if (isAuthPage) {
     return null;
