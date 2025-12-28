@@ -417,7 +417,7 @@ export default function EconomicDashboard() {
             </Section>
 
             {/* Yield Curve */}
-            <Section spacing="md" background="secondary">
+            <Section spacing="md" background="alt">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div>
                         {yieldCurve && <YieldCurveChart data={yieldCurve} />}
