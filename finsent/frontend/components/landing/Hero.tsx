@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* Left Column - Content */}
-          <div className="max-w-xl">
+          <div className="lg:pr-8">
             {/* Announcement Badge */}
             <ScrollReveal delay={0}>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-8 rounded-full bg-white/80 backdrop-blur-sm border border-cream-300/50 shadow-sm">

@@ -1,22 +1,27 @@
 'use client';
 
 // =============================================================================
-// SEARCH PAGE - Enhanced with Data Point Grid
+// SEARCH PAGE - Professional Stock Analysis
 // =============================================================================
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Section, Container } from '@/components/layout';
 import { SearchBar, SearchResults, Stock } from '@/components/search';
-import { DataPointGrid } from '@/components/charts/DataPointGrid';
+import { InteractivePriceChart } from '@/components/charts/InteractivePriceChart';
+import { FinancialMetricsGrid } from '@/components/charts/FinancialMetricsGrid';
 import { useMarketMovers, useQuickSearch, useLazyStockSearch } from '@/lib/hooks';
-import { ScrollReveal } from '@/components/ui';
+import { ScrollReveal, Spinner } from '@/components/ui';
 
 // Recent searches storage
 const RECENT_SEARCHES_KEY = 'caveray_recent_searches';
 
-export default function SearchPage() {
+// =============================================================================
+// MAIN SEARCH PAGE COMPONENT
+// =============================================================================
+
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
@@ -46,7 +51,7 @@ export default function SearchPage() {
 
   // Save recent search
   const addRecentSearch = (ticker: string) => {
-    const updated = [ticker, ...recentSearches.filter(s => s !== ticker)].slice(0, 10);
+    const updated = [ticker, ...recentSearches.filter((s: string) => s !== ticker)].slice(0, 10);
     setRecentSearches(updated);
     try {
       localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updated));
@@ -56,7 +61,7 @@ export default function SearchPage() {
   };
 
   // Convert market movers to Stock format for trending
-  const trendingStocks: Stock[] = (moversData?.gainers || []).slice(0, 4).map(stock => ({
+  const trendingStocks: Stock[] = (moversData?.gainers || []).slice(0, 6).map((stock: { ticker: string; price?: number; change_percent?: number }) => ({
     symbol: stock.ticker,
     name: stock.ticker,
     exchange: 'NASDAQ',
@@ -101,25 +106,170 @@ export default function SearchPage() {
   };
 
   const handleAddToWatchlist = (symbol: string) => {
-    setWatchlist((prev) =>
+    setWatchlist((prev: string[]) =>
       prev.includes(symbol)
-        ? prev.filter((s) => s !== symbol)
+        ? prev.filter((s: string) => s !== symbol)
         : [...prev, symbol]
     );
   };
 
-  return (
-    <div className="min-h-screen bg-cream-50">
-      {/* Hero search section */}
-      <Section spacing="xl" background="white">
-        <Container size="md">
-          <ScrollReveal>
+  // ==========================================================================
+  // RENDER: SEARCH RESULTS VIEW
+  // ==========================================================================
+
+  if (hasSearched && results.length > 0) {
+    const stock = results[0];
+
+    return (
+      <div className="min-h-screen bg-cream-50">
+        {/* Search Header */}
+        <Section spacing="md" background="white">
+          <Container>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              <div className="flex-1">
+                <SearchBar
+                  initialValue={query}
+                  onSearch={handleSearch}
+                  isLoading={isLoading}
+                  size="default"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleAddToWatchlist(stock.symbol)}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${watchlist.includes(stock.symbol)
+                      ? 'bg-electric-500 text-white'
+                      : 'bg-cream-100 text-obsidian-700 hover:bg-cream-200'
+                    }`}
+                >
+                  {watchlist.includes(stock.symbol) ? '★ In Watchlist' : '☆ Add to Watchlist'}
+                </button>
+                <Link
+                  href={`/stock/${stock.symbol}`}
+                  className="px-4 py-2.5 bg-obsidian-900 text-white rounded-xl text-sm font-medium hover:bg-obsidian-850 transition-all"
+                >
+                  Full Analysis →
+                </Link>
+              </div>
+            </div>
+          </Container>
+        </Section>
+
+        {/* Interactive Price Chart */}
+        <Section spacing="md" background="default">
+          <Container>
+            <ScrollReveal>
+              <InteractivePriceChart
+                symbol={stock.symbol}
+                name={stock.name}
+              />
+            </ScrollReveal>
+          </Container>
+        </Section>
+
+        {/* Financial Metrics Grid */}
+        <Section spacing="lg" background="white">
+          <Container>
+            <ScrollReveal delay={100}>
+              <FinancialMetricsGrid symbol={stock.symbol} />
+            </ScrollReveal>
+          </Container>
+        </Section>
+
+        {/* Quick Stats Bar */}
+        <Section spacing="md" background="default">
+          <Container>
+            <ScrollReveal delay={150}>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {[
+                  { label: 'Market Cap', value: stock.marketCap ? `$${(stock.marketCap / 1e12).toFixed(2)}T` : 'N/A' },
+                  { label: 'Volume', value: stock.volume ? `${(stock.volume / 1e6).toFixed(1)}M` : 'N/A' },
+                  { label: 'P/E Ratio', value: '28.5' },
+                  { label: '52W High', value: '$199.62' },
+                  { label: '52W Low', value: '$124.17' },
+                  { label: 'Avg Volume', value: '54.2M' },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="bg-white/80 backdrop-blur-lg rounded-xl border border-cream-200/50 p-4 text-center"
+                  >
+                    <p className="text-xs text-obsidian-400 mb-1">{stat.label}</p>
+                    <p className="text-lg font-bold text-obsidian-900">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </ScrollReveal>
+          </Container>
+        </Section>
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // RENDER: NO RESULTS VIEW
+  // ==========================================================================
+
+  if (hasSearched && results.length === 0 && !isLoading) {
+    return (
+      <div className="min-h-screen bg-cream-50">
+        <Section spacing="xl" background="white">
+          <Container size="md">
             <div className="text-center mb-8">
               <h1 className="text-3xl lg:text-4xl font-bold text-obsidian-900 tracking-tight mb-4">
                 Search Stocks
               </h1>
-              <p className="text-lg text-obsidian-500">
-                Search by ticker symbol or company name to get started
+            </div>
+            <SearchBar
+              initialValue={query}
+              onSearch={handleSearch}
+              isLoading={isLoading}
+              size="large"
+              autoFocus
+            />
+          </Container>
+        </Section>
+
+        <Section spacing="lg" background="default">
+          <Container size="sm">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-cream-100 flex items-center justify-center">
+                <svg className="w-8 h-8 text-obsidian-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-obsidian-900 mb-2">No results for "{query}"</h2>
+              <p className="text-obsidian-500 mb-6">
+                Try searching for a different ticker symbol or company name.
+              </p>
+              <button
+                onClick={() => { setHasSearched(false); setQuery(''); }}
+                className="px-6 py-2.5 bg-obsidian-900 text-white rounded-xl text-sm font-medium hover:bg-obsidian-850 transition-all"
+              >
+                Clear Search
+              </button>
+            </div>
+          </Container>
+        </Section>
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // RENDER: INITIAL STATE (NO SEARCH YET)
+  // ==========================================================================
+
+  return (
+    <div className="min-h-screen bg-cream-50">
+      {/* Hero Search Section */}
+      <Section spacing="xl" background="white">
+        <Container size="md">
+          <ScrollReveal>
+            <div className="text-center mb-8">
+              <h1 className="text-4xl lg:text-5xl font-bold text-obsidian-900 tracking-tight mb-4">
+                Search Stocks
+              </h1>
+              <p className="text-lg text-obsidian-500 max-w-lg mx-auto">
+                Get instant access to professional-grade charts, financial metrics, and AI-powered insights.
               </p>
             </div>
           </ScrollReveal>
@@ -133,152 +283,176 @@ export default function SearchPage() {
               autoFocus
             />
           </ScrollReveal>
+
+          {/* Popular Searches */}
+          <ScrollReveal delay={150}>
+            <div className="flex items-center justify-center gap-2 mt-6 flex-wrap">
+              <span className="text-sm text-obsidian-400">Popular:</span>
+              {['AAPL', 'TSLA', 'MSFT', 'GOOGL', 'AMZN', 'NVDA'].map((symbol) => (
+                <button
+                  key={symbol}
+                  onClick={() => handleSearch(symbol)}
+                  className="px-3 py-1.5 bg-cream-100 hover:bg-cream-200 rounded-lg text-sm font-medium text-obsidian-700 transition-colors"
+                >
+                  {symbol}
+                </button>
+              ))}
+            </div>
+          </ScrollReveal>
         </Container>
       </Section>
 
-      {/* Results or initial state */}
+      {/* Trending & Recent */}
       <Section spacing="lg" background="default">
         <Container>
-          {hasSearched ? (
-            <>
-              <SearchResults
-                query={query}
-                results={results}
-                isLoading={isLoading}
-                onAddToWatchlist={handleAddToWatchlist}
-                watchlistSymbols={watchlist}
-              />
-
-              {/* Data Point Grid for searched stock */}
-              {results.length > 0 && (
-                <ScrollReveal delay={200}>
-                  <div className="mt-8">
-                    <DataPointGrid symbol={results[0].symbol} />
-                  </div>
-                </ScrollReveal>
-              )}
-            </>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Trending stocks */}
-              <ScrollReveal>
-                <div>
-                  <h2 className="font-bold text-xl text-obsidian-900 mb-4">
-                    Trending Stocks
-                  </h2>
-                  <div className="space-y-3">
-                    {trendingStocks.map((stock, index) => (
-                      <ScrollReveal key={stock.symbol} delay={index * 50}>
-                        <Link
-                          href={`/stock/${stock.symbol}`}
-                          className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-lg rounded-xl border border-cream-200/50 shadow-glass hover:shadow-glass-lg hover:-translate-y-0.5 transition-all"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-electric-100 flex items-center justify-center">
-                              <span className="text-sm font-semibold text-electric-600">
-                                {stock.symbol.slice(0, 2)}
-                              </span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-obsidian-900">{stock.symbol}</p>
-                              <p className="text-sm text-obsidian-500">{stock.name}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-obsidian-900">${stock.price?.toFixed(2)}</p>
-                            <p
-                              className={`text-sm ${(stock.changePercent ?? 0) >= 0
-                                ? 'text-success-600'
-                                : 'text-coral-600'
-                                }`}
-                            >
-                              {(stock.changePercent ?? 0) >= 0 ? '+' : ''}
-                              {stock.changePercent?.toFixed(2)}%
-                            </p>
-                          </div>
-                        </Link>
-                      </ScrollReveal>
-                    ))}
-                  </div>
-                </div>
-              </ScrollReveal>
-
-              {/* Recent searches */}
-              <ScrollReveal delay={100}>
-                <div>
-                  <h2 className="font-bold text-xl text-obsidian-900 mb-4">
-                    Recent Searches
-                  </h2>
-                  {recentSearches.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {recentSearches.map((symbol) => (
-                        <button
-                          key={symbol}
-                          onClick={() => handleSearch(symbol)}
-                          className="px-4 py-2 bg-white/80 backdrop-blur-lg border border-cream-200/50 rounded-xl text-sm font-medium text-obsidian-700 hover:bg-cream-100 shadow-glass hover:shadow-glass-lg transition-all"
-                        >
-                          {symbol}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-obsidian-400">
-                      Your recent searches will appear here
-                    </p>
-                  )}
-
-                  {/* Quick links */}
-                  <div className="mt-8">
-                    <h3 className="font-semibold text-lg text-obsidian-900 mb-4">
-                      Popular Categories
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { label: 'Tech', emoji: '💻', query: 'tech' },
-                        { label: 'Finance', emoji: '🏦', query: 'finance' },
-                        { label: 'Healthcare', emoji: '🏥', query: 'healthcare' },
-                        { label: 'Energy', emoji: '⚡', query: 'energy' },
-                      ].map((category, index) => (
-                        <ScrollReveal key={category.label} delay={150 + index * 50}>
-                          <Link
-                            href={`/search?q=${category.query}`}
-                            className="p-4 bg-white/80 backdrop-blur-lg border border-cream-200/50 rounded-xl shadow-glass hover:shadow-glass-lg hover:-translate-y-0.5 transition-all text-center"
-                          >
-                            <span className="text-2xl mb-2 block">{category.emoji}</span>
-                            <span className="text-sm font-medium text-obsidian-700">{category.label}</span>
-                          </Link>
-                        </ScrollReveal>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </ScrollReveal>
-            </div>
-          )}
-        </Container>
-      </Section>
-
-      {/* Feature Data Grid Preview (when no search) */}
-      {!hasSearched && (
-        <Section spacing="lg" background="white">
-          <Container>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Trending Stocks */}
             <ScrollReveal>
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-obsidian-900 mb-3">
-                  Comprehensive Financial Data
+              <div>
+                <h2 className="font-bold text-xl text-obsidian-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🔥</span> Trending Now
                 </h2>
-                <p className="text-obsidian-500 max-w-xl mx-auto">
-                  Get instant access to key metrics, historical data, and AI-powered insights for any stock.
-                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {trendingStocks.map((stock, index) => (
+                    <button
+                      key={stock.symbol}
+                      onClick={() => handleSearch(stock.symbol)}
+                      className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-lg rounded-xl border border-cream-200/50 shadow-glass hover:shadow-glass-lg hover:-translate-y-0.5 transition-all text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-electric-500 to-electric-600 flex items-center justify-center">
+                          <span className="text-sm font-bold text-white">
+                            {stock.symbol.slice(0, 2)}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-semibold text-obsidian-900">{stock.symbol}</p>
+                          <p className="text-xs text-obsidian-500">{stock.exchange}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-obsidian-900">${stock.price?.toFixed(2)}</p>
+                        <p className={`text-xs font-semibold ${(stock.changePercent ?? 0) >= 0 ? 'text-success-600' : 'text-coral-600'}`}>
+                          {(stock.changePercent ?? 0) >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </ScrollReveal>
 
+            {/* Recent Searches & Categories */}
             <ScrollReveal delay={100}>
-              <DataPointGrid />
+              <div>
+                <h2 className="font-bold text-xl text-obsidian-900 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🕐</span> Recent Searches
+                </h2>
+                {recentSearches.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {recentSearches.map((symbol: string) => (
+                      <button
+                        key={symbol}
+                        onClick={() => handleSearch(symbol)}
+                        className="px-4 py-2 bg-white/80 backdrop-blur-lg border border-cream-200/50 rounded-xl text-sm font-medium text-obsidian-700 hover:bg-cream-100 shadow-glass hover:shadow-glass-lg transition-all"
+                      >
+                        {symbol}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-obsidian-400 mb-8">
+                    Your recent searches will appear here
+                  </p>
+                )}
+
+                <h3 className="font-semibold text-lg text-obsidian-900 mb-4 flex items-center gap-2">
+                  <span className="text-xl">📊</span> Browse by Sector
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Technology', emoji: '💻', tickers: 'AAPL, MSFT, GOOGL' },
+                    { label: 'Finance', emoji: '🏦', tickers: 'JPM, BAC, GS' },
+                    { label: 'Healthcare', emoji: '🏥', tickers: 'JNJ, UNH, PFE' },
+                    { label: 'Energy', emoji: '⚡', tickers: 'XOM, CVX, COP' },
+                  ].map((category) => (
+                    <div
+                      key={category.label}
+                      className="p-4 bg-white/80 backdrop-blur-lg border border-cream-200/50 rounded-xl shadow-glass"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">{category.emoji}</span>
+                        <span className="font-semibold text-obsidian-900">{category.label}</span>
+                      </div>
+                      <p className="text-xs text-obsidian-400">{category.tickers}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </ScrollReveal>
-          </Container>
-        </Section>
-      )}
+          </div>
+        </Container>
+      </Section>
+
+      {/* Feature Preview */}
+      <Section spacing="lg" background="white">
+        <Container>
+          <ScrollReveal>
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-obsidian-900 mb-3">
+                Professional Analysis Tools
+              </h2>
+              <p className="text-obsidian-500 max-w-xl mx-auto">
+                Get access to the same tools used by professional traders and analysts.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={100}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                {
+                  icon: '📈',
+                  title: 'Interactive Charts',
+                  description: 'Candlesticks, moving averages, support/resistance, and more. Full zoom and fullscreen support.',
+                },
+                {
+                  icon: '📊',
+                  title: 'Financial Metrics',
+                  description: '12 key metrics with 7-year historical data. Revenue, margins, cash flow, and returns.',
+                },
+                {
+                  icon: '🤖',
+                  title: 'AI Insights',
+                  description: 'Sentiment analysis, pattern detection, and AI-powered trading signals.',
+                },
+              ].map((feature) => (
+                <div
+                  key={feature.title}
+                  className="p-6 bg-cream-50 rounded-2xl border border-cream-200/50"
+                >
+                  <span className="text-3xl mb-4 block">{feature.icon}</span>
+                  <h3 className="font-semibold text-lg text-obsidian-900 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-obsidian-500">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </Container>
+      </Section>
     </div>
+  );
+}
+
+// Wrap in Suspense for useSearchParams
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-cream-50 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }
