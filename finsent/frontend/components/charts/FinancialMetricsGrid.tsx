@@ -181,13 +181,12 @@ const MetricCard: React.FC<MetricCardProps> = ({ config, data, delay = 0 }) => {
 
                             {/* Bar */}
                             <div
-                                className={`w-full rounded-t transition-all duration-500 group-hover:opacity-80 ${isLatest ? 'ring-2 ring-offset-1' : ''
-                                    }`}
+                                className="w-full rounded-t transition-all duration-500 group-hover:opacity-80"
                                 style={{
                                     height: `${Math.max(normalizedHeight, 4)}%`,
                                     backgroundColor: isNegative ? '#EF4444' : config.color,
                                     opacity: 0.4 + (index / data.length) * 0.6,
-                                    ringColor: isLatest ? config.color : 'transparent',
+                                    boxShadow: isLatest ? `0 0 0 1px white, 0 0 0 3px ${config.color}` : 'none',
                                 }}
                             />
 
