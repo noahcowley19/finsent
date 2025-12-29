@@ -9,7 +9,6 @@ import {
   AllocationChart,
   AddPositionModal,
 } from '@/components/portfolio';
-//
 import {
   CorrelationMatrix,
   MonteCarloSimulation,
@@ -30,11 +29,11 @@ function PortfolioContent() {
   const { positions, analysis, loading, error, addPosition, removePosition, updatePosition, analyze } = usePortfolio();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
-  // Transform positions for the advanced tools
+  // FIX: Use 'avgCost' instead of 'cost_basis' to match LocalPortfolioPosition type
   const advancedPositions = positions.map(p => ({
      ticker: p.ticker,
      shares: p.shares,
-     total_cost_basis: p.cost_basis * p.shares
+     total_cost_basis: p.avgCost * p.shares 
   }));
   const tickers = positions.map(p => p.ticker);
 
@@ -57,7 +56,7 @@ function PortfolioContent() {
       setSummary({
         totalValue: metrics.total_value,
         totalCost: metrics.total_cost,
-        dayChange: metrics.total_gain_loss, // fallback
+        dayChange: metrics.total_gain_loss,
         dayChangePercent: metrics.total_gain_loss_percent,
         totalGain: metrics.total_gain_loss,
         totalGainPercent: metrics.total_gain_loss_percent,
@@ -90,7 +89,6 @@ function PortfolioContent() {
       }));
       setAllocationData(allocation);
 
-      // Simple mock performance data generator
       const perfData: PerformanceDataPoint[] = [];
       const now = new Date();
       for (let i = 90; i >= 0; i--) {
@@ -110,7 +108,6 @@ function PortfolioContent() {
 
   return (
     <div className="min-h-screen bg-cream-50 pb-20">
-      {/* Header */}
       <Section spacing="md" background="white">
         <ScrollReveal>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -128,7 +125,6 @@ function PortfolioContent() {
         </ScrollReveal>
       </Section>
 
-      {/* Main Content */}
       {positions.length > 0 && (
         <>
           <Section spacing="md" background="default">
@@ -143,12 +139,9 @@ function PortfolioContent() {
                 <ScrollReveal>
                   <PerformanceChart data={performanceData} />
                 </ScrollReveal>
-                
-                {/* --- NEW V2 MODULES --- */}
                 <ScrollReveal delay={100}>
                   <WhatIfSimulator positions={advancedPositions} />
                 </ScrollReveal>
-                
                 <ScrollReveal delay={200}>
                    <MonteCarloSimulation positions={advancedPositions} />
                 </ScrollReveal>
@@ -158,16 +151,12 @@ function PortfolioContent() {
                 <ScrollReveal delay={100}>
                   <AllocationChart data={allocationData} />
                 </ScrollReveal>
-
-                {/* --- NEW V2 MODULES --- */}
                 <ScrollReveal delay={200}>
                    <VaRCard positions={advancedPositions} />
                 </ScrollReveal>
-                
                 <ScrollReveal delay={300}>
                   <CorrelationMatrix tickers={tickers} />
                 </ScrollReveal>
-                
                 <ScrollReveal delay={400}>
                    <OptimizationPanel positions={advancedPositions} />
                 </ScrollReveal>
@@ -187,7 +176,6 @@ function PortfolioContent() {
         </>
       )}
 
-      {/* Empty State */}
       {positions.length === 0 && (
         <Section spacing="xl" background="default">
             <div className="text-center py-16">
