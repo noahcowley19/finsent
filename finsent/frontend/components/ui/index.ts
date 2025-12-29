@@ -137,10 +137,14 @@ export {
 // -----------------------------------------------------------------------------
 export {
   Modal,
+  ModalHeader,
+  ModalBody,
   ModalFooter,
   ConfirmModal,
   type ModalProps,
   type ModalSize,
+  type ModalHeaderProps,
+  type ModalBodyProps,
   type ModalFooterProps,
   type ConfirmModalProps,
 } from './Modal';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Modal } from '@/components/ui';
+import { Modal, ModalHeader, ModalBody } from '@/components/ui';
 import { useQuickSearch } from '@/lib/hooks';
 
 // =============================================================================
@@ -107,128 +107,131 @@ export const AddPositionModal: React.FC<AddPositionModalProps> = ({
     const isFormValid = validatedTicker && parseFloat(shares) > 0 && parseFloat(costBasis) > 0;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Add Position" size="sm">
-            <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Ticker Input */}
-                <div>
-                    <label className="block text-sm font-medium text-obsidian-700 mb-2">
-                        Ticker Symbol
-                    </label>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={ticker}
-                            onChange={(e) => {
-                                setTicker(e.target.value.toUpperCase());
-                                setValidatedTicker(null);
-                            }}
-                            onBlur={validateTicker}
-                            placeholder="e.g., AAPL"
-                            className={`
+        <Modal isOpen={isOpen} onClose={onClose} size="sm">
+            <ModalHeader title="Add Position" onClose={onClose} />
+            <ModalBody>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Ticker Input */}
+                    <div>
+                        <label className="block text-sm font-medium text-obsidian-700 mb-2">
+                            Ticker Symbol
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={ticker}
+                                onChange={(e) => {
+                                    setTicker(e.target.value.toUpperCase());
+                                    setValidatedTicker(null);
+                                }}
+                                onBlur={validateTicker}
+                                placeholder="e.g., AAPL"
+                                className={`
                 w-full h-11 px-4 rounded-xl border text-obsidian-900
                 focus:outline-none focus:ring-2 transition-all
                 ${tickerError
-                                    ? 'border-coral-500 focus:ring-coral-500/20'
-                                    : validatedTicker
-                                        ? 'border-success-500 focus:ring-success-500/20'
-                                        : 'border-cream-300 focus:ring-electric-500/20 focus:border-electric-500'
-                                }
+                                        ? 'border-coral-500 focus:ring-coral-500/20'
+                                        : validatedTicker
+                                            ? 'border-success-500 focus:ring-success-500/20'
+                                            : 'border-cream-300 focus:ring-electric-500/20 focus:border-electric-500'
+                                    }
               `}
-                        />
-                        {isValidating && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <div className="w-5 h-5 border-2 border-electric-500 border-t-transparent rounded-full animate-spin" />
-                            </div>
+                            />
+                            {isValidating && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <div className="w-5 h-5 border-2 border-electric-500 border-t-transparent rounded-full animate-spin" />
+                                </div>
+                            )}
+                            {validatedTicker && !isValidating && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-success-500">
+                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                        {tickerError && (
+                            <p className="mt-1.5 text-sm text-coral-500">{tickerError}</p>
                         )}
-                        {validatedTicker && !isValidating && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-success-500">
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
-                            </div>
+                        {validatedTicker && (
+                            <p className="mt-1.5 text-sm text-success-600">{validatedTicker.name}</p>
                         )}
                     </div>
-                    {tickerError && (
-                        <p className="mt-1.5 text-sm text-coral-500">{tickerError}</p>
-                    )}
-                    {validatedTicker && (
-                        <p className="mt-1.5 text-sm text-success-600">{validatedTicker.name}</p>
-                    )}
-                </div>
 
-                {/* Shares Input */}
-                <div>
-                    <label className="block text-sm font-medium text-obsidian-700 mb-2">
-                        Number of Shares
-                    </label>
-                    <input
-                        type="number"
-                        value={shares}
-                        onChange={(e) => setShares(e.target.value)}
-                        placeholder="e.g., 100"
-                        min="0.01"
-                        step="0.01"
-                        className="w-full h-11 px-4 rounded-xl border border-cream-300 text-obsidian-900 focus:outline-none focus:ring-2 focus:ring-electric-500/20 focus:border-electric-500 transition-all"
-                    />
-                </div>
-
-                {/* Cost Basis Input */}
-                <div>
-                    <label className="block text-sm font-medium text-obsidian-700 mb-2">
-                        Cost Basis (per share)
-                    </label>
-                    <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-obsidian-400">$</span>
+                    {/* Shares Input */}
+                    <div>
+                        <label className="block text-sm font-medium text-obsidian-700 mb-2">
+                            Number of Shares
+                        </label>
                         <input
                             type="number"
-                            value={costBasis}
-                            onChange={(e) => setCostBasis(e.target.value)}
-                            placeholder="e.g., 150.00"
+                            value={shares}
+                            onChange={(e) => setShares(e.target.value)}
+                            placeholder="e.g., 100"
                             min="0.01"
                             step="0.01"
-                            className="w-full h-11 pl-8 pr-4 rounded-xl border border-cream-300 text-obsidian-900 focus:outline-none focus:ring-2 focus:ring-electric-500/20 focus:border-electric-500 transition-all"
+                            className="w-full h-11 px-4 rounded-xl border border-cream-300 text-obsidian-900 focus:outline-none focus:ring-2 focus:ring-electric-500/20 focus:border-electric-500 transition-all"
                         />
                     </div>
-                </div>
 
-                {/* Summary */}
-                {isFormValid && (
-                    <div className="p-4 rounded-xl bg-cream-100 border border-cream-200">
-                        <p className="text-sm text-obsidian-600">
-                            Adding <strong>{parseFloat(shares).toLocaleString()}</strong> shares of{' '}
-                            <strong>{validatedTicker?.symbol}</strong> at{' '}
-                            <strong>${parseFloat(costBasis).toFixed(2)}</strong> per share
-                        </p>
-                        <p className="text-sm text-obsidian-500 mt-1">
-                            Total cost: <strong>${(parseFloat(shares) * parseFloat(costBasis)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                        </p>
+                    {/* Cost Basis Input */}
+                    <div>
+                        <label className="block text-sm font-medium text-obsidian-700 mb-2">
+                            Cost Basis (per share)
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-obsidian-400">$</span>
+                            <input
+                                type="number"
+                                value={costBasis}
+                                onChange={(e) => setCostBasis(e.target.value)}
+                                placeholder="e.g., 150.00"
+                                min="0.01"
+                                step="0.01"
+                                className="w-full h-11 pl-8 pr-4 rounded-xl border border-cream-300 text-obsidian-900 focus:outline-none focus:ring-2 focus:ring-electric-500/20 focus:border-electric-500 transition-all"
+                            />
+                        </div>
                     </div>
-                )}
 
-                {/* Actions */}
-                <div className="flex gap-3 pt-2">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex-1 h-11 rounded-xl border border-cream-300 text-obsidian-700 font-medium hover:bg-cream-100 transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={!isFormValid}
-                        className={`
+                    {/* Summary */}
+                    {isFormValid && (
+                        <div className="p-4 rounded-xl bg-cream-100 border border-cream-200">
+                            <p className="text-sm text-obsidian-600">
+                                Adding <strong>{parseFloat(shares).toLocaleString()}</strong> shares of{' '}
+                                <strong>{validatedTicker?.symbol}</strong> at{' '}
+                                <strong>${parseFloat(costBasis).toFixed(2)}</strong> per share
+                            </p>
+                            <p className="text-sm text-obsidian-500 mt-1">
+                                Total cost: <strong>${(parseFloat(shares) * parseFloat(costBasis)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 h-11 rounded-xl border border-cream-300 text-obsidian-700 font-medium hover:bg-cream-100 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={!isFormValid}
+                            className={`
               flex-1 h-11 rounded-xl font-medium transition-all
               ${isFormValid
-                                ? 'bg-obsidian-900 text-white hover:bg-obsidian-850'
-                                : 'bg-cream-200 text-obsidian-400 cursor-not-allowed'
-                            }
+                                    ? 'bg-obsidian-900 text-white hover:bg-obsidian-850'
+                                    : 'bg-cream-200 text-obsidian-400 cursor-not-allowed'
+                                }
             `}
-                    >
-                        Add Position
-                    </button>
-                </div>
-            </form>
+                        >
+                            Add Position
+                        </button>
+                    </div>
+                </form>
+            </ModalBody>
         </Modal>
     );
 };
