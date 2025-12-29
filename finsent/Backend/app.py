@@ -23,8 +23,52 @@ from technicals import technicals_bp
 from compare import compare_bp
 from dividends import dividends_bp
 
+# ML Blueprint (optional - graceful fallback if not available)
+try:
+    from ml_endpoints import ml_bp
+    ML_AVAILABLE = True
+except ImportError:
+    ml_bp = None
+    ML_AVAILABLE = False
+
+# Quant Lab V2 Blueprint (advanced quantitative analysis)
+try:
+    from quant_lab_v2 import quant_v2_bp
+    QUANT_V2_AVAILABLE = True
+except ImportError as e:
+    print(f"Quant Lab V2 not available: {e}")
+    quant_v2_bp = None
+    QUANT_V2_AVAILABLE = False
+
+# Screener V2 Blueprint (ML-powered stock discovery)
+try:
+    from screener_v2 import screener_v2_bp
+    SCREENER_V2_AVAILABLE = True
+except ImportError as e:
+    print(f"Screener V2 not available: {e}")
+    screener_v2_bp = None
+    SCREENER_V2_AVAILABLE = False
+
+# Macro V2 Blueprint (Global Macro Intelligence)
+try:
+    from macro_v2 import macro_v2_bp
+    MACRO_V2_AVAILABLE = True
+except ImportError as e:
+    print(f"Macro V2 not available: {e}")
+    macro_v2_bp = None
+    MACRO_V2_AVAILABLE = False
+
+# Insider V2 Blueprint (Smart Money Tracking)
+try:
+    from insider_v2 import insider_v2_bp
+    INSIDER_V2_AVAILABLE = True
+except ImportError as e:
+    print(f"Insider V2 not available: {e}")
+    insider_v2_bp = None
+    INSIDER_V2_AVAILABLE = False
 
 
+#this is the main app
 app = Flask(__name__)
 
 # Configure CORS origins from environment variable or use defaults
@@ -214,13 +258,48 @@ app.register_blueprint(technicals_bp)
 app.register_blueprint(compare_bp)
 app.register_blueprint(dividends_bp)
 
+# Register ML blueprint if available
+if ML_AVAILABLE and ml_bp:
+    app.register_blueprint(ml_bp)
+    logger.info("ML Blueprint registered successfully")
+else:
+    logger.warning("ML Blueprint not available")
+
+# Register Quant Lab V2 blueprint if available
+if QUANT_V2_AVAILABLE and quant_v2_bp:
+    app.register_blueprint(quant_v2_bp)
+    logger.info("Quant Lab V2 Blueprint registered successfully")
+else:
+    logger.warning("Quant Lab V2 Blueprint not available")
+
+# Register Screener V2 blueprint if available
+if SCREENER_V2_AVAILABLE and screener_v2_bp:
+    app.register_blueprint(screener_v2_bp)
+    logger.info("Screener V2 Blueprint registered successfully")
+else:
+    logger.warning("Screener V2 Blueprint not available")
+
+# Register Macro V2 blueprint if available
+if MACRO_V2_AVAILABLE and macro_v2_bp:
+    app.register_blueprint(macro_v2_bp)
+    logger.info("Macro V2 Blueprint registered successfully")
+else:
+    logger.warning("Macro V2 Blueprint not available")
+
+# Register Insider V2 blueprint if available
+if INSIDER_V2_AVAILABLE and insider_v2_bp:
+    app.register_blueprint(insider_v2_bp)
+    logger.info("Insider V2 Blueprint registered successfully")
+else:
+    logger.warning("Insider V2 Blueprint not available")
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', debug=False, port=port)
 
 
-
+#this is the test
 
 
 

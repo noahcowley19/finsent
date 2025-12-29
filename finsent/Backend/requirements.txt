@@ -10,3 +10,16 @@ pandas
 numpy
 flask-limiter
 scipy
+
+# Quant Lab Advanced Dependencies
+statsmodels
+hmmlearn
+arch
+plotly
+
+# Screener V2 ML Dependencies
+scikit-learn
+joblib
+
+# Macro Page Dependencies
+fredapi

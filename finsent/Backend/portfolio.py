@@ -6,6 +6,15 @@ import numpy as np
 import math
 from cache import financial_cache, Cache
 
+# Import ML modules
+try:
+    from ml.forecaster import forecast_portfolio, forecast_ticker
+    from ml.sentiment import analyze_portfolio_sentiment, analyze_ticker_sentiment
+    ML_AVAILABLE = True
+except ImportError as e:
+    print(f"ML modules not available: {e}")
+    ML_AVAILABLE = False
+
 portfolio_bp = Blueprint('portfolio', __name__)
 
 
@@ -141,6 +150,192 @@ def calculate_sharpe_ratio(returns, risk_free_rate=0.02):
     sharpe = np.mean(excess_returns) / np.std(returns) * np.sqrt(252)
     return safe_round(sharpe, 2)
 
+
+def calculate_sortino_ratio(returns, risk_free_rate=0.02):
+    """
+    Calculate Sortino Ratio: (Rp - Rf) / σd
+    Uses downside deviation instead of standard deviation
+    Only considers negative returns for volatility calculation
+    """
+    if returns is None or len(returns) == 0:
+        return None
+    
+    # Daily risk-free rate
+    daily_rf = risk_free_rate / 252
+    excess_returns = returns - daily_rf
+    
+    # Calculate downside deviation (only negative returns)
+    downside_returns = returns[returns < daily_rf]
+    if len(downside_returns) == 0:
+        return None  # No downside risk
+    
+    downside_deviation = np.std(downside_returns) * np.sqrt(252)
+    
+    if downside_deviation == 0:
+        return None
+    
+    annualized_excess_return = np.mean(excess_returns) * 252
+    sortino = annualized_excess_return / downside_deviation
+    return safe_round(sortino, 2)
+
+
+def calculate_treynor_ratio(returns, beta, risk_free_rate=0.02):
+    """
+    Calculate Treynor Ratio: (Rp - Rf) / β
+    Measures excess return per unit of systematic risk
+    """
+    if returns is None or len(returns) == 0 or beta is None or beta == 0:
+        return None
+    
+    # Annualized excess return
+    daily_rf = risk_free_rate / 252
+    excess_returns = returns - daily_rf
+    annualized_excess_return = np.mean(excess_returns) * 252
+    
+    treynor = annualized_excess_return / beta
+    return safe_round(treynor * 100, 2)  # Return as percentage
+
+
+def calculate_information_ratio(returns, benchmark_returns, risk_free_rate=0.02):
+    """
+    Calculate Information Ratio: (Rp - Rb) / Tracking Error
+    Measures active return per unit of active risk
+    """
+    if returns is None or benchmark_returns is None:
+        return None
+    if len(returns) == 0 or len(benchmark_returns) == 0:
+        return None
+    
+    # Align lengths
+    min_len = min(len(returns), len(benchmark_returns))
+    returns = returns[-min_len:]
+    benchmark_returns = benchmark_returns[-min_len:]
+    
+    # Active return (portfolio - benchmark)
+    active_returns = returns - benchmark_returns
+    
+    # Tracking error (volatility of active returns)
+    tracking_error = np.std(active_returns) * np.sqrt(252)
+    
+    if tracking_error == 0:
+        return None
+    
+    # Annualized active return
+    annualized_active_return = np.mean(active_returns) * 252
+    
+    information_ratio = annualized_active_return / tracking_error
+    return safe_round(information_ratio, 2)
+
+
+def calculate_jensens_alpha(returns, benchmark_returns, beta, risk_free_rate=0.02):
+    """
+    Calculate Jensen's Alpha: Rp - [Rf + β(Rm - Rf)]
+    Measures the abnormal return above CAPM prediction
+    """
+    if returns is None or benchmark_returns is None or beta is None:
+        return None
+    
+    # Annualized returns
+    portfolio_return = np.mean(returns) * 252
+    benchmark_return = np.mean(benchmark_returns) * 252
+    
+    # Expected return according to CAPM
+    expected_return = risk_free_rate + beta * (benchmark_return - risk_free_rate)
+    
+    # Jensen's Alpha
+    alpha = portfolio_return - expected_return
+    return safe_round(alpha * 100, 2)  # Return as percentage
+
+
+def calculate_historical_var(returns, confidence=0.95):
+    """
+    Calculate Historical VaR using percentile method
+    More robust than parametric VaR, uses actual return distribution
+    """
+    if returns is None or len(returns) == 0:
+        return None
+    
+    # VaR is the (1-confidence) percentile of returns
+    var_percentile = (1 - confidence) * 100
+    var = np.percentile(returns, var_percentile)
+    return safe_round(var * 100, 2)  # Return as percentage
+
+
+def calculate_parametric_var(returns, confidence=0.95):
+    """
+    Calculate Parametric VaR using Variance-Covariance method
+    Assumes returns are normally distributed
+    """
+    if returns is None or len(returns) == 0:
+        return None
+    
+    from scipy import stats
+    
+    mean_return = np.mean(returns)
+    std_return = np.std(returns)
+    
+    # Z-score for given confidence level
+    z_score = stats.norm.ppf(1 - confidence)
+    
+    var = mean_return + z_score * std_return
+    return safe_round(var * 100, 2)  # Return as percentage
+
+
+def calculate_max_drawdown(prices):
+    """
+    Calculate Maximum Drawdown (MDD)
+    Largest peak-to-trough decline
+    """
+    if prices is None or len(prices) == 0:
+        return None
+    
+    # Calculate running maximum
+    running_max = np.maximum.accumulate(prices)
+    
+    # Calculate drawdowns
+    drawdowns = (prices - running_max) / running_max
+    
+    # Maximum drawdown
+    max_drawdown = np.min(drawdowns)
+    return safe_round(max_drawdown * 100, 2)  # Return as percentage
+
+
+def calculate_hhi(weights):
+    """
+    Calculate Herfindahl-Hirschman Index (HHI)
+    Measures portfolio concentration
+    HHI = Σ(wi²) where wi is the weight of each holding
+    
+    Interpretation:
+    - HHI < 0.15: Diversified
+    - 0.15 ≤ HHI < 0.25: Moderately concentrated
+    - HHI ≥ 0.25: Highly concentrated
+    """
+    if weights is None or len(weights) == 0:
+        return None
+    
+    # Ensure weights sum to 1
+    weights = np.array(weights)
+    weights = weights / np.sum(weights)
+    
+    hhi = np.sum(weights ** 2)
+    return safe_round(hhi, 4)
+
+
+def get_benchmark_returns(period='1y'):
+    """
+    Get S&P 500 (SPY) returns as benchmark
+    """
+    try:
+        spy = yf.Ticker('SPY')
+        hist = spy.history(period=period)
+        if hist.empty:
+            return None
+        prices = hist['Close'].values
+        returns = np.diff(prices) / prices[:-1]
+        return returns
+    except:
+        return None
 
 def calculate_portfolio_metrics(positions):
     """Calculate comprehensive portfolio metrics"""
@@ -555,8 +750,8 @@ def calculate_correlation_matrix(tickers):
     return result
 
 
-def run_monte_carlo_simulation(positions, num_simulations=1000, time_horizon=252):
-    """Run Monte Carlo simulation for portfolio"""
+def run_monte_carlo_simulation(positions, num_simulations=10000, time_horizon=252):
+    """Run Monte Carlo simulation for portfolio (10K simulations for accuracy)"""
     if not positions:
         return None
     
@@ -641,6 +836,159 @@ def run_monte_carlo_simulation(positions, num_simulations=1000, time_horizon=252
         'worst_case_return': safe_round((np.percentile(final_values, 5) / total_value - 1) * 100, 2),
         'best_case_return': safe_round((np.percentile(final_values, 95) / total_value - 1) * 100, 2),
     }
+
+
+def calculate_efficient_frontier(positions, num_portfolios=5000, risk_free_rate=0.02):
+    """
+    Calculate the Efficient Frontier using Modern Portfolio Theory
+    Returns optimal portfolio weights and the frontier curve
+    """
+    if not positions or len(positions) < 2:
+        return None
+    
+    tickers = [p.get('ticker', '').upper() for p in positions]
+    prices = get_price_history(tickers, period='2y')  # 2 years for better estimates
+    
+    if prices is None or prices.empty:
+        return None
+    
+    valid_tickers = [t for t in tickers if t in prices.columns]
+    if len(valid_tickers) < 2:
+        return None
+    
+    # Calculate returns
+    returns = prices[valid_tickers].pct_change().dropna()
+    
+    # Calculate mean returns and covariance matrix
+    mean_returns = returns.mean().values * 252  # Annualized
+    cov_matrix = returns.cov().values * 252  # Annualized
+    
+    n_assets = len(valid_tickers)
+    
+    # Generate random portfolios for frontier
+    np.random.seed(42)
+    portfolio_returns = []
+    portfolio_volatilities = []
+    portfolio_weights = []
+    portfolio_sharpes = []
+    
+    for _ in range(num_portfolios):
+        # Random weights that sum to 1
+        weights = np.random.random(n_assets)
+        weights /= weights.sum()
+        
+        # Calculate portfolio return
+        port_return = np.dot(weights, mean_returns)
+        
+        # Calculate portfolio volatility
+        port_vol = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+        
+        # Calculate Sharpe ratio
+        sharpe = (port_return - risk_free_rate) / port_vol if port_vol > 0 else 0
+        
+        portfolio_returns.append(port_return)
+        portfolio_volatilities.append(port_vol)
+        portfolio_weights.append(weights)
+        portfolio_sharpes.append(sharpe)
+    
+    # Find optimal portfolios
+    sharpes = np.array(portfolio_sharpes)
+    returns_arr = np.array(portfolio_returns)
+    vols_arr = np.array(portfolio_volatilities)
+    
+    # Maximum Sharpe Ratio portfolio
+    max_sharpe_idx = np.argmax(sharpes)
+    max_sharpe_weights = portfolio_weights[max_sharpe_idx]
+    max_sharpe_return = returns_arr[max_sharpe_idx]
+    max_sharpe_vol = vols_arr[max_sharpe_idx]
+    
+    # Minimum Volatility portfolio
+    min_vol_idx = np.argmin(vols_arr)
+    min_vol_weights = portfolio_weights[min_vol_idx]
+    min_vol_return = returns_arr[min_vol_idx]
+    min_vol_vol = vols_arr[min_vol_idx]
+    
+    # Calculate current portfolio metrics
+    total_value = sum(p.get('current_value', 0) for p in positions)
+    current_weights = np.array([
+        positions[tickers.index(t)].get('current_value', 0) / total_value 
+        if t in [p.get('ticker', '').upper() for p in positions] else 0
+        for t in valid_tickers
+    ]) if total_value > 0 else np.ones(n_assets) / n_assets
+    
+    current_weights = current_weights / current_weights.sum()  # Normalize
+    current_return = np.dot(current_weights, mean_returns)
+    current_vol = np.sqrt(np.dot(current_weights.T, np.dot(cov_matrix, current_weights)))
+    current_sharpe = (current_return - risk_free_rate) / current_vol if current_vol > 0 else 0
+    
+    # Generate efficient frontier points
+    # Sort portfolios by volatility and pick those on the frontier
+    sorted_indices = np.argsort(vols_arr)
+    frontier_vols = []
+    frontier_returns = []
+    max_return_so_far = -np.inf
+    
+    for idx in sorted_indices:
+        if returns_arr[idx] > max_return_so_far:
+            frontier_vols.append(vols_arr[idx])
+            frontier_returns.append(returns_arr[idx])
+            max_return_so_far = returns_arr[idx]
+    
+    return {
+        'valid_tickers': valid_tickers,
+        'current_portfolio': {
+            'weights': {t: safe_round(w * 100, 2) for t, w in zip(valid_tickers, current_weights)},
+            'expected_return': safe_round(current_return * 100, 2),
+            'volatility': safe_round(current_vol * 100, 2),
+            'sharpe_ratio': safe_round(current_sharpe, 2),
+        },
+        'max_sharpe_portfolio': {
+            'weights': {t: safe_round(w * 100, 2) for t, w in zip(valid_tickers, max_sharpe_weights)},
+            'expected_return': safe_round(max_sharpe_return * 100, 2),
+            'volatility': safe_round(max_sharpe_vol * 100, 2),
+            'sharpe_ratio': safe_round(sharpes[max_sharpe_idx], 2),
+        },
+        'min_volatility_portfolio': {
+            'weights': {t: safe_round(w * 100, 2) for t, w in zip(valid_tickers, min_vol_weights)},
+            'expected_return': safe_round(min_vol_return * 100, 2),
+            'volatility': safe_round(min_vol_vol * 100, 2),
+            'sharpe_ratio': safe_round(sharpes[min_vol_idx], 2),
+        },
+        'efficient_frontier': {
+            'volatilities': [safe_round(v * 100, 2) for v in frontier_vols[:50]],  # Limit points
+            'returns': [safe_round(r * 100, 2) for r in frontier_returns[:50]],
+        },
+        'rebalancing_suggestions': generate_rebalancing_suggestions(
+            valid_tickers, current_weights, max_sharpe_weights
+        ),
+        'risk_free_rate': risk_free_rate,
+        'portfolios_simulated': num_portfolios,
+    }
+
+
+def generate_rebalancing_suggestions(tickers, current_weights, optimal_weights):
+    """Generate actionable rebalancing suggestions"""
+    suggestions = []
+    
+    for i, ticker in enumerate(tickers):
+        current = current_weights[i] * 100
+        optimal = optimal_weights[i] * 100
+        diff = optimal - current
+        
+        if abs(diff) > 2:  # Only suggest if difference > 2%
+            action = 'increase' if diff > 0 else 'decrease'
+            suggestions.append({
+                'ticker': ticker,
+                'action': action,
+                'current_weight': safe_round(current, 1),
+                'optimal_weight': safe_round(optimal, 1),
+                'change': safe_round(abs(diff), 1),
+            })
+    
+    # Sort by magnitude of change
+    suggestions.sort(key=lambda x: x['change'], reverse=True)
+    
+    return suggestions
 
 
 def calculate_var_cvar(positions, confidence=0.95, time_horizon=1):
@@ -1045,4 +1393,227 @@ def what_if():
             'error_type': 'server_error'
         }), 500
 
+
+# =============================================================================
+# ADVANCED RISK METRICS ENDPOINT
+# =============================================================================
+
+@portfolio_bp.route('/api/portfolio/advanced-metrics', methods=['POST'])
+def get_advanced_metrics():
+    """
+    Calculate comprehensive advanced portfolio metrics including:
+    - Risk/Return: Sharpe, Sortino, Treynor, Information Ratio, Jensen's Alpha
+    - Volatility: Std Dev, Beta, Max Drawdown
+    - VaR: Parametric (95%, 99%), Historical (95%, 99%)
+    - Concentration: HHI Index
+    """
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        risk_free_rate = data.get('risk_free_rate', 0.02)
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        # Get position data and basic metrics
+        portfolio_metrics = calculate_portfolio_metrics(positions)
+        positions_data = portfolio_metrics.get('positions', [])
+        
+        if not positions_data:
+            return jsonify({
+                'error': 'Unable to fetch data for positions',
+                'error_type': 'data_error'
+            }), 400
+        
+        # Get tickers and calculate weights
+        tickers = [p.get('ticker', '').upper() for p in positions_data]
+        total_value = sum(p.get('current_value', 0) for p in positions_data)
+        weights = [p.get('current_value', 0) / total_value for p in positions_data] if total_value > 0 else []
+        
+        # Get price history for portfolio
+        prices = get_price_history(tickers)
+        
+        portfolio_returns = None
+        portfolio_prices = None
+        portfolio_beta = calculate_portfolio_beta(positions_data)
+        
+        if prices is not None and not prices.empty:
+            # Calculate weighted portfolio returns
+            valid_tickers = [t for t in tickers if t in prices.columns]
+            valid_weights = np.array([weights[tickers.index(t)] for t in valid_tickers])
+            valid_weights = valid_weights / valid_weights.sum()  # Renormalize
+            
+            returns = prices[valid_tickers].pct_change().dropna()
+            portfolio_returns = returns.dot(valid_weights).values
+            
+            # Calculate portfolio prices (normalized)
+            portfolio_prices = (prices[valid_tickers].dot(valid_weights)).values
+        
+        # Get benchmark returns (SPY)
+        benchmark_returns = get_benchmark_returns()
+        
+        # Calculate all risk/return metrics
+        risk_return_metrics = {
+            'sharpe_ratio': calculate_sharpe_ratio(portfolio_returns, risk_free_rate),
+            'sortino_ratio': calculate_sortino_ratio(portfolio_returns, risk_free_rate),
+            'treynor_ratio': calculate_treynor_ratio(portfolio_returns, portfolio_beta, risk_free_rate),
+            'information_ratio': calculate_information_ratio(portfolio_returns, benchmark_returns, risk_free_rate),
+            'jensens_alpha': calculate_jensens_alpha(portfolio_returns, benchmark_returns, portfolio_beta, risk_free_rate),
+        }
+        
+        # Calculate volatility metrics
+        volatility_metrics = {
+            'annualized_volatility': calculate_volatility(portfolio_returns),
+            'portfolio_beta': portfolio_beta,
+            'max_drawdown': calculate_max_drawdown(portfolio_prices),
+        }
+        
+        # Calculate VaR metrics
+        var_metrics = {
+            'var_95_historical': calculate_historical_var(portfolio_returns, 0.95),
+            'var_99_historical': calculate_historical_var(portfolio_returns, 0.99),
+            'var_95_parametric': calculate_parametric_var(portfolio_returns, 0.95),
+            'var_99_parametric': calculate_parametric_var(portfolio_returns, 0.99),
+        }
+        
+        # Dollar VaR
+        if total_value > 0:
+            var_metrics['var_95_dollar'] = safe_round(
+                abs(var_metrics['var_95_historical'] or 0) / 100 * total_value, 2
+            )
+            var_metrics['var_99_dollar'] = safe_round(
+                abs(var_metrics['var_99_historical'] or 0) / 100 * total_value, 2
+            )
+        
+        # Calculate concentration metrics
+        hhi = calculate_hhi(weights)
+        concentration_metrics = {
+            'hhi_index': hhi,
+            'hhi_interpretation': 'Diversified' if hhi and hhi < 0.15 else 
+                                  'Moderately Concentrated' if hhi and hhi < 0.25 else 
+                                  'Highly Concentrated',
+            'effective_n': safe_round(1 / hhi, 1) if hhi and hhi > 0 else None,  # Effective number of holdings
+            'top_holding_weight': safe_round(max(weights) * 100, 2) if weights else None,
+        }
+        
+        # Calculate CAPM expected return
+        capm = calculate_capm(portfolio_beta, risk_free_rate)
+        
+        # Risk-adjusted performance summary
+        risk_adjusted_summary = {
+            'risk_grade': 'A' if (risk_return_metrics['sharpe_ratio'] or 0) > 1.5 else
+                          'B' if (risk_return_metrics['sharpe_ratio'] or 0) > 1.0 else
+                          'C' if (risk_return_metrics['sharpe_ratio'] or 0) > 0.5 else
+                          'D' if (risk_return_metrics['sharpe_ratio'] or 0) > 0 else 'F',
+            'diversification_grade': 'A' if (hhi or 1) < 0.10 else
+                                     'B' if (hhi or 1) < 0.15 else
+                                     'C' if (hhi or 1) < 0.25 else
+                                     'D' if (hhi or 1) < 0.40 else 'F',
+        }
+        
+        response = {
+            'portfolio_value': safe_round(total_value, 2),
+            'positions_count': len(positions_data),
+            'risk_return_metrics': risk_return_metrics,
+            'volatility_metrics': volatility_metrics,
+            'var_metrics': var_metrics,
+            'concentration_metrics': concentration_metrics,
+            'capm_analysis': capm,
+            'risk_adjusted_summary': risk_adjusted_summary,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
+
+
+@portfolio_bp.route('/api/portfolio/time-machine', methods=['POST'])
+def time_machine():
+    """
+    Get portfolio metrics at a specific historical date
+    Enables the 'Time Travel' feature in the frontend
+    """
+    try:
+        data = request.get_json()
+        positions = data.get('positions', [])
+        target_date = data.get('date')  # ISO format: 'YYYY-MM-DD'
+        
+        if not positions:
+            return jsonify({
+                'error': 'No positions provided',
+                'error_type': 'validation'
+            }), 400
+        
+        if not target_date:
+            return jsonify({
+                'error': 'Target date is required',
+                'error_type': 'validation'
+            }), 400
+        
+        try:
+            target_dt = datetime.strptime(target_date, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({
+                'error': 'Invalid date format. Use YYYY-MM-DD',
+                'error_type': 'validation'
+            }), 400
+        
+        # Get historical prices for all positions
+        tickers = [p.get('ticker', '').upper() for p in positions]
+        total_value_at_date = 0
+        positions_at_date = []
+        
+        for pos in positions:
+            ticker = pos.get('ticker', '').upper()
+            shares = float(pos.get('shares', 0))
+            cost_basis = float(pos.get('total_cost_basis', 0))
+            
+            try:
+                stock = yf.Ticker(ticker)
+                # Get historical data around target date
+                start_date = target_dt - timedelta(days=7)
+                end_date = target_dt + timedelta(days=1)
+                hist = stock.history(start=start_date, end=end_date)
+                
+                if not hist.empty:
+                    # Find closest price to target date
+                    hist.index = pd.to_datetime(hist.index).tz_localize(None)
+                    closest_idx = hist.index.get_indexer([target_dt], method='nearest')[0]
+                    price_at_date = hist['Close'].iloc[closest_idx]
+                    value_at_date = shares * price_at_date
+                    
+                    total_value_at_date += value_at_date
+                    positions_at_date.append({
+                        'ticker': ticker,
+                        'shares': shares,
+                        'price_at_date': safe_round(price_at_date, 2),
+                        'value_at_date': safe_round(value_at_date, 2),
+                        'cost_basis': cost_basis,
+                        'gain_loss_at_date': safe_round(value_at_date - cost_basis, 2),
+                    })
+            except Exception as e:
+                continue
+        
+        response = {
+            'target_date': target_date,
+            'total_value': safe_round(total_value_at_date, 2),
+            'positions': positions_at_date,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'An error occurred: {str(e)}',
+            'error_type': 'server_error'
+        }), 500
 

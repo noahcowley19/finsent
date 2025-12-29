@@ -21,3 +21,7 @@ export {
     OptimizationPanel,
     WhatIfSimulator
 } from './AdvancedPortfolio';
+
+// Risk Dashboard & Time Travel
+export { RiskDashboard } from './RiskDashboard';
+export { TimeSlider } from './TimeSlider';
