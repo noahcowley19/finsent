@@ -29,6 +29,14 @@ export {
 } from './ConnectedNavbar';
 
 export {
+  CommandBarNavbar,
+} from './CommandBarNavbar';
+
+export {
+  NavbarSwitcher,
+} from './NavbarSwitcher';
+
+export {
   Footer,
 } from './Footer';
 
