@@ -11,6 +11,7 @@ export { PortfolioSummary, type PortfolioSummaryProps, type PortfolioSummaryData
 export { HoldingsTable, type HoldingsTableProps, type Holding } from './HoldingsTable';
 export { PerformanceChart, type PerformanceChartProps, type PerformanceDataPoint } from './PerformanceChart';
 export { AllocationChart, type AllocationChartProps, type AllocationItem } from './AllocationChart';
+export { AddPositionModal, type AddPositionModalProps } from './AddPositionModal';
 
 // Advanced Portfolio Analytics
 export {

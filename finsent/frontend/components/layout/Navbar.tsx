@@ -71,9 +71,9 @@ const Logo: React.FC = () => {
       <Image
         src="/caveray-wordmark.png"
         alt="Caveray"
-        width={120}
-        height={28}
-        className="h-7 w-auto object-contain transition-opacity duration-150 group-hover:opacity-80"
+        width={140}
+        height={32}
+        className="h-8 w-auto object-contain transition-opacity duration-150 group-hover:opacity-80"
         priority
       />
     </Link>
