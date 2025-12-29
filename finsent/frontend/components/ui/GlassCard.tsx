@@ -51,4 +51,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     );
 };
 
+// Export GlassPanel as an alias for backward compatibility
+export const GlassPanel = GlassCard;
+
 export default GlassCard;

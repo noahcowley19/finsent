@@ -219,11 +219,11 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     <Card variant={variant} padding="md" hover className={`group ${className}`} {...props}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-body-sm text-ink-500 mb-1">{label}</p>
-          <p className="font-semibold text-display-sm text-ink-900 tracking-tight">{value}</p>
+          <p className="text-sm text-gray-500 uppercase tracking-wide font-medium mb-3">{label}</p>
+          <p className="font-bold text-3xl text-ink-black-900 tracking-tight">{value}</p>
           {change && (
             <p
-              className={`mt-2 text-body-sm font-medium flex items-center gap-1 ${changePositive ? 'text-success-600' : 'text-error-600'
+              className={`mt-2 text-sm font-medium flex items-center gap-1 ${changePositive ? 'text-success-600' : 'text-terracotta-500'
                 }`}
             >
               <span className="text-xs">{changePositive ? '↑' : '↓'}</span>
@@ -232,7 +232,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="w-10 h-10 rounded-lg bg-ink-100 flex items-center justify-center text-ink-500 group-hover:bg-ink-200 group-hover:text-ink-600 transition-colors">
+          <div className="text-navy-900 opacity-60">
             {icon}
           </div>
         )}
