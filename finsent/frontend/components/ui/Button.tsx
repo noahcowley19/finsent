@@ -27,7 +27,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 // =============================================================================
-// STYLES - Modern SaaS Aesthetic
+// STYLES - Editorial Finance Aesthetic
 // =============================================================================
 
 const baseStyles = `
@@ -37,31 +37,35 @@ const baseStyles = `
   border
   cursor-pointer
   transition-all duration-150 ease-out
-  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2
   disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
   select-none
 `;
 
 const variantStyles: Record<ButtonVariant, string> = {
+  // Primary - Solid Terracotta
   primary: `
-    bg-ink-900 text-white border-transparent
-    hover:bg-ink-800 hover:-translate-y-px hover:shadow-lg
-    active:bg-ink-950 active:translate-y-0
+    bg-terracotta-500 text-white border-transparent
+    hover:bg-terracotta-600 hover:-translate-y-px hover:shadow-md
+    active:bg-terracotta-700 active:translate-y-0
   `,
+  // Secondary - White background with Navy border
   secondary: `
-    bg-white text-ink-700 border-ink-200
-    hover:bg-ink-50 hover:border-ink-300 hover:-translate-y-px
-    active:bg-ink-100 active:translate-y-0
+    bg-white text-navy-900 border-navy-900
+    hover:bg-cream-50 hover:border-ink-black-900 hover:-translate-y-px
+    active:bg-cream-100 active:translate-y-0
   `,
+  // Ghost - Transparent with Navy text
   ghost: `
-    bg-transparent text-ink-600 border-transparent
-    hover:bg-ink-100 hover:text-ink-900
-    active:bg-ink-200
+    bg-transparent text-navy-900 border-transparent
+    hover:bg-terracotta-50 hover:text-terracotta-500
+    active:bg-terracotta-100
   `,
+  // Accent - Alias to primary (Terracotta)
   accent: `
-    bg-accent text-white border-transparent
-    hover:bg-accent-600 hover:-translate-y-px hover:shadow-glow-sm
-    active:bg-accent-700 active:translate-y-0
+    bg-terracotta-500 text-white border-transparent
+    hover:bg-terracotta-600 hover:-translate-y-px hover:shadow-md
+    active:bg-terracotta-700 active:translate-y-0
   `,
 };
 

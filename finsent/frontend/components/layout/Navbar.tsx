@@ -97,12 +97,12 @@ const UserMenu: React.FC<{
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 p-1 rounded-full transition-all duration-150 hover:bg-cream-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-electric-500"
+        className="flex items-center gap-2 p-1 rounded-full transition-all duration-150 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta-500"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-obsidian-600 to-obsidian-800 flex items-center justify-center text-white text-sm font-medium">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-navy-900 to-navy-700 flex items-center justify-center text-white text-sm font-medium">
           {user.name?.charAt(0) || user.email.charAt(0).toUpperCase()}
         </div>
-        <svg className={`w-4 h-4 text-obsidian-400 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-4 h-4 text-navy-600 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -110,26 +110,26 @@ const UserMenu: React.FC<{
       {isOpen && (
         <>
           <div className="fixed inset-0 z-dropdown" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-diffuse border border-cream-200/50 z-dropdown animate-fade-in-down overflow-hidden">
-            <div className="px-4 py-3 border-b border-cream-100">
-              <p className="font-semibold text-obsidian-900 truncate">{user.name || 'User'}</p>
-              <p className="text-sm text-obsidian-500 truncate">{user.email}</p>
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-dropdown animate-fade-in-down overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <p className="font-semibold text-ink-black-900 truncate">{user.name || 'User'}</p>
+              <p className="text-sm text-navy-600 truncate">{user.email}</p>
               {user.tier === 'pro' && (
-                <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-electric-100 text-electric-600">
+                <span className="inline-flex items-center mt-2 px-2 py-0.5 rounded-full text-xs font-medium bg-terracotta-100 text-terracotta-600">
                   Pro
                 </span>
               )}
             </div>
             <div className="py-1">
-              <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-obsidian-700 hover:bg-cream-50 transition-colors">
-                <svg className="w-4 h-4 text-obsidian-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-navy-800 hover:bg-cream-50 transition-colors">
+                <svg className="w-4 h-4 text-navy-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 Settings
               </Link>
               {user.tier === 'free' && (
-                <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-electric-600 hover:bg-cream-50 transition-colors">
+                <Link href="/pricing" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-terracotta-600 hover:bg-cream-50 transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
@@ -137,8 +137,8 @@ const UserMenu: React.FC<{
                 </Link>
               )}
             </div>
-            <div className="border-t border-cream-100 py-1">
-              <button onClick={() => { setIsOpen(false); onSignOut?.(); }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-obsidian-500 hover:bg-cream-50 transition-colors">
+            <div className="border-t border-gray-100 py-1">
+              <button onClick={() => { setIsOpen(false); onSignOut?.(); }} className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-navy-600 hover:bg-cream-50 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -153,7 +153,7 @@ const UserMenu: React.FC<{
 };
 
 // =============================================================================
-// NAVBAR COMPONENT - Cream/Obsidian Aesthetic
+// NAVBAR COMPONENT - Editorial Finance with Floating Glassmorphism
 // =============================================================================
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -194,10 +194,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           fixed top-0 left-0 right-0 z-fixed
           transition-all duration-300 ease-out
           ${scrolled
-            ? 'bg-cream-50/90 backdrop-blur-xl border-b border-cream-200/50 shadow-sm'
+            ? 'bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm'
             : transparent
               ? 'bg-transparent'
-              : 'bg-cream-50/80 backdrop-blur-md'
+              : 'bg-white/80 backdrop-blur-md border-b border-gray-200'
           }
         `}
       >
@@ -214,11 +214,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                     key={link.href}
                     href={link.href}
                     className={`
-                      relative px-4 py-2 rounded-xl text-sm font-medium
+                      relative px-4 py-2 rounded-lg text-sm font-medium
                       transition-all duration-150
                       ${isActive
-                        ? 'text-obsidian-900 bg-cream-200/60'
-                        : 'text-obsidian-600 hover:text-obsidian-900 hover:bg-cream-100'
+                        ? 'text-terracotta-500 bg-terracotta-50'
+                        : 'text-navy-900 hover:text-terracotta-500 hover:bg-terracotta-50'
                       }
                     `}
                   >
@@ -236,15 +236,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="hidden sm:flex items-center gap-3">
                   <button
                     onClick={onSignIn}
-                    className="px-4 py-2 text-sm font-medium text-obsidian-600 hover:text-obsidian-900 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-navy-900 hover:text-terracotta-500 transition-colors"
                   >
                     Log in
                   </button>
                   <button
                     onClick={onSignUp}
-                    className="px-5 py-2.5 text-sm font-medium rounded-xl bg-obsidian-900 text-white hover:bg-obsidian-850 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg"
+                    className="px-5 py-2.5 text-sm font-medium rounded-lg bg-terracotta-500 text-white hover:bg-terracotta-600 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
                   >
-                    Get started
+                    Sign Up
                   </button>
                 </div>
               )}
@@ -252,7 +252,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-xl text-obsidian-600 hover:text-obsidian-900 hover:bg-cream-100 transition-colors"
+                className="lg:hidden p-2 rounded-lg text-navy-900 hover:text-terracotta-500 hover:bg-terracotta-50 transition-colors"
                 aria-label="Open menu"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
