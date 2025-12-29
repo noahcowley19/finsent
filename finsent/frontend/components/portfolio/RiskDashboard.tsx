@@ -300,13 +300,13 @@ export const RiskDashboard: React.FC<{ positions: Position[] }> = ({ positions }
                     />
                     <MetricCard
                         label="VaR 95% ($)"
-                        value={metrics.var_metrics.var_95_dollar?.toLocaleString()}
+                        value={metrics.var_metrics.var_95_dollar?.toLocaleString() ?? null}
                         tooltip="Dollar amount at risk at 95% confidence level."
                         color="negative"
                     />
                     <MetricCard
                         label="VaR 99% ($)"
-                        value={metrics.var_metrics.var_99_dollar?.toLocaleString()}
+                        value={metrics.var_metrics.var_99_dollar?.toLocaleString() ?? null}
                         tooltip="Dollar amount at risk at 99% confidence level."
                         color="negative"
                     />
