@@ -8,12 +8,18 @@ import React, { useState, useCallback } from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://finsent-backend.onrender.com';
 
-interface Rule {
+export interface Rule {
   id: string;
   indicator: string;
   operator: string;
   value: string | number;
   action: 'entry' | 'exit';
+}
+
+export interface Strategy {
+  symbol: string;
+  period: string;
+  rules: Rule[];
 }
 
 interface TearsheetData {
@@ -69,13 +75,13 @@ const RuleBlock: React.FC<{
 }> = ({ rule, onUpdate, onRemove }) => {
   return (
     <div className={`flex items-center gap-3 p-4 rounded-xl border ${rule.action === 'entry'
-        ? 'bg-success-50 border-success-200'
-        : 'bg-coral-50 border-coral-200'
+      ? 'bg-success-50 border-success-200'
+      : 'bg-coral-50 border-coral-200'
       }`}>
       {/* Action badge */}
       <span className={`px-2 py-1 text-xs font-bold uppercase rounded ${rule.action === 'entry'
-          ? 'bg-success-100 text-success-700'
-          : 'bg-coral-100 text-coral-700'
+        ? 'bg-success-100 text-success-700'
+        : 'bg-coral-100 text-coral-700'
         }`}>
         {rule.action}
       </span>
@@ -200,15 +206,26 @@ const Tearsheet: React.FC<{ data: TearsheetData }> = ({ data }) => {
   );
 };
 
+export interface StrategyBuilderProps {
+  onRunBacktest?: (strategy: Strategy) => void;
+  onSave?: (strategy: Strategy) => void;
+  isRunning?: boolean;
+}
+
 // Main Strategy Builder Component
-export const StrategyBuilder: React.FC = () => {
+export const StrategyBuilder: React.FC<StrategyBuilderProps> = ({
+  onRunBacktest,
+  onSave,
+  isRunning = false,
+}) => {
   const [ticker, setTicker] = useState('SPY');
   const [period, setPeriod] = useState('5y');
   const [rules, setRules] = useState<Rule[]>([
     { id: '1', indicator: 'RSI', operator: '<', value: '30', action: 'entry' },
     { id: '2', indicator: 'RSI', operator: '>', value: '70', action: 'exit' },
   ]);
-  const [loading, setLoading] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
+  const loading = isRunning || internalLoading;
   const [tearsheet, setTearsheet] = useState<TearsheetData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -233,7 +250,22 @@ export const StrategyBuilder: React.FC = () => {
   const runBacktest = useCallback(async () => {
     if (!ticker || rules.length === 0) return;
 
-    setLoading(true);
+    if (onRunBacktest) {
+      onRunBacktest({
+        symbol: ticker.toUpperCase(),
+        period,
+        rules: rules.map(({ indicator, operator, value, action }) => ({
+          indicator,
+          operator,
+          value: isNaN(Number(value)) ? value : Number(value),
+          id: '', // Not strictly needed for API but for type consistency
+          action,
+        })),
+      });
+      return;
+    }
+
+    setInternalLoading(true);
     setError(null);
 
     try {
@@ -259,16 +291,36 @@ export const StrategyBuilder: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
-      setLoading(false);
+      setInternalLoading(false);
     }
-  }, [ticker, period, rules]);
+  }, [ticker, period, rules, onRunBacktest]);
+
+  const handleSave = () => {
+    if (onSave) {
+      onSave({
+        symbol: ticker.toUpperCase(),
+        period,
+        rules,
+      });
+    }
+  };
 
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-obsidian-900">Strategy Forge</h2>
-        <p className="text-obsidian-500">Build and backtest trading strategies with visual logic blocks</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-obsidian-900">Strategy Forge</h2>
+          <p className="text-obsidian-500">Build and backtest trading strategies with visual logic blocks</p>
+        </div>
+        {onSave && (
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 border border-cream-200 rounded-lg text-sm font-medium hover:bg-cream-50 transition-colors"
+          >
+            Save Strategy
+          </button>
+        )}
       </div>
 
       {/* Controls */}
