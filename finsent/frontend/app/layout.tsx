@@ -14,7 +14,7 @@
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/lib/auth-context';
 import { ToastProvider } from '@/components/ui';
-import { NavbarSwitcher } from '@/components/layout/NavbarSwitcher';
+import { ConnectedNavbar } from '@/components/layout/ConnectedNavbar';
 import { Footer } from '@/components/layout';
 import './globals.css';
 
@@ -89,7 +89,7 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider position="top-right">
             {/* Navigation */}
-            <NavbarSwitcher />
+            <ConnectedNavbar />
 
             {/* Main content */}
             <main className="flex-1">{children}</main>

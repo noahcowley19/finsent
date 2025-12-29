@@ -1,22 +1,34 @@
 // =============================================================================
-// LANDING PAGE - Financial Operating System
+// LANDING PAGE
 // =============================================================================
-// Main landing page with Command Bar navigation and Bento Grid layout
+// Main landing page composing all landing sections
 //
 // Location: frontend/app/page.tsx
 //
 // =============================================================================
 
-import { HeroCommand, BentoGrid, PricingDark, FAQDark, FinalCTADark } from '@/components/landing';
+import {
+  Hero,
+  TrustedBy,
+  Features,
+  HowItWorks,
+  Pricing,
+  Testimonials,
+  FAQ,
+  FinalCTA,
+} from '@/components/landing';
 
 export default function LandingPage() {
   return (
-    <div className="bg-obsidian-950 -mt-16">
-      <HeroCommand />
-      <BentoGrid />
-      <PricingDark />
-      <FAQDark />
-      <FinalCTADark />
-    </div>
+    <>
+      <Hero />
+      <TrustedBy />
+      <Features />
+      <HowItWorks />
+      <Pricing />
+      <Testimonials />
+      <FAQ />
+      <FinalCTA />
+    </>
   );
 }

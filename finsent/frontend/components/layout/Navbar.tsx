@@ -56,9 +56,12 @@ export const navLinks: NavLink[] = [
 ];
 
 const featuredLinks: NavLink[] = [
-  { label: 'Search', href: '/search' },
   { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Pricing', href: '/pricing' },
+  { label: 'Macro', href: '/economic' },
+  { label: 'Insider', href: '/insider' },
+  { label: 'Screener', href: '/screener' },
+  { label: 'Quant Lab', href: '/quant-lab' },
+  { label: 'Portfolio', href: '/portfolio' },
 ];
 
 // =============================================================================
