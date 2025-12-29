@@ -1,7 +1,9 @@
 'use client';
 
 // =============================================================================
-// INSIDER RADAR V2 - Smart Money Tracking Dashboard
+// INSIDER RADAR V2 - Atmospheric Glass Theme (Cream/Obsidian)
+// =============================================================================
+// Reskinned from Brutalist Dark to match the Caveray design system
 // =============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -47,7 +49,7 @@ interface Cluster {
     color: string;
 }
 
-// Conviction Gauge Component
+// Conviction Gauge Component - Cream Theme
 const ConvictionGauge: React.FC<{ score: number; color: string }> = ({ score, color }) => {
     const radius = 28;
     const circumference = 2 * Math.PI * radius;
@@ -61,7 +63,7 @@ const ConvictionGauge: React.FC<{ score: number; color: string }> = ({ score, co
                     cy="32"
                     r={radius}
                     fill="none"
-                    stroke="#2a2a2a"
+                    stroke="#E7E5E4"
                     strokeWidth="6"
                 />
                 <circle
@@ -78,35 +80,35 @@ const ConvictionGauge: React.FC<{ score: number; color: string }> = ({ score, co
                 />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-mono font-bold text-white">{score}</span>
+                <span className="text-sm font-bold text-obsidian-900">{score}</span>
             </div>
         </div>
     );
 };
 
-// Trade Card Component
+// Trade Card Component - Cream Theme
 const TradeCard: React.FC<{ trade: Trade }> = ({ trade }) => {
     const isBuy = trade.transaction_type === 'Buy';
 
     return (
-        <div className="bg-[#121212] border border-[#2a2a2a] p-4 flex items-center gap-4">
+        <div className="bg-white/50 backdrop-blur-md border border-cream-200 rounded-2xl p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
             <ConvictionGauge score={trade.conviction_score} color={trade.conviction_color} />
 
             <div className="flex-1">
                 <div className="flex items-center gap-2">
-                    <span className={`text-lg font-mono font-bold ${isBuy ? 'text-[#00ff88]' : 'text-[#ff0066]'}`}>
+                    <span className={`text-lg font-bold ${isBuy ? 'text-success-600' : 'text-coral-600'}`}>
                         {trade.ticker}
                     </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded ${isBuy ? 'bg-[#00ff8820] text-[#00ff88]' : 'bg-[#ff006620] text-[#ff0066]'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isBuy ? 'bg-success-100 text-success-700' : 'bg-coral-100 text-coral-700'}`}>
                         {trade.transaction_type.toUpperCase()}
                     </span>
                 </div>
 
-                <div className="text-sm text-[#888] mt-1">
+                <div className="text-sm text-obsidian-600 mt-1">
                     {trade.insider_name} • {trade.insider_title}
                 </div>
 
-                <div className="flex items-center gap-4 mt-2 text-xs text-[#666]">
+                <div className="flex items-center gap-4 mt-2 text-xs text-obsidian-500">
                     <span>${(trade.value / 1e6).toFixed(1)}M</span>
                     <span>{trade.shares.toLocaleString()} shares</span>
                     <span>{trade.date}</span>
@@ -114,23 +116,23 @@ const TradeCard: React.FC<{ trade: Trade }> = ({ trade }) => {
             </div>
 
             <div className="text-right">
-                <div className="text-[10px] text-[#666] uppercase">Rank</div>
-                <div className="text-lg font-mono text-white">{trade.insider_rank}/5</div>
+                <div className="text-[10px] text-obsidian-500 uppercase">Rank</div>
+                <div className="text-lg font-bold text-obsidian-900">{trade.insider_rank}/5</div>
             </div>
         </div>
     );
 };
 
-// Congress Trade Card Component
+// Congress Trade Card Component - Cream Theme
 const CongressCard: React.FC<{ trade: CongressTrade }> = ({ trade }) => {
     const isBuy = trade.transaction_type === 'Buy';
     const hasConflict = trade.conflict?.is_conflict;
 
     return (
-        <div className={`bg-[#121212] border p-4 ${hasConflict ? 'border-[#ff6600]' : 'border-[#2a2a2a]'}`}>
+        <div className={`bg-white/50 backdrop-blur-md border rounded-2xl p-4 hover:shadow-md transition-shadow ${hasConflict ? 'border-amber-400' : 'border-cream-200'}`}>
             {hasConflict && (
                 <div
-                    className="text-[10px] font-mono mb-2 px-2 py-1 rounded inline-block"
+                    className="text-[10px] font-medium mb-2 px-2 py-1 rounded-full inline-block"
                     style={{ backgroundColor: trade.conflict.color + '20', color: trade.conflict.color }}
                 >
                     {trade.conflict.label} • {trade.conflict.committee}
@@ -141,44 +143,48 @@ const CongressCard: React.FC<{ trade: CongressTrade }> = ({ trade }) => {
                 <div>
                     <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${trade.party === 'D' ? 'bg-blue-500' : 'bg-red-500'}`} />
-                        <span className="text-white font-medium">{trade.politician}</span>
-                        <span className="text-[10px] text-[#666]">{trade.chamber}</span>
+                        <span className="text-obsidian-900 font-semibold">{trade.politician}</span>
+                        <span className="text-[10px] text-obsidian-500">{trade.chamber}</span>
                     </div>
 
                     <div className="flex items-center gap-2 mt-2">
-                        <span className={`text-lg font-mono ${isBuy ? 'text-[#00ff88]' : 'text-[#ff0066]'}`}>
+                        <span className={`text-lg font-bold ${isBuy ? 'text-success-600' : 'text-coral-600'}`}>
                             {trade.ticker}
                         </span>
-                        <span className="text-sm text-[#888]">{trade.amount}</span>
+                        <span className="text-sm text-obsidian-600">{trade.amount}</span>
                     </div>
                 </div>
 
                 <div className="text-right">
-                    <div className={`text-sm font-mono ${isBuy ? 'text-[#00ff88]' : 'text-[#ff0066]'}`}>
+                    <div className={`text-sm font-semibold ${isBuy ? 'text-success-600' : 'text-coral-600'}`}>
                         {trade.transaction_type}
                     </div>
-                    <div className="text-xs text-[#666] mt-1">{trade.date}</div>
+                    <div className="text-xs text-obsidian-500 mt-1">{trade.date}</div>
                 </div>
             </div>
         </div>
     );
 };
 
-// Cluster Badge Component
+// Cluster Badge Component - Cream Theme
 const ClusterBadge: React.FC<{ cluster: Cluster }> = ({ cluster }) => {
     if (!cluster) return null;
 
+    const getBgColor = () => {
+        if (cluster.signal.includes('STRONG BUY')) return 'bg-success-100 text-success-700 border-success-200';
+        if (cluster.signal.includes('BUY')) return 'bg-success-50 text-success-600 border-success-100';
+        if (cluster.signal.includes('SELL')) return 'bg-coral-100 text-coral-700 border-coral-200';
+        return 'bg-cream-100 text-obsidian-600 border-cream-200';
+    };
+
     return (
-        <div
-            className="px-4 py-2 rounded text-sm font-mono"
-            style={{ backgroundColor: cluster.color + '20', color: cluster.color }}
-        >
+        <div className={`px-4 py-3 rounded-2xl border ${getBgColor()}`}>
             <div className="flex items-center gap-3">
                 <span className="text-lg">
                     {cluster.cluster_detected ? '🔥' : '📊'}
                 </span>
                 <div>
-                    <div className="font-bold">{cluster.signal}</div>
+                    <div className="font-semibold">{cluster.signal}</div>
                     <div className="text-[10px] opacity-70">
                         {cluster.buy_count} buyers • {cluster.sell_count} sellers (7d)
                     </div>
@@ -239,47 +245,49 @@ export const InsiderRadar: React.FC = () => {
     }, [activeTab, fetchCorporateTrades, fetchCongressTrades]);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen bg-cream-50">
             {/* Header */}
-            <div className="border-b border-[#2a2a2a] px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-mono font-bold tracking-tight">
-                            INSIDER RADAR V2
-                        </h1>
-                        <p className="text-xs text-[#666] mt-1 font-mono">
-                            SMART MONEY TRACKING • ML-POWERED SIGNALS
-                        </p>
-                    </div>
+            <div className="border-b border-cream-200 bg-white/50 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-obsidian-900 tracking-tight">
+                                Insider Radar
+                            </h1>
+                            <p className="text-sm text-obsidian-500 mt-1">
+                                Smart Money Tracking • ML-Powered Signals
+                            </p>
+                        </div>
 
-                    {/* Tab Switcher */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setActiveTab('corporate')}
-                            className={`px-4 py-2 text-xs font-mono transition-colors ${activeTab === 'corporate'
-                                    ? 'bg-[#00ff88] text-black'
-                                    : 'bg-[#121212] text-[#888] hover:text-white'
-                                }`}
-                        >
-                            CORPORATE
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('congress')}
-                            className={`px-4 py-2 text-xs font-mono transition-colors ${activeTab === 'congress'
-                                    ? 'bg-[#ff6600] text-black'
-                                    : 'bg-[#121212] text-[#888] hover:text-white'
-                                }`}
-                        >
-                            CONGRESS {conflictsCount > 0 && `(${conflictsCount} ⚠️)`}
-                        </button>
+                        {/* Tab Switcher */}
+                        <div className="flex items-center gap-2 p-1 bg-cream-100 rounded-xl">
+                            <button
+                                onClick={() => setActiveTab('corporate')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'corporate'
+                                    ? 'bg-electric-500 text-white shadow-sm'
+                                    : 'text-obsidian-600 hover:text-obsidian-900'
+                                    }`}
+                            >
+                                Corporate
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('congress')}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${activeTab === 'congress'
+                                    ? 'bg-amber-500 text-white shadow-sm'
+                                    : 'text-obsidian-600 hover:text-obsidian-900'
+                                    }`}
+                            >
+                                Congress {conflictsCount > 0 && <span className="ml-1">({conflictsCount} ⚠️)</span>}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="p-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {activeTab === 'corporate' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {/* Search Bar */}
                         <div className="flex items-center gap-4">
                             <input
@@ -287,14 +295,14 @@ export const InsiderRadar: React.FC = () => {
                                 value={ticker}
                                 onChange={(e) => setTicker(e.target.value.toUpperCase())}
                                 placeholder="Enter ticker..."
-                                className="flex-1 px-4 py-3 bg-[#121212] border border-[#2a2a2a] text-white font-mono focus:border-[#00ff88] outline-none"
+                                className="flex-1 px-4 py-3 bg-white/50 backdrop-blur-md border border-cream-200 rounded-xl text-obsidian-900 placeholder-obsidian-400 focus:border-electric-500 focus:ring-2 focus:ring-electric-200 outline-none transition-all"
                             />
                             <button
                                 onClick={fetchCorporateTrades}
                                 disabled={loading}
-                                className="px-6 py-3 bg-[#00ff88] text-black font-mono font-bold hover:bg-[#00cc6a] disabled:opacity-50 transition-colors"
+                                className="px-6 py-3 bg-electric-500 text-white font-semibold rounded-xl hover:bg-electric-600 disabled:opacity-50 transition-colors"
                             >
-                                {loading ? 'SCANNING...' : 'SCAN'}
+                                {loading ? 'Scanning...' : 'Scan'}
                             </button>
                         </div>
 
@@ -302,38 +310,38 @@ export const InsiderRadar: React.FC = () => {
                         {cluster && <ClusterBadge cluster={cluster} />}
 
                         {/* Trades List */}
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {trades.length > 0 ? (
                                 trades.map((trade, i) => <TradeCard key={i} trade={trade} />)
                             ) : !loading && (
-                                <div className="text-center py-12 text-[#666]">
-                                    <p className="text-lg">No smart money trades found</p>
-                                    <p className="text-sm mt-1">Try a different ticker</p>
+                                <div className="text-center py-12 bg-white/50 backdrop-blur-md border border-cream-200 rounded-2xl">
+                                    <p className="text-lg text-obsidian-600">No smart money trades found</p>
+                                    <p className="text-sm text-obsidian-500 mt-1">Try a different ticker</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         {/* Conflict Counter */}
                         {conflictsCount > 0 && (
-                            <div className="bg-[#ff660020] border border-[#ff6600] p-4 rounded">
-                                <div className="text-[#ff6600] font-mono">
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl">
+                                <div className="text-amber-700 font-semibold">
                                     ⚠️ {conflictsCount} potential committee conflicts detected
                                 </div>
-                                <div className="text-xs text-[#888] mt-1">
+                                <div className="text-xs text-amber-600 mt-1">
                                     Politicians trading stocks within their committee jurisdiction
                                 </div>
                             </div>
                         )}
 
                         {/* Congress Trades List */}
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {congressTrades.length > 0 ? (
                                 congressTrades.map((trade, i) => <CongressCard key={i} trade={trade} />)
                             ) : !loading && (
-                                <div className="text-center py-12 text-[#666]">
-                                    <p className="text-lg">Loading congressional trades...</p>
+                                <div className="text-center py-12 bg-white/50 backdrop-blur-md border border-cream-200 rounded-2xl">
+                                    <p className="text-lg text-obsidian-600">Loading congressional trades...</p>
                                 </div>
                             )}
                         </div>
@@ -342,10 +350,12 @@ export const InsiderRadar: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-[#2a2a2a] px-6 py-3 text-center">
-                <span className="text-[10px] text-[#444] font-mono">
-                    DATA SOURCES: SEC FORM 4 • HOUSE STOCK WATCHER • SENATE STOCK WATCHER
-                </span>
+            <div className="border-t border-cream-200 bg-white/30 backdrop-blur-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center">
+                    <span className="text-xs text-obsidian-400">
+                        Data Sources: SEC Form 4 • House Stock Watcher • Senate Stock Watcher
+                    </span>
+                </div>
             </div>
         </div>
     );

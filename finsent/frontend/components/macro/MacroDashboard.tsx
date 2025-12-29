@@ -1,7 +1,9 @@
 'use client';
 
 // =============================================================================
-// MACRO INTELLIGENCE HUB - Brutalist Dark Mode Dashboard
+// MACRO INTELLIGENCE HUB - Atmospheric Glass Theme (Cream/Obsidian)
+// =============================================================================
+// Reskinned from Brutalist Dark to match the Caveray design system
 // =============================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -58,8 +60,8 @@ interface VitalData {
     sparkline: number[];
 }
 
-// Sparkline Component
-const Sparkline: React.FC<{ data: number[]; color?: string }> = ({ data, color = '#00ff88' }) => {
+// Sparkline Component - Cream Theme
+const Sparkline: React.FC<{ data: number[]; color?: string }> = ({ data, color = '#22C55E' }) => {
     if (!data || data.length === 0) return null;
 
     const max = Math.max(...data);
@@ -84,43 +86,43 @@ const Sparkline: React.FC<{ data: number[]; color?: string }> = ({ data, color =
     );
 };
 
-// Module Card Wrapper
+// Module Card Wrapper - Glass Morphism
 const ModuleCard: React.FC<{
     title: string;
     children: React.ReactNode;
     span?: 1 | 2;
 }> = ({ title, children, span = 1 }) => (
-    <div className={`bg-[#121212] border border-[#2a2a2a] p-4 ${span === 2 ? 'col-span-2' : ''}`}>
-        <h3 className="text-xs uppercase tracking-widest text-[#666] mb-3 font-mono">{title}</h3>
+    <div className={`bg-white/50 backdrop-blur-md border border-cream-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow ${span === 2 ? 'lg:col-span-2' : ''}`}>
+        <h3 className="text-xs uppercase tracking-widest text-obsidian-500 mb-4 font-medium">{title}</h3>
         {children}
     </div>
 );
 
 // Module A: Global Liquidity
 const LiquidityModule: React.FC<{ data: LiquidityData | null }> = ({ data }) => {
-    if (!data) return <div className="text-[#666]">Loading...</div>;
+    if (!data) return <div className="text-obsidian-400 text-sm">Loading...</div>;
 
     return (
         <div className="space-y-4">
             <div className="text-center">
-                <div className="text-4xl font-mono text-white font-bold">
+                <div className="text-4xl font-bold text-obsidian-900">
                     {data.total.formatted}
                 </div>
-                <div className="text-xs text-[#666] mt-1">GLOBAL CENTRAL BANK LIQUIDITY</div>
+                <div className="text-xs text-obsidian-500 mt-1">Global Central Bank Liquidity</div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-[#0a0a0a] p-3 border border-[#2a2a2a]">
-                    <div className="text-sm font-mono text-[#00d4ff]">{data.breakdown.fed.formatted}</div>
-                    <div className="text-[10px] text-[#666]">FED</div>
+                <div className="bg-cream-100/80 p-3 rounded-xl">
+                    <div className="text-sm font-semibold text-electric-600">{data.breakdown.fed.formatted}</div>
+                    <div className="text-[10px] text-obsidian-500">FED</div>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 border border-[#2a2a2a]">
-                    <div className="text-sm font-mono text-[#00d4ff]">{data.breakdown.ecb.formatted}</div>
-                    <div className="text-[10px] text-[#666]">ECB</div>
+                <div className="bg-cream-100/80 p-3 rounded-xl">
+                    <div className="text-sm font-semibold text-electric-600">{data.breakdown.ecb.formatted}</div>
+                    <div className="text-[10px] text-obsidian-500">ECB</div>
                 </div>
-                <div className="bg-[#0a0a0a] p-3 border border-[#2a2a2a]">
-                    <div className="text-sm font-mono text-[#00d4ff]">{data.breakdown.boj.formatted}</div>
-                    <div className="text-[10px] text-[#666]">BOJ</div>
+                <div className="bg-cream-100/80 p-3 rounded-xl">
+                    <div className="text-sm font-semibold text-electric-600">{data.breakdown.boj.formatted}</div>
+                    <div className="text-[10px] text-obsidian-500">BOJ</div>
                 </div>
             </div>
         </div>
@@ -132,9 +134,8 @@ const YieldCurveModule: React.FC<{
     curve: YieldCurveData | null;
     recession: RecessionData | null
 }> = ({ curve, recession }) => {
-    if (!curve || !recession) return <div className="text-[#666]">Loading...</div>;
+    if (!curve || !recession) return <div className="text-obsidian-400 text-sm">Loading...</div>;
 
-    // Simple yield curve visualization
     const maxYield = Math.max(...curve.curve.map(c => c.yield));
     const minYield = Math.min(...curve.curve.map(c => c.yield));
     const range = maxYield - minYield || 1;
@@ -143,22 +144,22 @@ const YieldCurveModule: React.FC<{
         <div className="space-y-4">
             {/* Recession Probability */}
             <div className="flex items-center justify-between">
-                <span className="text-xs text-[#666] uppercase">Recession Probability</span>
+                <span className="text-xs text-obsidian-500 uppercase">Recession Probability</span>
                 <span
-                    className="text-2xl font-mono font-bold"
-                    style={{ color: recession.color }}
+                    className="text-2xl font-bold"
+                    style={{ color: recession.probability > 50 ? '#EF4444' : recession.probability > 30 ? '#F59E0B' : '#22C55E' }}
                 >
                     {recession.probability}%
                 </span>
             </div>
 
             {/* Probability Bar */}
-            <div className="h-2 bg-[#0a0a0a] rounded">
+            <div className="h-2 bg-cream-200 rounded-full overflow-hidden">
                 <div
-                    className="h-full rounded transition-all"
+                    className="h-full rounded-full transition-all"
                     style={{
                         width: `${Math.min(recession.probability, 100)}%`,
-                        backgroundColor: recession.color
+                        backgroundColor: recession.probability > 50 ? '#EF4444' : recession.probability > 30 ? '#F59E0B' : '#22C55E'
                     }}
                 />
             </div>
@@ -170,10 +171,10 @@ const YieldCurveModule: React.FC<{
                     return (
                         <div key={point.maturity} className="flex-1 flex flex-col items-center">
                             <div
-                                className={`w-full rounded-t ${curve.inverted ? 'bg-[#ff0066]' : 'bg-[#00ff88]'}`}
+                                className={`w-full rounded-t ${curve.inverted ? 'bg-coral-500' : 'bg-electric-500'}`}
                                 style={{ height: `${Math.max(height, 5)}%` }}
                             />
-                            <span className="text-[8px] text-[#666] mt-1">{point.maturity}</span>
+                            <span className="text-[8px] text-obsidian-500 mt-1">{point.maturity}</span>
                         </div>
                     );
                 })}
@@ -181,15 +182,15 @@ const YieldCurveModule: React.FC<{
 
             {/* Spreads */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-[#0a0a0a] p-2 border border-[#2a2a2a]">
-                    <span className="text-[#666]">10Y-2Y:</span>
-                    <span className={`ml-2 font-mono ${curve.spreads['10Y_2Y'] < 0 ? 'text-[#ff0066]' : 'text-[#00ff88]'}`}>
+                <div className="bg-cream-100/80 p-2 rounded-lg">
+                    <span className="text-obsidian-500">10Y-2Y:</span>
+                    <span className={`ml-2 font-semibold ${curve.spreads['10Y_2Y'] < 0 ? 'text-coral-600' : 'text-success-600'}`}>
                         {curve.spreads['10Y_2Y']}%
                     </span>
                 </div>
-                <div className="bg-[#0a0a0a] p-2 border border-[#2a2a2a]">
-                    <span className="text-[#666]">10Y-3M:</span>
-                    <span className={`ml-2 font-mono ${curve.spreads['10Y_3M'] < 0 ? 'text-[#ff0066]' : 'text-[#00ff88]'}`}>
+                <div className="bg-cream-100/80 p-2 rounded-lg">
+                    <span className="text-obsidian-500">10Y-3M:</span>
+                    <span className={`ml-2 font-semibold ${curve.spreads['10Y_3M'] < 0 ? 'text-coral-600' : 'text-success-600'}`}>
                         {curve.spreads['10Y_3M']}%
                     </span>
                 </div>
@@ -200,7 +201,7 @@ const YieldCurveModule: React.FC<{
 
 // Module C: Fed Speak Decoder
 const FedSpeakModule: React.FC<{ data: FedSpeakData | null }> = ({ data }) => {
-    if (!data) return <div className="text-[#666]">Loading...</div>;
+    if (!data) return <div className="text-obsidian-400 text-sm">Loading...</div>;
 
     const gaugePosition = ((data.sentiment.score + 1) / 2) * 100;
 
@@ -208,14 +209,14 @@ const FedSpeakModule: React.FC<{ data: FedSpeakData | null }> = ({ data }) => {
         <div className="space-y-4">
             {/* Hawk/Dove Gauge */}
             <div className="relative">
-                <div className="flex justify-between text-[10px] text-[#666] mb-1">
+                <div className="flex justify-between text-[10px] text-obsidian-500 mb-1">
                     <span>DOVE</span>
                     <span>NEUTRAL</span>
                     <span>HAWK</span>
                 </div>
-                <div className="h-3 bg-gradient-to-r from-[#00ff88] via-[#ffaa00] to-[#ff0066] rounded relative">
+                <div className="h-3 bg-gradient-to-r from-success-400 via-amber-400 to-coral-500 rounded-full relative">
                     <div
-                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-[#0a0a0a] shadow-lg transition-all"
+                        className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full border-2 border-obsidian-300 shadow-md transition-all"
                         style={{ left: `calc(${gaugePosition}% - 8px)` }}
                     />
                 </div>
@@ -224,25 +225,25 @@ const FedSpeakModule: React.FC<{ data: FedSpeakData | null }> = ({ data }) => {
             {/* Score */}
             <div className="text-center">
                 <span
-                    className="text-3xl font-mono font-bold"
-                    style={{ color: data.sentiment.color }}
+                    className="text-3xl font-bold"
+                    style={{ color: data.sentiment.score > 0 ? '#EF4444' : data.sentiment.score < 0 ? '#22C55E' : '#F59E0B' }}
                 >
                     {data.sentiment.score > 0 ? '+' : ''}{data.sentiment.score}
                 </span>
                 <span
-                    className="ml-2 text-sm uppercase"
-                    style={{ color: data.sentiment.color }}
+                    className="ml-2 text-sm uppercase font-medium"
+                    style={{ color: data.sentiment.score > 0 ? '#EF4444' : data.sentiment.score < 0 ? '#22C55E' : '#F59E0B' }}
                 >
                     {data.sentiment.label}
                 </span>
             </div>
 
             {/* Statement Excerpt */}
-            <div className="text-xs text-[#888] italic leading-relaxed border-l-2 border-[#2a2a2a] pl-3">
+            <div className="text-xs text-obsidian-600 italic leading-relaxed border-l-2 border-cream-300 pl-3">
                 "{data.statement.excerpt.slice(0, 150)}..."
             </div>
 
-            <div className="text-[10px] text-[#666]">
+            <div className="text-[10px] text-obsidian-500">
                 Last Statement: {data.statement.date}
             </div>
         </div>
@@ -251,45 +252,47 @@ const FedSpeakModule: React.FC<{ data: FedSpeakData | null }> = ({ data }) => {
 
 // Module D: Inflation Nowcast
 const InflationModule: React.FC<{ data: InflationData | null }> = ({ data }) => {
-    if (!data) return <div className="text-[#666]">Loading...</div>;
+    if (!data) return <div className="text-obsidian-400 text-sm">Loading...</div>;
+
+    const inflationColor = data.nowcast > 3 ? '#EF4444' : data.nowcast > 2 ? '#F59E0B' : '#22C55E';
 
     return (
         <div className="space-y-4">
             <div className="flex items-end justify-between">
                 <div>
-                    <div className="text-[10px] text-[#666] uppercase">Inflation Nowcast</div>
+                    <div className="text-[10px] text-obsidian-500 uppercase">Inflation Nowcast</div>
                     <div
-                        className="text-4xl font-mono font-bold"
-                        style={{ color: data.color }}
+                        className="text-4xl font-bold"
+                        style={{ color: inflationColor }}
                     >
                         {data.nowcast}%
                     </div>
                 </div>
                 <div className="text-right">
-                    <div className="text-[10px] text-[#666] uppercase">Official CPI</div>
-                    <div className="text-xl font-mono text-[#888]">{data.official_cpi}%</div>
+                    <div className="text-[10px] text-obsidian-500 uppercase">Official CPI</div>
+                    <div className="text-xl font-semibold text-obsidian-600">{data.official_cpi}%</div>
                 </div>
             </div>
 
             {/* Comparison Bar */}
-            <div className="space-y-1">
+            <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#666] w-16">NOWCAST</span>
-                    <div className="flex-1 h-4 bg-[#0a0a0a] rounded">
+                    <span className="text-[10px] text-obsidian-500 w-16">NOWCAST</span>
+                    <div className="flex-1 h-3 bg-cream-200 rounded-full overflow-hidden">
                         <div
-                            className="h-full rounded"
+                            className="h-full rounded-full"
                             style={{
                                 width: `${(data.nowcast / 5) * 100}%`,
-                                backgroundColor: data.color
+                                backgroundColor: inflationColor
                             }}
                         />
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-[#666] w-16">OFFICIAL</span>
-                    <div className="flex-1 h-4 bg-[#0a0a0a] rounded">
+                    <span className="text-[10px] text-obsidian-500 w-16">OFFICIAL</span>
+                    <div className="flex-1 h-3 bg-cream-200 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-[#666] rounded"
+                            className="h-full bg-obsidian-400 rounded-full"
                             style={{ width: `${(data.official_cpi / 5) * 100}%` }}
                         />
                     </div>
@@ -297,8 +300,8 @@ const InflationModule: React.FC<{ data: InflationData | null }> = ({ data }) => 
             </div>
 
             <div
-                className="text-xs uppercase text-center py-1 rounded"
-                style={{ backgroundColor: data.color + '20', color: data.color }}
+                className="text-xs uppercase text-center py-2 rounded-lg font-medium"
+                style={{ backgroundColor: inflationColor + '15', color: inflationColor }}
             >
                 Trend: {data.trend}
             </div>
@@ -308,14 +311,19 @@ const InflationModule: React.FC<{ data: InflationData | null }> = ({ data }) => 
 
 // Module E: Stress Heatmap
 const StressModule: React.FC<{ data: StressData | null }> = ({ data }) => {
-    if (!data) return <div className="text-[#666]">Loading...</div>;
+    if (!data) return <div className="text-obsidian-400 text-sm">Loading...</div>;
 
     const getColor = (val: number) => {
-        if (val >= 0.7) return '#00ff88';
-        if (val >= 0.3) return '#00ff8866';
-        if (val >= -0.3) return '#444';
-        if (val >= -0.7) return '#ff006666';
-        return '#ff0066';
+        if (val >= 0.7) return '#22C55E';
+        if (val >= 0.3) return '#86EFAC';
+        if (val >= -0.3) return '#D4D4D8';
+        if (val >= -0.7) return '#FDA4AF';
+        return '#EF4444';
+    };
+
+    const getTextColor = (val: number) => {
+        if (val >= 0.3 || val <= -0.3) return '#FFFFFF';
+        return '#71717A';
     };
 
     return (
@@ -327,21 +335,21 @@ const StressModule: React.FC<{ data: StressData | null }> = ({ data }) => {
                         <tr>
                             <th></th>
                             {data.labels.map((l) => (
-                                <th key={l} className="text-[#666] font-normal px-1">{l}</th>
+                                <th key={l} className="text-obsidian-500 font-normal px-1">{l}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {data.matrix.map((row, i) => (
                             <tr key={i}>
-                                <td className="text-[#666] pr-2">{data.labels[i]}</td>
+                                <td className="text-obsidian-500 pr-2">{data.labels[i]}</td>
                                 {row.map((val, j) => (
                                     <td
                                         key={j}
-                                        className="text-center p-1"
+                                        className="text-center p-1 rounded"
                                         style={{ backgroundColor: getColor(val) }}
                                     >
-                                        <span className="text-[8px] text-white font-mono">
+                                        <span className="text-[8px] font-medium" style={{ color: getTextColor(val) }}>
                                             {val.toFixed(1)}
                                         </span>
                                     </td>
@@ -358,8 +366,8 @@ const StressModule: React.FC<{ data: StressData | null }> = ({ data }) => {
                     {data.stress_flags.map((flag, i) => (
                         <div
                             key={i}
-                            className="text-[10px] px-2 py-1 rounded"
-                            style={{ backgroundColor: flag.color + '20', color: flag.color }}
+                            className="text-[10px] px-2 py-1 rounded-lg font-medium"
+                            style={{ backgroundColor: flag.color + '15', color: flag.color }}
                         >
                             ⚠ {flag.condition}
                         </div>
@@ -368,9 +376,9 @@ const StressModule: React.FC<{ data: StressData | null }> = ({ data }) => {
             )}
 
             {/* Overall Status */}
-            <div className={`text-center text-xs py-2 rounded ${data.overall_stress
-                    ? 'bg-[#ff006620] text-[#ff0066]'
-                    : 'bg-[#00ff8820] text-[#00ff88]'
+            <div className={`text-center text-xs py-2 rounded-lg font-medium ${data.overall_stress
+                ? 'bg-coral-100 text-coral-700'
+                : 'bg-success-100 text-success-700'
                 }`}>
                 {data.overall_stress ? '⚠ ELEVATED STRESS' : '✓ NORMAL CONDITIONS'}
             </div>
@@ -380,12 +388,12 @@ const StressModule: React.FC<{ data: StressData | null }> = ({ data }) => {
 
 // Module F: Economic Vitals
 const VitalsModule: React.FC<{ data: Record<string, VitalData> | null }> = ({ data }) => {
-    if (!data) return <div className="text-[#666]">Loading...</div>;
+    if (!data) return <div className="text-obsidian-400 text-sm">Loading...</div>;
 
     const getTrendColor = (trend: string) => {
-        if (trend === 'up') return '#00ff88';
-        if (trend === 'down') return '#ff0066';
-        return '#ffaa00';
+        if (trend === 'up') return '#22C55E';
+        if (trend === 'down') return '#EF4444';
+        return '#F59E0B';
     };
 
     const vitals = Object.values(data);
@@ -395,12 +403,12 @@ const VitalsModule: React.FC<{ data: Record<string, VitalData> | null }> = ({ da
             {vitals.map((vital) => (
                 <div
                     key={vital.name}
-                    className="flex items-center justify-between bg-[#0a0a0a] p-2 border border-[#2a2a2a]"
+                    className="flex items-center justify-between bg-cream-100/80 p-3 rounded-xl"
                 >
-                    <span className="text-[10px] text-[#666] uppercase flex-1">{vital.name}</span>
+                    <span className="text-[10px] text-obsidian-500 uppercase flex-1">{vital.name}</span>
                     <div className="flex items-center gap-2">
                         <Sparkline data={vital.sparkline} color={getTrendColor(vital.trend)} />
-                        <span className="text-sm font-mono text-white">
+                        <span className="text-sm font-semibold text-obsidian-900">
                             {vital.value}{vital.unit}
                         </span>
                     </div>
@@ -452,67 +460,71 @@ export const MacroDashboard: React.FC = () => {
     }, [fetchData]);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white">
+        <div className="min-h-screen bg-cream-50">
             {/* Header */}
-            <div className="border-b border-[#2a2a2a] px-6 py-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-mono font-bold tracking-tight">
-                            MACRO INTELLIGENCE HUB
-                        </h1>
-                        <p className="text-xs text-[#666] mt-1 font-mono">
-                            GLOBAL ECONOMIC RADAR • REAL-TIME ANALYSIS
-                        </p>
-                    </div>
-                    <div className="text-right">
-                        <button
-                            onClick={fetchData}
-                            disabled={loading}
-                            className="px-4 py-2 bg-[#121212] border border-[#2a2a2a] text-xs font-mono hover:bg-[#1a1a1a] transition-colors disabled:opacity-50"
-                        >
-                            {loading ? 'SYNCING...' : 'REFRESH'}
-                        </button>
-                        <div className="text-[10px] text-[#666] mt-1">
-                            Last: {lastUpdate}
+            <div className="border-b border-cream-200 bg-white/50 backdrop-blur-md">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-obsidian-900 tracking-tight">
+                                Macro Intelligence Hub
+                            </h1>
+                            <p className="text-sm text-obsidian-500 mt-1">
+                                Global Economic Radar • Real-Time Analysis
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <button
+                                onClick={fetchData}
+                                disabled={loading}
+                                className="px-5 py-2.5 bg-electric-500 text-white text-sm font-medium rounded-xl hover:bg-electric-600 transition-colors disabled:opacity-50"
+                            >
+                                {loading ? 'Syncing...' : 'Refresh'}
+                            </button>
+                            <div className="text-xs text-obsidian-500 mt-2">
+                                Last: {lastUpdate}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Grid */}
-            <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <ModuleCard title="Module A: Global Liquidity Impulse">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <ModuleCard title="Global Liquidity Impulse">
                         <LiquidityModule data={liquidity} />
                     </ModuleCard>
 
-                    <ModuleCard title="Module B: Yield Curve & Recession">
+                    <ModuleCard title="Yield Curve & Recession">
                         <YieldCurveModule curve={yieldCurve} recession={recession} />
                     </ModuleCard>
 
-                    <ModuleCard title="Module C: Fed Speak Decoder">
+                    <ModuleCard title="Fed Speak Decoder">
                         <FedSpeakModule data={fedSpeak} />
                     </ModuleCard>
 
-                    <ModuleCard title="Module D: Inflation Nowcast">
+                    <ModuleCard title="Inflation Nowcast">
                         <InflationModule data={inflation} />
                     </ModuleCard>
 
-                    <ModuleCard title="Module E: Stress Heatmap">
+                    <ModuleCard title="Stress Heatmap">
                         <StressModule data={stress} />
                     </ModuleCard>
 
-                    <ModuleCard title="Module F: Economic Vitals">
+                    <ModuleCard title="Economic Vitals">
                         <VitalsModule data={vitals} />
                     </ModuleCard>
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-[#2a2a2a] px-6 py-3 text-center">
-                <span className="text-[10px] text-[#444] font-mono">
-                    DATA SOURCES: FEDERAL RESERVE • YFINANCE • BLS • ATLANTA FED
-                </span>
+            <div className="border-t border-cream-200 bg-white/30 backdrop-blur-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center">
+                    <span className="text-xs text-obsidian-400">
+                        Data Sources: Federal Reserve • YFinance • BLS • Atlanta Fed
+                    </span>
+                </div>
             </div>
         </div>
     );
