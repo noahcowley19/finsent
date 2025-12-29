@@ -435,29 +435,35 @@ export const MacroDashboard: React.FC = () => {
 
         try {
             const response = await fetch(`${API_BASE}/api/macro/dashboard`);
+            
+            // SECURITY CHECK: If backend is missing V2, it sends 404 HTML.
+            // We must prevent that from crashing the app.
+            const contentType = response.headers.get("content-type");
+            if (!response.ok || !contentType || !contentType.includes("application/json")) {
+                 console.warn("Macro API unavailable - Backend may be in Safe Mode");
+                 setLoading(false);
+                 return; // Stop execution to prevent crash
+            }
+
             const data = await response.json();
 
-            setLiquidity(data.liquidity);
-            setYieldCurve(data.yield_curve);
-            setRecession(data.recession);
-            setFedSpeak(data.fed_speak);
-            setInflation(data.inflation);
-            setStress(data.stress);
-            setVitals(data.vitals?.vitals);
-            setLastUpdate(new Date().toLocaleTimeString());
+            // Only set state if data actually exists
+            if (data) {
+                if (data.liquidity) setLiquidity(data.liquidity);
+                if (data.yield_curve) setYieldCurve(data.yield_curve);
+                if (data.recession) setRecession(data.recession);
+                if (data.fed_speak) setFedSpeak(data.fed_speak);
+                if (data.inflation) setInflation(data.inflation);
+                if (data.stress) setStress(data.stress);
+                if (data.vitals?.vitals) setVitals(data.vitals.vitals);
+                setLastUpdate(new Date().toLocaleTimeString());
+            }
         } catch (error) {
             console.error('Failed to fetch macro data:', error);
         } finally {
             setLoading(false);
         }
     }, []);
-
-    useEffect(() => {
-        fetchData();
-        // Refresh every 5 minutes
-        const interval = setInterval(fetchData, 5 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, [fetchData]);
 
     return (
         <div className="min-h-screen bg-cream-50">
