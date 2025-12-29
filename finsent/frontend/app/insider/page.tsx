@@ -1,12 +1,13 @@
+'use client';
+
 // =============================================================================
-// INSIDER TRADING PAGE - Insider Radar
+// INSIDER TRADING PAGE - Insider Radar V2
 // =============================================================================
-// Renders the InsiderRadar component for insider/congress trading analysis
-//
-// Location: frontend/app/insider/page.tsx
+// Renders the V2 InsiderRadar component for insider/congress tracking
 // =============================================================================
 
-import { InsiderRadar } from '@/components/insider/InsiderRadar';
+import React from 'react';
+import InsiderRadar from '@/components/insider/InsiderRadar';
 
 export default function InsiderPage() {
   return <InsiderRadar />;

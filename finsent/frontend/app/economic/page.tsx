@@ -1,12 +1,13 @@
+'use client';
+
 // =============================================================================
 // ECONOMIC INDICATORS PAGE - Macro Intelligence Hub
 // =============================================================================
-// Renders the MacroDashboard component for macro analysis
-//
-// Location: frontend/app/economic/page.tsx
+// Renders the V2 MacroDashboard component for macro analysis
 // =============================================================================
 
-import { MacroDashboard } from '@/components/macro/MacroDashboard';
+import React from 'react';
+import MacroDashboard from '@/components/macro/MacroDashboard';
 
 export default function EconomicPage() {
     return <MacroDashboard />;

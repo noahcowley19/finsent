@@ -1,25 +1,29 @@
-Flask
+# =============================================================================
+# CAVERAY BACKEND REQUIREMENTS
+# =============================================================================
+# Core dependencies for the Financial Intelligence Platform API
+# =============================================================================
+
+# Web Framework
+flask
 flask-cors
-feedparser
-requests
-beautifulsoup4
-vaderSentiment
-yfinance
+flask-limiter
 gunicorn
+
+# Data & Finance
+yfinance
 pandas
 numpy
-flask-limiter
-scipy
+requests
+beautifulsoup4
+fredapi
 
-# Quant Lab Advanced Dependencies
+# AI & Math Engines (Required for V2 Modules)
+scikit-learn
+scipy
 statsmodels
 hmmlearn
-arch
-plotly
+vaderSentiment
 
-# Screener V2 ML Dependencies
-scikit-learn
+# Utilities
 joblib
-
-# Macro Page Dependencies
-fredapi
