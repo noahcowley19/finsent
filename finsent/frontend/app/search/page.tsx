@@ -138,8 +138,8 @@ function SearchPageContent() {
                 <button
                   onClick={() => handleAddToWatchlist(stock.symbol)}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${watchlist.includes(stock.symbol)
-                      ? 'bg-electric-500 text-white'
-                      : 'bg-cream-100 text-obsidian-700 hover:bg-cream-200'
+                    ? 'bg-electric-500 text-white'
+                    : 'bg-cream-100 text-obsidian-700 hover:bg-cream-200'
                     }`}
                 >
                   {watchlist.includes(stock.symbol) ? '★ In Watchlist' : '☆ Add to Watchlist'}
@@ -310,7 +310,10 @@ function SearchPageContent() {
             <ScrollReveal>
               <div>
                 <h2 className="font-bold text-xl text-obsidian-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🔥</span> Trending Now
+                  <svg className="w-5 h-5 text-coral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  Trending Now
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   {trendingStocks.map((stock, index) => (
@@ -346,7 +349,10 @@ function SearchPageContent() {
             <ScrollReveal delay={100}>
               <div>
                 <h2 className="font-bold text-xl text-obsidian-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🕐</span> Recent Searches
+                  <svg className="w-5 h-5 text-obsidian-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Recent Searches
                 </h2>
                 {recentSearches.length > 0 ? (
                   <div className="flex flex-wrap gap-2 mb-8">
@@ -367,21 +373,24 @@ function SearchPageContent() {
                 )}
 
                 <h3 className="font-semibold text-lg text-obsidian-900 mb-4 flex items-center gap-2">
-                  <span className="text-xl">📊</span> Browse by Sector
+                  <svg className="w-5 h-5 text-electric-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Browse by Sector
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { label: 'Technology', emoji: '💻', tickers: 'AAPL, MSFT, GOOGL' },
-                    { label: 'Finance', emoji: '🏦', tickers: 'JPM, BAC, GS' },
-                    { label: 'Healthcare', emoji: '🏥', tickers: 'JNJ, UNH, PFE' },
-                    { label: 'Energy', emoji: '⚡', tickers: 'XOM, CVX, COP' },
+                    { label: 'Technology', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>, tickers: 'AAPL, MSFT, GOOGL', color: 'text-electric-500' },
+                    { label: 'Finance', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" /></svg>, tickers: 'JPM, BAC, GS', color: 'text-amber-500' },
+                    { label: 'Healthcare', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>, tickers: 'JNJ, UNH, PFE', color: 'text-coral-500' },
+                    { label: 'Energy', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>, tickers: 'XOM, CVX, COP', color: 'text-success-500' },
                   ].map((category) => (
                     <div
                       key={category.label}
                       className="p-4 bg-white/80 backdrop-blur-lg border border-cream-200/50 rounded-xl shadow-glass"
                     >
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xl">{category.emoji}</span>
+                        <span className={category.color}>{category.icon}</span>
                         <span className="font-semibold text-obsidian-900">{category.label}</span>
                       </div>
                       <p className="text-xs text-obsidian-400">{category.tickers}</p>
@@ -412,26 +421,31 @@ function SearchPageContent() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 {
-                  icon: '📈',
+                  icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" /></svg>,
                   title: 'Interactive Charts',
                   description: 'Candlesticks, moving averages, support/resistance, and more. Full zoom and fullscreen support.',
+                  color: 'bg-electric-100 text-electric-600',
                 },
                 {
-                  icon: '📊',
+                  icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
                   title: 'Financial Metrics',
                   description: '12 key metrics with 7-year historical data. Revenue, margins, cash flow, and returns.',
+                  color: 'bg-amber-100 text-amber-600',
                 },
                 {
-                  icon: '🤖',
+                  icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
                   title: 'AI Insights',
                   description: 'Sentiment analysis, pattern detection, and AI-powered trading signals.',
+                  color: 'bg-coral-100 text-coral-600',
                 },
               ].map((feature) => (
                 <div
                   key={feature.title}
                   className="p-6 bg-cream-50 rounded-2xl border border-cream-200/50"
                 >
-                  <span className="text-3xl mb-4 block">{feature.icon}</span>
+                  <div className={`w-12 h-12 rounded-xl ${feature.color} flex items-center justify-center mb-4`}>
+                    {feature.icon}
+                  </div>
                   <h3 className="font-semibold text-lg text-obsidian-900 mb-2">{feature.title}</h3>
                   <p className="text-sm text-obsidian-500">{feature.description}</p>
                 </div>
